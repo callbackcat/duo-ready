@@ -1,0 +1,190 @@
+# duo-ready native rules (Swift / Objective-C / Info.plist)
+# Patterns are Python regexes. By default they run against a copy of the line
+# with comments and string-literal contents blanked out (positions preserved).
+# raw: true matches the original line (needed when the string content matters).
+# kind: line (default) | multiline (regex over the whole file) | file (python check in scan.py)
+# Verified against Apple guidance 27 Oct 2026. See references/rules-native.md.
+
+- id: screen-main-bounds
+  lang: [swift, objc]
+  severity: error
+  pattern: 'UIScreen\.main\.bounds|\[UIScreen mainScreen\]\.bounds|UIScreen\.mainScreen\.bounds'
+  autofix: true
+  replace: view.bounds
+  fix_exclude: 'UIWindow\(frame:'
+  fix_hint: UIScreen.main is ambiguous on a two-display device and will be deprecated; size from view.bounds, window.bounds, or the scene, and in SwiftUI use GeometryReader or onGeometryChange. The autofix assumes the call site is inside a view or view controller; review each diff.
+  apple_ref: https://developer.apple.com/iphone-duo/prepare/
+  doc: references/rules-native.md#screen-main-bounds
+
+- id: screen-main-scale
+  lang: [swift, objc]
+  severity: error
+  pattern: 'UIScreen\.main\.(?:nativeScale|scale)\b|\[UIScreen mainScreen\]\.(?:nativeScale|scale)\b'
+  autofix: true
+  replace: traitCollection.displayScale
+  fix_hint: Read the scale of the display the view is actually on via traitCollection.displayScale (UIKit) or @Environment(\.displayScale) (SwiftUI); the two Duo displays are separate screens.
+  apple_ref: https://developer.apple.com/iphone-duo/prepare/
+  doc: references/rules-native.md#screen-main-scale
+
+- id: window-frame-init
+  lang: [swift, objc]
+  severity: error
+  pattern: 'UIWindow\s*\(\s*frame\s*:|\[\[UIWindow alloc\]\s*initWithFrame'
+  autofix: false
+  fix_hint: A window created from a frame never follows the scene when the device folds; create it with UIWindow(windowScene:) inside the scene delegate.
+  apple_ref: https://developer.apple.com/iphone-duo/prepare/
+  doc: references/rules-native.md#window-frame-init
+
+- id: stored-uiscreen
+  lang: [swift]
+  severity: warn
+  pattern: '\b(?:var|let)\s+\w+\s*(?::\s*UIScreen\b|=\s*UIScreen\.main(?![\w.]))'
+  autofix: false
+  fix_hint: A stored UIScreen points at whichever display the app started on; resolve it on demand with view.window?.windowScene?.screen.
+  apple_ref: https://developer.apple.com/iphone-duo/prepare/
+  doc: references/rules-native.md#stored-uiscreen
+
+- id: orientation-layout
+  lang: [swift, objc]
+  severity: error
+  pattern: 'UIDevice\.current\.orientation|\[UIDevice currentDevice\]\.orientation|\bstatusBarOrientation\b|\binterfaceOrientation\b(?!\w)'
+  exclude: 'supportedInterfaceOrientations|preferredInterfaceOrientationForPresentation'
+  autofix: false
+  fix_hint: The inner display ignores orientation and the outer display is wider than tall even in portrait, so orientation no longer predicts layout; compare bounds.width to bounds.height or use size classes.
+  apple_ref: https://developer.apple.com/iphone-duo/prepare/
+  doc: references/rules-native.md#orientation-layout
+
+- id: idiom-check
+  lang: [swift, objc]
+  severity: error
+  pattern: 'userInterfaceIdiom\s*(?:==|!=)\s*\.?(?:phone|pad|UIUserInterfaceIdiomPhone|UIUserInterfaceIdiomPad)\b|UI_USER_INTERFACE_IDIOM\(\)'
+  autofix: false
+  fix_hint: iPhone Duo reports the .phone idiom while offering iPad-class space on the inner display; choose layouts from size classes or available width, never from the idiom.
+  apple_ref: https://developer.apple.com/iphone-duo/prepare/
+  doc: references/rules-native.md#idiom-check
+
+- id: regular-means-ipad
+  lang: [swift]
+  severity: error
+  pattern: '(?:[iI]sI?[pP]ad|[iI]pad)\w*\s*=[^=].*horizontalSizeClass\s*==\s*\.regular|horizontalSizeClass\s*==\s*\.regular.*(?:[iI]sI?[pP]ad|[iI]pad)'
+  autofix: false
+  fix_hint: Regular width no longer means iPad; the Duo inner display is regular in both dimensions on an iPhone. Branch on the size class itself, not on a derived "isPad" flag.
+  apple_ref: https://developer.apple.com/iphone-duo/prepare/
+  doc: references/rules-native.md#regular-means-ipad
+
+- id: regular-width-assumes-regular-height
+  lang: [swift]
+  severity: info
+  pattern: 'horizontalSizeClass\s*==\s*\.regular'
+  exclude: 'verticalSizeClass|[iI]sI?[pP]ad|[iI]pad'
+  autofix: false
+  fix_hint: A 6.9-inch iPhone in landscape is regular width with compact height, so a two-pane layout keyed on width alone breaks there; check verticalSizeClass (or height) before assuming the Duo inner display.
+  apple_ref: https://developer.apple.com/videos/play/tech-talks/111461/
+  doc: references/rules-native.md#regular-width-assumes-regular-height
+
+- id: hardcoded-size
+  lang: [swift, objc]
+  severity: error
+  pattern: '(?i)(?:width|height|bounds|size)[^\n]*?(?:==|>=|<=|[<>])\s*(?:320|375|390|393|402|414|428|430|440|568|667|736|812|844|852|874|896|926|932|956)(?:\.0)?\b|\[\s*(?:320|375|390|393|402|414|428|430|440|568|667|736|812|844|852|874|896|926|932|956)(?:\.0)?\s*,\s*(?:320|375|390|393|402|414|428|430|440|568|667|736|812|844|852|874|896|926|932|956)(?:\.0)?\b'
+  autofix: false
+  fix_hint: Lists of known iPhone dimensions never include the Duo window sizes (466x678, 951x669 pt) and will keep growing; remove the comparison and size relative to the container.
+  apple_ref: https://developer.apple.com/iphone-duo/prepare/
+  doc: references/rules-native.md#hardcoded-size
+
+- id: fill-media
+  lang: [swift, objc]
+  severity: warn
+  pattern: '\.scaleAspectFill\b|UIViewContentModeScaleAspectFill|contentMode\s*:\s*\.fill\b|resizingMode\s*:\s*\.fill\b'
+  autofix: false
+  fix_hint: Full-bleed media cropped with aspect-fill loses its subject when the window changes from 466x678 to 951x669; pick fill or fit from the size class or aspect ratio, or set a focal point.
+  apple_ref: https://developer.apple.com/iphone-duo/prepare/
+  doc: references/rules-native.md#fill-media
+
+- id: layout-once
+  lang: [swift]
+  severity: warn
+  kind: file
+  check: layout_once
+  autofix: false
+  fix_hint: Geometry read in viewDidLoad, viewIsAppearing or init is captured once and is wrong after the first fold; move size-dependent layout to viewDidLayoutSubviews / layoutSubviews and use viewWillTransition(to:with:) for work that must run on size changes.
+  apple_ref: https://developer.apple.com/iphone-duo/prepare/
+  doc: references/rules-native.md#layout-once
+
+- id: fixed-orientation-plist
+  lang: [plist]
+  severity: warn
+  kind: file
+  check: fixed_orientation_plist
+  autofix: false
+  fix_hint: The inner display does not honor UISupportedInterfaceOrientations, so a portrait-only app still gets a 951x669 landscape window there; add landscape orientations and lay out by size class instead of relying on the lock.
+  apple_ref: https://developer.apple.com/videos/play/tech-talks/111461/
+  doc: references/rules-native.md#fixed-orientation-plist
+
+- id: custom-bar-class
+  lang: [swift, objc]
+  severity: error
+  pattern: '\bUI(?:Toolbar|NavigationBar|TabBar)\s*\(|\[UI(?:Toolbar|NavigationBar|TabBar) alloc\]|class\s+\w+\s*:\s*UI(?:Toolbar|NavigationBar|TabBar)\b'
+  autofix: false
+  fix_hint: Items in a hand-built UIToolbar, UINavigationBar or UITabBar are not considered for the vertical bar on iPhone Duo and stay horizontal; use UINavigationController and UITabBarController and set toolbar items on the view controller.
+  apple_ref: https://developer.apple.com/documentation/technologyoverviews/preparing-your-app-for-iphone-duo
+  doc: references/rules-native.md#custom-bar-class
+
+- id: toolbar-item-no-symbol
+  lang: [swift]
+  severity: warn
+  raw: true
+  pattern: 'UIBarButtonItem\s*\(\s*title\s*:|ToolbarItem(?:\([^)]*\))?\s*\{\s*Button\(\s*"[^"]+"\s*(?:\)|,\s*action)'
+  exclude: 'image\s*:|systemImage|Label\('
+  autofix: false
+  fix_hint: A title-only item never moves into the vertical bar and keeps an otherwise empty horizontal rail; give every item both a symbol and a title (Label / systemImage, or UIBarButtonItem(image:)) so the system can pick the right form.
+  apple_ref: https://developer.apple.com/videos/play/tech-talks/111462/
+  doc: references/rules-native.md#toolbar-item-no-symbol
+
+- id: custom-overflow-menu
+  lang: [swift]
+  severity: warn
+  raw: true
+  pattern: '(?:Image|UIImage)\(\s*systemName\s*:\s*"ellipsis'
+  exclude: 'ToolbarOverflowMenu'
+  autofix: false
+  fix_hint: iPhone Duo collapses bar items into a system overflow menu that also uses the ellipsis; move your own overflow actions into ToolbarOverflowMenu (SwiftUI) or additionalOverflowItems (UIKit) so people find everything in one place.
+  apple_ref: https://developer.apple.com/design/human-interface-guidelines/designing-for-iphone-duo
+  doc: references/rules-native.md#custom-overflow-menu
+
+- id: no-scene-delegate
+  lang: [plist]
+  severity: error
+  kind: project
+  check: no_scene_delegate
+  autofix: false
+  fix_hint: Apps built with the iOS 27 SDK or later must use the UIScene life cycle (TN3187); without UIApplicationSceneManifest and a UIWindowSceneDelegate the app cannot follow the scene between displays.
+  apple_ref: https://developer.apple.com/documentation/technotes/tn3187-migrating-to-the-uikit-scene-based-life-cycle
+  doc: references/rules-native.md#no-scene-delegate
+
+- id: symmetric-safe-area
+  lang: [swift, objc]
+  severity: error
+  pattern: '\bmax\s*\(\s*[\w.]*(?:[sS]afeAreaInsets|[iI]nsets)\.(?:left|right|leading|trailing)\s*,\s*[\w.]*(?:[sS]afeAreaInsets|[iI]nsets)\.(?:left|right|leading|trailing)\s*\)|\bMAX\s*\(\s*[\w.]*safeAreaInsets\.(?:left|right)\s*,'
+  autofix: false
+  fix_hint: Safe areas are asymmetric on iPhone Duo (the vertical bar and status column sit on one edge only); apply each edge's inset separately instead of the larger of the two.
+  apple_ref: https://developer.apple.com/videos/play/tech-talks/111461/
+  doc: references/rules-native.md#symmetric-safe-area
+
+- id: centered-grid-odd-columns
+  lang: [swift]
+  severity: info
+  pattern: '(?:columns|numberOfColumns|columnCount|itemsPerRow)\s*[:=]\s*(?:3|5|7|9)\b|repeating\s*:\s*GridItem\(.*?\)\s*,\s*count\s*:\s*(?:3|5|7|9)\b'
+  autofix: false
+  fix_hint: An odd column count centers one column on the fold when the device is partially open; prefer an even number of columns, or center the grid on the division region reported by ReservedRegion.
+  apple_ref: https://developer.apple.com/design/human-interface-guidelines/designing-for-iphone-duo
+  doc: references/rules-native.md#centered-grid-odd-columns
+
+- id: cached-reserved-regions
+  lang: [swift]
+  severity: info
+  pattern: '^\s*(?:self\.)?\w+\s*=\s*[\w.]*\breservedRegions\s*\('
+  exclude: '^\s*(?:let|var)\b'
+  autofix: false
+  fix_hint: Reserved regions are empty for the first few layout passes and change as the device folds; read them on every layout pass instead of storing the result.
+  apple_ref: https://developer.apple.com/videos/play/tech-talks/111463/
+  doc: references/rules-native.md#cached-reserved-regions

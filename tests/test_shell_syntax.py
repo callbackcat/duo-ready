@@ -1,0 +1,140 @@
+"""Shell scripts: syntax, --help, and honest refusal on a non-macOS host.
+
+These run on Windows through Git Bash, which is why they only check what a
+non-Mac can check: every script parses, prints usage with --help, and exits 4
+with the contract's exact `cannot run on this host:` prefix instead of faking
+a result. assets.sh is host-independent and gets a functional test.
+"""
+import json
+import os
+import platform
+import shutil
+import struct
+import subprocess
+import sys
+import zlib
+
+import pytest
+
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+SCRIPTS = os.path.join(ROOT, "scripts")
+BASH = shutil.which("bash") or "/usr/bin/bash"
+
+SCRIPT_NAMES = [
+    "preflight.sh", "sdk-stamp.sh", "build.sh", "sim.sh", "capture.sh",
+    "run-matrix.sh", "perf.sh", "assets.sh",
+]
+# Arguments that make each script get past argument validation.
+REFUSAL_ARGS = {
+    "preflight.sh": [],
+    "sdk-stamp.sh": ["Fake.app"],
+    "build.sh": [],
+    "sim.sh": ["udid"],
+    "capture.sh": ["out.png"],
+    "run-matrix.sh": [],
+    "perf.sh": [],
+}
+
+
+def run(script, *args, env=None, cwd=ROOT):
+    merged = dict(os.environ)
+    if env:
+        merged.update(env)
+    return subprocess.run(
+        [BASH, os.path.join(SCRIPTS, script), *args],
+        cwd=cwd, capture_output=True, text=True, timeout=60, env=merged,
+    )
+
+
+@pytest.mark.parametrize("script", SCRIPT_NAMES + ["common.sh"])
+def test_bash_syntax(script):
+    r = subprocess.run([BASH, "-n", os.path.join(SCRIPTS, script)], capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+
+
+@pytest.mark.parametrize("script", SCRIPT_NAMES)
+def test_help(script):
+    r = run(script, "--help")
+    assert r.returncode == 0, r.stderr
+    assert "Usage:" in r.stdout
+
+
+@pytest.mark.skipif(platform.system() == "Darwin", reason="refusal only applies off macOS")
+@pytest.mark.parametrize("script", sorted(REFUSAL_ARGS))
+def test_refuses_on_non_mac(script):
+    r = run(script, *REFUSAL_ARGS[script], env={"DUO_PY": "python"})
+    assert r.returncode == 4, f"stdout={r.stdout!r} stderr={r.stderr!r}"
+    lines = [ln for ln in r.stderr.splitlines() if ln.startswith("cannot run on this host:")]
+    assert len(lines) == 1, r.stderr
+
+
+def test_assets_refuses_without_python():
+    # assets.sh does not need macOS but must not pretend to work without its tools.
+    r = run("assets.sh", env={"DUO_PY": "definitely-missing-python"})
+    assert r.returncode == 4
+    assert r.stderr.startswith("cannot run on this host:")
+
+
+def _png(path, width, height):
+    """Write a solid grey RGB PNG with the standard library."""
+    raw = b"".join(bytes([0]) + bytes([128, 128, 128]) * width for _ in range(height))
+
+    def chunk(tag, data):
+        return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", zlib.crc32(tag + data) & 0xFFFFFFFF)
+
+    with open(path, "wb") as f:
+        f.write(bytes([0x89]) + b"PNG" + bytes([0x0D, 0x0A, 0x1A, 0x0A]))
+        f.write(chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)))
+        f.write(chunk(b"IDAT", zlib.compress(raw)))
+        f.write(chunk(b"IEND", b""))
+
+
+def test_assets_exports_passing_cells(tmp_path):
+    """Given a run with ui.json and captures, assets.sh exports the App Store set,
+    writes manifest.json and FEATURING.md, and prints the upload commands."""
+    proj = tmp_path / "proj"
+    caps = proj / ".duo" / "runs" / "1" / "captures"
+    caps.mkdir(parents=True)
+    shutil.copy(os.path.join(ROOT, "templates", "duo.yaml"), proj / "duo.yaml")
+    _png(caps / "feed-closed-portrait.png", 1398, 2034)
+    _png(caps / "feed-open-landscape.png", 2853, 2007)
+    _png(caps / "feed-book-landscape.png", 2853, 2007)
+    ui = {"schema": 1, "run": 1, "cells": [
+        {"flow": "feed", "cell": "closed-portrait", "screenshot": str(caps / "feed-closed-portrait.png"),
+         "results": [{"assertion": "offscreen_elements", "status": "pass"}]},
+        {"flow": "feed", "cell": "open-landscape", "screenshot": str(caps / "feed-open-landscape.png"),
+         "results": [{"assertion": "offscreen_elements", "status": "pass"}]},
+        {"flow": "feed", "cell": "book-landscape", "screenshot": str(caps / "feed-book-landscape.png"),
+         "results": [{"assertion": "interactive_in_fold", "status": "fail"}]},
+    ]}
+    (proj / ".duo" / "runs" / "1" / "ui.json").write_text(json.dumps(ui))
+    r = run("assets.sh", "--json", cwd=str(proj), env={"DUO_PY": "python", "DUO_ROOT": str(proj).replace(os.sep, "/")})
+    assert r.returncode == 0, r.stdout + r.stderr
+    dest = proj / "fastlane" / "screenshots" / "en-US"
+    files = sorted(p.name for p in dest.glob("*.png"))
+    assert files == ["00_iphone_duo_inner_feed-open-landscape.png", "01_iphone_duo_outer_feed-closed-portrait.png"]
+    manifest = json.loads((dest / "manifest.json").read_text())
+    assert [e["cell"] for e in manifest["screenshots"]] == ["open-landscape", "closed-portrait"]
+    assert (proj / "FEATURING.md").exists()
+    assert "APP_IPHONE_DUO" in r.stdout
+
+
+def test_duocfg_reads_template():
+    py = sys.executable
+    cfg = os.path.join(ROOT, "templates", "duo.yaml")
+    duocfg = os.path.join(SCRIPTS, "duocfg.py")
+    r = subprocess.run([py, duocfg, "scheme", "--file", cfg], capture_output=True, text=True)
+    assert r.returncode == 0 and r.stdout.strip() == "MyApp"
+    r = subprocess.run([py, duocfg, "cells", "--file", cfg, "--list"], capture_output=True, text=True)
+    assert r.stdout.split() == ["closed-portrait", "closed-landscape", "open-landscape", "open-portrait", "book-landscape", "book-portrait"]
+    r = subprocess.run([py, duocfg, "perf.launch_ms.fail", "--file", cfg], capture_output=True, text=True)
+    assert r.stdout.strip() == "1500"
+    r = subprocess.run([py, duocfg, "missing.key", "--file", cfg], capture_output=True, text=True)
+    assert r.returncode == 1
+    r = subprocess.run([py, duocfg, "missing.key", "--file", cfg, "--default", "x"], capture_output=True, text=True)
+    assert r.returncode == 0 and r.stdout.strip() == "x"
+
+
+def test_templates_exist():
+    for name in ["duo.yaml", "flows.yaml", "DuoUITests.swift", "DuoPerfTests.swift", "github-actions-duo.yml"]:
+        assert os.path.isfile(os.path.join(ROOT, "templates", name)), name

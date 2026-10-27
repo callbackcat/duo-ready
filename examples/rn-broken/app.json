@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "DuoBrokenRN",
+    "slug": "duo-broken-rn",
+    "orientation": "portrait",
+    "ios": {
+      "bundleIdentifier": "com.example.duobrokenrn",
+      "supportsTablet": false
+    }
+  }
+}

@@ -1,0 +1,43 @@
+# flows.yaml - flow examples. Copy the ones you need into duo.yaml under `flows:`.
+#
+# A flow is a short, declarative script that reaches one screen worth checking.
+# The pipeline runs every flow in every cell of the pose matrix and after each
+# transition, so keep flows short and deterministic (no network-dependent waits).
+#
+# Step grammar (one step per item, Maestro-compatible verbs):
+#   launch                        launch the app fresh
+#   tap "<label or id>"           tap by accessibility label or identifier
+#   wait "<label or id>"          wait up to 10 s for the element to appear
+#   scroll <n>                    n swipes up in the main scroll view
+#   deeplink <url>                open a URL scheme / universal link
+#   pose <closed|open|book>       change the pose mid-flow (in addition to duo.yaml transitions)
+#   rotate <portrait|landscape>   rotate the active display
+#   sleep <seconds>
+#
+# Native apps run these through templates/DuoUITests.swift (XCUITest).
+# React Native / Expo / Flutter apps run Maestro for closed-* cells and the
+# duoctl interpreter in scripts/run-matrix.sh for open/book cells, because
+# Maestro misreports inner-display geometry (mobile-dev-inc/maestro#3617).
+# Prefer deep links + ids over tap chains for open/book cells.
+
+flows:
+  - name: onboarding
+    steps: [launch, tap "Get started", wait "Welcome"]
+
+  - name: feed
+    steps: [launch, wait "Feed", scroll 5]
+
+  - name: player
+    steps: [launch, tap "Library", tap "First item", wait "Now playing"]
+
+  - name: settings-sheet
+    steps: [launch, tap "Settings", wait "Done"]       # sheets get vertical bars on the outer display
+
+  - name: search-keyboard
+    steps: [launch, tap "Search", sleep 1]             # keyboard hides the vertical tab bar on the outer display
+
+  - name: detail-deeplink
+    steps: [deeplink myapp://items/42, wait "Item 42"]
+
+  - name: fold-mid-edit
+    steps: [launch, tap "Compose", pose book, wait "Compose"]   # explicit mid-flow fold

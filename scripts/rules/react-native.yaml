@@ -1,0 +1,129 @@
+# duo-ready React Native / Expo rules (JS / TS / app.json / package.json)
+# Same schema as native.yaml. Apple's scan cannot see JS layout code, which is
+# why these exist. Verified 27 Oct 2026. See references/rules-react-native.md.
+
+- id: rn-dimensions-module-scope
+  lang: [js, ts]
+  severity: error
+  raw: true
+  pattern: '^(?:export\s+)?(?:const|let|var)\s+[^=\n]*=\s*Dimensions\.get\(\s*[''"](?:window|screen)[''"]'
+  autofix: false
+  fix_hint: A module-scope Dimensions.get runs once at launch and is wrong after the first fold (466 to 951 pt); read the size inside the component with useWindowDimensions(), which re-renders on fold, rotation and Split View.
+  apple_ref: https://developer.apple.com/iphone-duo/prepare/
+  doc: references/rules-react-native.md#rn-dimensions-module-scope
+
+- id: rn-dimensions-no-listener
+  lang: [js, ts]
+  severity: warn
+  kind: file
+  check: rn_dimensions_no_listener
+  autofix: false
+  fix_hint: Dimensions.get inside a component is a snapshot; without useWindowDimensions or a change listener the layout keeps the pre-fold size. Prefer useWindowDimensions().
+  apple_ref: https://developer.apple.com/iphone-duo/prepare/
+  doc: references/rules-react-native.md#rn-dimensions-no-listener
+
+- id: rn-platform-ispad
+  lang: [js, ts]
+  severity: error
+  pattern: '\bPlatform\.isPad\b|\bisPad\s*\?\s*'
+  autofix: false
+  fix_hint: Platform.isPad is false on iPhone Duo although the inner display offers iPad-class width; branch on useWindowDimensions().width instead of the device kind.
+  apple_ref: https://developer.apple.com/iphone-duo/prepare/
+  doc: references/rules-react-native.md#rn-platform-ispad
+
+- id: rn-orientation-lock
+  lang: [js, ts, json]
+  severity: warn
+  raw: true
+  pattern: '"orientation"\s*:\s*"(?:portrait|landscape)"|ScreenOrientation\.lockAsync\s*\(|\.lockTo(?:Portrait|Landscape)\w*\s*\(|Orientation\.lockTo\w+'
+  autofix: false
+  fix_hint: The inner display ignores orientation locks, so a portrait-locked app still receives a 951x669 window there; drop the lock or make the layout width-driven so the lock is irrelevant.
+  apple_ref: https://developer.apple.com/videos/play/tech-talks/111461/
+  doc: references/rules-react-native.md#rn-orientation-lock
+
+- id: rn-hardcoded-breakpoint
+  lang: [js, ts]
+  severity: warn
+  pattern: '\b(?:width|height)\s*(?:===?|!==?|<=?|>=?)\s*(?:320|375|390|393|402|414|428|430|440|568|667|736|812|844|852|874|896|926|932|956)\b|\b(?:320|375|390|393|402|414|428|430|440|568|667|736|812|844|852|874|896|926|932|956)\s*(?:<=?|>=?|===?)\s*(?:width|height)\b'
+  autofix: false
+  fix_hint: Comparisons against specific iPhone widths miss the Duo sizes (466 closed, 951 open, narrower in Split View); use one semantic breakpoint such as width >= 600 for the two-column layout.
+  apple_ref: https://developer.apple.com/iphone-duo/prepare/
+  doc: references/rules-react-native.md#rn-hardcoded-breakpoint
+
+- id: rn-stylesheet-fixed-width
+  lang: [js, ts]
+  severity: warn
+  pattern: '^\s*(?:width|minWidth|maxWidth)\s*:\s*(?:[3-9]\d\d|1\d{3})\b'
+  exclude: '%'
+  autofix: false
+  fix_hint: A fixed width of 300 pt or more overflows the 466 pt outer display and wastes the 951 pt inner one; use flex, percentages, or the window width from useWindowDimensions().
+  apple_ref: https://developer.apple.com/design/human-interface-guidelines/designing-for-iphone-duo
+  doc: references/rules-react-native.md#rn-stylesheet-fixed-width
+
+- id: rn-safe-area-missing
+  lang: [js, ts]
+  severity: warn
+  kind: file
+  check: rn_safe_area_missing
+  autofix: false
+  fix_hint: On iPhone Duo the status column and vertical bar sit on one edge and the outer camera occludes a corner, so screens without SafeAreaView / useSafeAreaInsets draw under them; wrap the screen or apply the insets per edge.
+  apple_ref: https://developer.apple.com/videos/play/tech-talks/111461/
+  doc: references/rules-react-native.md#rn-safe-area-missing
+
+- id: rn-symmetric-insets
+  lang: [js, ts]
+  severity: error
+  pattern: 'Math\.max\s*\(\s*\w*[iI]nsets\.(?:left|right)\s*,\s*\w*[iI]nsets\.(?:left|right)\s*\)|paddingHorizontal\s*:\s*(?:Math\.max\s*\(\s*)?\w*[iI]nsets\.(?:left|right)\b'
+  autofix: false
+  fix_hint: The Duo safe area is asymmetric (84 pt status column on one edge only); use paddingLeft: insets.left and paddingRight: insets.right rather than one value for both.
+  apple_ref: https://developer.apple.com/videos/play/tech-talks/111461/
+  doc: references/rules-react-native.md#rn-symmetric-insets
+
+- id: rn-image-cover
+  lang: [js, ts]
+  severity: warn
+  raw: true
+  pattern: 'resizeMode\s*[:=]\s*\{?\s*[''"]cover[''"]|contentFit\s*[:=]\s*\{?\s*[''"]cover[''"]|objectFit\s*:\s*[''"]cover[''"]'
+  autofix: false
+  fix_hint: A cover-cropped hero image loses its subject when the window jumps from 466x678 to 951x669; choose cover or contain from the window aspect ratio, or keep the image at a fixed aspectRatio and place content beneath it.
+  apple_ref: https://developer.apple.com/iphone-duo/prepare/
+  doc: references/rules-react-native.md#rn-image-cover
+
+- id: rn-js-tab-bar
+  lang: [js, ts]
+  severity: warn
+  pattern: '\bcreateBottomTabNavigator\s*\(|\btabBar\s*[:=]\s*\{?\s*\(?\s*(?:props|\(\s*props)|\btabBar=\{'
+  autofix: false
+  fix_hint: A JS-drawn tab bar stays at the bottom while the system moves bars to the vertical edge on iPhone Duo, so the app looks out of place; prefer createNativeBottomTabNavigator (UITabBarController) or expo-router native tabs.
+  apple_ref: https://developer.apple.com/design/human-interface-guidelines/designing-for-iphone-duo
+  doc: references/rules-react-native.md#rn-js-tab-bar
+
+- id: rn-appstate-inactive-pause
+  lang: [js, ts]
+  severity: warn
+  raw: true
+  pattern: '(?:state|nextAppState|appState|status|next)\s*!==?\s*[''"]active[''"]|(?:state|nextAppState|appState|status|next)\s*===?\s*[''"]inactive[''"]'
+  autofix: false
+  fix_hint: In Split View on the inner display a visible app can be inactive, so pausing playback or work on anything other than background interrupts the user; pause only when AppState becomes background.
+  apple_ref: https://developer.apple.com/videos/play/tech-talks/111464/
+  doc: references/rules-react-native.md#rn-appstate-inactive-pause
+
+- id: rn-expo-hinge-for-layout
+  lang: [js, ts]
+  severity: warn
+  kind: file
+  check: rn_expo_hinge_for_layout
+  autofix: false
+  fix_hint: Expo says to use hinge state for interactions and effects, not for layout; derive layout from useWindowDimensions() and safe-area insets so it also holds in Split View and on other devices.
+  apple_ref: https://docs.expo.dev/versions/v58.0.0/sdk/hinge/
+  doc: references/rules-react-native.md#rn-expo-hinge-for-layout
+
+- id: rn-sdk-floor
+  lang: [json]
+  severity: warn
+  kind: file
+  check: rn_sdk_floor
+  autofix: false
+  fix_hint: Expo SDK 58 is the first with expo-hinge and Duo-aware native tabs, and react-native-screens shipped iPhone Duo fixes on 13 Oct 2026; older versions mis-size screens on the inner display. Upgrade before testing.
+  apple_ref: https://docs.expo.dev/versions/v58.0.0/sdk/hinge/
+  doc: references/rules-react-native.md#rn-sdk-floor

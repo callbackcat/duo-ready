@@ -1,0 +1,18 @@
+// !$*UTF8*$!
+// Minimal fixture: only the build settings detect.py reads.
+{
+	archiveVersion = 1;
+	objectVersion = 56;
+	objects = {
+		D0000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.duobroken;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+			};
+			name = Debug;
+		};
+	};
+	rootObject = D0000000;
+}

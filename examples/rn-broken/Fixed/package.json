@@ -1,0 +1,13 @@
+{
+  "name": "duo-fixed-rn",
+  "version": "1.0.0",
+  "dependencies": {
+    "expo": "~58.0.0",
+    "expo-hinge": "~1.0.0",
+    "react": "19.1.0",
+    "react-native": "0.82.0",
+    "react-native-safe-area-context": "5.4.0",
+    "react-native-screens": "^4.20.0",
+    "@bottom-tabs/react-navigation": "^1.0.0"
+  }
+}

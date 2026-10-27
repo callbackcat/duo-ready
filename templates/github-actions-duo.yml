@@ -1,0 +1,96 @@
+# duo-ready CI template. Copy to .github/workflows/duo-ready.yml.
+#
+# Runs preflight -> build -> pose matrix -> perf -> report on a Mac and uploads
+# .duo/runs as an artifact. Exit codes: 1 UI, 2 perf, 3 build, 4 preflight,
+# 5 pose control unavailable (private HID protocol changed in this Xcode).
+#
+# Hosted runners: as of Oct 2026 `macos-latest` may not ship Xcode 27.1 yet.
+# Check https://github.com/actions/runner-images for the installed Xcode list;
+# the job below fails fast in preflight if 27.1 is missing. The second job
+# shows the self-hosted variant for a Mac you control.
+
+name: duo-ready
+
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      write_baseline:
+        description: "Write perf + visual baselines from this run"
+        type: boolean
+        default: false
+
+jobs:
+  duo-hosted:
+    name: iPhone Duo matrix (hosted macOS)
+    runs-on: macos-15   # bump to the image that carries Xcode 27.1
+    timeout-minutes: 90
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer   # adjust to the runner's path
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode 27.1
+        run: |
+          ls /Applications | grep -i xcode || true
+          if [ ! -d "$DEVELOPER_DIR" ]; then
+            echo "Xcode 27.1 not on this image; use the self-hosted job or install with xcodes" >&2
+            exit 4
+          fi
+          sudo xcode-select -s "$DEVELOPER_DIR"
+          xcodebuild -version
+
+      - name: Install iOS 27.1 simulator runtime
+        run: xcodebuild -downloadPlatform iOS
+
+      - name: Install pose tools (private HID protocol; pin versions in production)
+        run: |
+          brew install skarol/tap/duoctl artemnovichkov/tap/hinge
+          duoctl --version || true
+          hinge --version || true
+
+      - name: Install fastlane (>= 2.241.1 knows the Duo screenshot sizes)
+        run: gem install fastlane --no-document || true
+
+      - name: Preflight
+        run: bash scripts/preflight.sh --json
+
+      - name: Build
+        run: bash scripts/build.sh --json
+
+      - name: Pose matrix
+        run: bash scripts/run-matrix.sh
+
+      - name: Perf
+        run: bash scripts/perf.sh ${{ inputs.write_baseline && '--write-baseline' || '' }}
+
+      - name: Report
+        if: always()
+        run: python3 scripts/report.py --run "$(ls .duo/runs | sort -n | tail -1)" || true
+
+      - name: Upload run
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: duo-run
+          path: .duo/runs
+          if-no-files-found: warn
+
+  duo-self-hosted:
+    name: iPhone Duo matrix (self-hosted Mac)
+    if: false   # flip to true once a Mac with Xcode 27.1 is registered as a runner
+    runs-on: [self-hosted, macOS, xcode-27.1]
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/preflight.sh
+      - run: bash scripts/build.sh
+      - run: bash scripts/run-matrix.sh
+      - run: bash scripts/perf.sh
+      - if: always()
+        run: python3 scripts/report.py --run "$(ls .duo/runs | sort -n | tail -1)" || true
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: duo-run
+          path: .duo/runs

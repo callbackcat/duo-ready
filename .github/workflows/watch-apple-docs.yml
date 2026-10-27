@@ -1,0 +1,64 @@
+name: Watch Apple iPhone Duo pages
+
+# Apple changes these pages without notice. Weekly diff; opens or updates one
+# issue so the references can be re-verified (see references/*.md "Verified" dates).
+
+on:
+  schedule:
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch pages
+        run: |
+          mkdir -p .apple-watch/new
+          while read -r name url; do
+            curl -sSL "$url" | sed -e 's/<[^>]*>//g' | tr -s ' \n' > ".apple-watch/new/$name.txt" || true
+          done <<'LIST'
+          hig https://developer.apple.com/design/human-interface-guidelines/designing-for-iphone-duo
+          overview https://developer.apple.com/documentation/technologyoverviews/preparing-your-app-for-iphone-duo
+          prepare https://developer.apple.com/iphone-duo/prepare/
+          news https://developer.apple.com/news/?id=kkphp5qo
+          screenshots https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications
+          previews https://developer.apple.com/help/app-store-connect/reference/app-information/app-preview-specifications
+          assets https://developer.apple.com/app-store/asset-best-practices/
+          manage https://developer.apple.com/help/app-store-connect/manage-app-information/manage-your-app-store-assets
+          xcode271 https://developer.apple.com/documentation/xcode-release-notes/xcode-27_1-release-notes
+          LIST
+      - name: Compare with last snapshot
+        id: cmp
+        run: |
+          changed=""
+          for f in .apple-watch/new/*.txt; do
+            n=$(basename "$f")
+            if [ -f ".apple-watch/last/$n" ] && ! diff -q ".apple-watch/last/$n" "$f" >/dev/null; then
+              changed="$changed $n"
+            fi
+          done
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
+          rm -rf .apple-watch/last && mv .apple-watch/new .apple-watch/last
+      - name: Commit snapshot
+        run: |
+          git config user.name "duo-ready-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add .apple-watch/last
+          git commit -m "chore: apple docs snapshot" || true
+          git push || true
+      - name: Open or update issue
+        if: steps.cmp.outputs.changed != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CHANGED: ${{ steps.cmp.outputs.changed }}
+        run: |
+          title="Apple iPhone Duo pages changed"
+          body="Changed since last snapshot:$CHANGED. Re-verify references/device-facts.md, apple-guidance.md and asc-duo-specs.md."
+          num=$(gh issue list --label apple-docs --state open --json number --jq '.[0].number')
+          if [ -n "$num" ]; then gh issue comment "$num" --body "$body"; else gh issue create --title "$title" --body "$body" --label apple-docs; fi

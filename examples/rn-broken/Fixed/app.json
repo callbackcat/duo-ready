@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "DuoFixedRN",
+    "slug": "duo-fixed-rn",
+    "orientation": "default",
+    "ios": {
+      "bundleIdentifier": "com.example.duofixedrn"
+    }
+  }
+}
