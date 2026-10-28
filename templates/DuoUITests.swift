@@ -1,7 +1,11 @@
 // DuoUITests.swift - duo-ready XCUITest tour template.
 //
 // Add this file to a UI test target named `DuoUITests` (File > New > Target >
-// UI Testing Bundle). scripts/run-matrix.sh runs it once per flow x cell with:
+// UI Testing Bundle, or templates/add-duo-test-targets.rb without Xcode).
+// scripts/run-matrix.sh runs it once per flow x cell. xcodebuild forwards only
+// TEST_RUNNER_-prefixed variables to a UI test runner, where they arrive
+// without the prefix; the shell sets TEST_RUNNER_DUO_FLOW and so on, and the
+// test reads:
 //
 //   DUO_FLOW      flow name (for attachment names)
 //   DUO_CELL      cell name, e.g. "book-landscape"

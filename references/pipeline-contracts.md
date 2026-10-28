@@ -11,7 +11,10 @@ Machine-readable formats shared by every script. Scripts read and write only the
 ├── baselines/          # <flow>-<cell>.png, committed after the first green run
 └── runs/<n>/
     ├── build.json      # app path, sdk stamp, scheme, configuration, derived_data, scene_manifest
-    ├── captures/       # <flow>-<cell>.png and <flow>-<cell>.tree.json; <flow>-<cell>.skip.json for cells the app refused
+    ├── captures/       # <flow>-<cell>.png and <flow>-<cell>.tree.json; <flow>-<cell>.skip.json for cells the app refused;
+    │                   # <flow>-<cell>.error.json for cells whose flow step failed
+    ├── thumbs/         # report thumbnails (240 px matrix, 720 px failures); the report links the full captures
+    ├── perf/           # <cell>.metrics.json (xcresulttool test-results metrics), <cell>.xcresult, <cell>.log; ">" spelled "-to-"
     ├── ui.json         # assertion results
     ├── perf.json
     ├── failures.json   # agent payloads (ui + perf failures merged)
@@ -70,8 +73,10 @@ One step per list item, Maestro-compatible verbs so RN users can reuse their flo
 
 ```
 launch
-tap "<accessibility label or id>"
-wait "<label or id>"            # waits up to 10 s for the element
+reset                           # clear app state (reinstall; Maestro clearState)
+tap "<accessibility label>"     # tap id:<testID> for an identifier
+wait "<label>"                  # waits up to 10 s; wait id:<testID> for an identifier (Maestro matches a
+                                # bare string as text only, so ids must be written as id:)
 scroll <n>                      # n swipes up in the main scroll view
 deeplink <url>
 pose <closed|open|book>         # mid-flow transition
@@ -79,7 +84,9 @@ rotate <portrait|landscape>
 sleep <seconds>
 ```
 
-Native runner translates to XCUITest (template in `templates/DuoUITests.swift`); RN runner uses Maestro for closed cells and `duoctl tap --label` for open/book cells (Maestro misreports inner-display geometry, issue mobile-dev-inc/maestro#3617).
+Native runner translates to XCUITest (template in `templates/DuoUITests.swift`; the shell passes `TEST_RUNNER_DUO_FLOW`, `TEST_RUNNER_DUO_CELL`, `TEST_RUNNER_DUO_STEPS`, `TEST_RUNNER_DUO_TREE_OUT`, which xcodebuild delivers to the runner without the prefix); RN runner uses Maestro for closed cells and `duoctl tap --label` for open/book cells (Maestro misreports inner-display geometry, issue mobile-dev-inc/maestro#3617). `--driver duoctl` forces the duoctl interpreter for closed cells too (deeplink, wait, sleep; no taps on the outer display). `--udid <udid>` (or `DUOCTL_UDID`) drives an already booted simulator instead of the protected `duo-ready` one, for flows behind a sign-in.
+
+A step that fails ends the cell, not the matrix: the runner writes `<flow>-<cell>.error.json` (`{"flow","cell","error":true,"reason"}`), `assert.py` records the cell with `errored: true` and one result `{"assertion":"flow","status":"fail","reason":...}`, and `failures.json` carries it with `assertion: "flow"`. Tool, build and pose failures (exit 3, 4, 5) still stop the run.
 
 ## scan.json
 
@@ -153,7 +160,7 @@ Patterns are Python regexes applied per line unless `multiline: true`. Comments 
 }
 ```
 
-Element tree format (`*.tree.json`): `{"elements":[{"id":"PlayButton","type":"button","label":"Play","frame":[x,y,w,h],"interactive":true,"text":"...","truncated":false}]}` in points, origin top-left of the app window.
+Element tree format (`*.tree.json`): `{"elements":[{"id":"PlayButton","type":"button","label":"Play","frame":[x,y,w,h],"interactive":true,"text":"...","truncated":false}], "source": "duoctl elements"|"xcuitest", "ancestry": false|true}` in points, origin top-left of the app window. `source` names the producer; `ancestry` is true only when elements carry `parent`/`scrollable` (XCUITest). AXe trees (`duoctl elements`, normalised by `scripts/tree.py`) are flat, list types capitalised (`Button`, `TextField`, `StaticText`, `Group`, `Application`), and report the root `Application` unrotated; `assert.py` marks interactivity by type, drops containers, and downgrades vertical-only overflow to `warn` when `ancestry` is false. Each cell in `ui.json` carries `tree_source`, `ancestry`, `window` and `window_source` (`cell` from the geometry table, or `screenshot` when the capture's pixel size says the display came up in the other orientation, as the inner display does right after an unfold).
 
 When `duoctl elements` fails (AXe missing) or the DuoUITests attachment is absent, `run-matrix.sh` writes `{"source": "unavailable", "elements": []}` instead. `assert.py` then reports every tree-based assertion as `skip` with the reason, sets `tree_available: false` on the cell, and `verified` is true only when at least one cell had a tree. An empty tree is never a pass (first field test: 25 vacuous greens).
 
@@ -162,10 +169,10 @@ When `duoctl elements` fails (AXe missing) or the DuoUITests attachment is absen
 ## build.json
 
 ```json
-{ "schema": 1, "run": 3, "stack": "expo", "scheme": "Momo", "configuration": "Release",
-  "app": "/Users/me/Library/Developer/Xcode/DerivedData/duo-ready-Momo/Build/Products/Release-iphonesimulator/Momo.app",
-  "bundle_id": "com.example.momo", "sdk_stamp": "27.1", "log": ".duo/runs/3/build.log",
-  "derived_data": "/Users/me/Library/Developer/Xcode/DerivedData/duo-ready-Momo", "scene_manifest": true }
+{ "schema": 1, "run": 3, "stack": "expo", "scheme": "MyApp", "configuration": "Release",
+  "app": "/Users/me/Library/Developer/Xcode/DerivedData/duo-ready-MyApp/Build/Products/Release-iphonesimulator/MyApp.app",
+  "bundle_id": "com.example.myapp", "sdk_stamp": "27.1", "log": ".duo/runs/3/build.log",
+  "derived_data": "/Users/me/Library/Developer/Xcode/DerivedData/duo-ready-MyApp", "scene_manifest": true }
 ```
 
 `scene_manifest: false` on a UIKit or React Native app built with SDK 27 means the app will be killed about 2 s after launch; `sim.sh launch` exits 3 when it sees "UIScene life cycle is required" in the system log.
@@ -175,12 +182,16 @@ When `duoctl elements` fails (AXe missing) or the DuoUITests attachment is absen
 ```json
 { "schema": 1, "run": 3, "mode": "regression",
   "metrics": [
-    { "flow": "feed", "cell": "closed-portrait", "metric": "launch_ms", "value": 612, "baseline": 590, "status": "pass" },
-    { "flow": "feed", "cell": "closed>open", "metric": "fold_relayout_ms", "value": 310, "baseline": null, "status": "fail" }
+    { "flow": "*", "cell": "closed-portrait", "metric": "launch_ms", "value": 612.0, "unit": "ms", "baseline": 590, "status": "pass" },
+    { "flow": "*", "cell": "closed-portrait", "metric": "launch_wall_ms", "value": 5810.0, "unit": "ms", "baseline": null, "status": "info" },
+    { "flow": "*", "cell": "closed-portrait", "metric": "memory_peak_mb", "value": 50.9, "unit": "MB", "baseline": null, "status": "info" },
+    { "flow": "*", "cell": "closed>open", "metric": "fold_relayout_ms", "value": 310.0, "unit": "ms", "baseline": null, "status": "baseline" }
   ] }
 ```
 
-With no `DuoPerfTests` target there is nothing to measure: `perf.sh` exits 4, writes `"metrics": [], "status": "skip", "reason": "..."`, and never writes a baseline. The report shows perf as skipped.
+Metric names come from the test name plus the XCTest metric identifier (`scripts/perfparse.py`): `launch_ms` is `XCTApplicationLaunchMetric` in `testLaunch`, `launch_wall_ms` the `XCTClockMetric` around the whole launch block (XCUITest setup included, so seconds; reported, never gated), `fold_relayout_ms` the clock metric in `testFoldRelayout`, `memory_delta_mb`/`memory_peak_mb` the memory metrics, `cpu_s` CPU time. Gated metrics are `launch_ms`, `fold_relayout_ms`, `memory_delta_mb`; the rest are `info`. Statuses: `pass`, `warn`, `fail`, `info`, `baseline` (no baseline yet; the value becomes one on `--write-baseline`). Source files are `<cell>.metrics.json` from `xcrun xcresulttool get test-results metrics --path <cell>.xcresult` (`>` spelled `-to-` on disk), with the legacy `<cell>.json` root object as a fallback for older toolchains.
+
+With no `DuoPerfTests` target there is nothing to measure: `perf.sh` exits 4, writes `"metrics": [], "status": "skip", "reason": "..."`, and never writes a baseline. The `reason` distinguishes a missing target from a result bundle that carried no measurements although the log shows `measured [` lines. The report shows perf as skipped with that reason.
 
 ## failures.json (agent payload)
 
@@ -192,15 +203,19 @@ With no `DuoPerfTests` target there is nothing to measure: `perf.sh` exits 4, wr
     "screenshot": ".duo/runs/3/captures/feed-book-landscape.png",
     "matched_rule": "centered-grid-odd-columns",
     "source_hint": "Sources/PlayerView.swift:88",
+    "source_confidence": "file",
     "fix_hint": "Keep interactive elements out of x 455–495 in book poses; use ReservedRegion or ArrangementView."
-  }
+  },
+  { "flow": "checkout", "cell": "open-landscape", "assertion": "flow", "elements": [], "screenshot": null,
+    "reason": "step timed out: wait \"Pay\" (not in the element tree after 10 s)", "matched_rule": null, "source_hint": null,
+    "fix_hint": "The flow did not reach its screen in this cell; fix the step or the app, this is not a layout result." }
 ]
 ```
 
-`source_hint` is set when a scan finding's file name shares a stem with the failing screen's view id (`PlayButton` → `PlayerView.swift`). Otherwise null.
+`matched_rule` is only ever a rule that can cause that assertion (table in `assertions.md`). `source_confidence` is `file` when the finding's file stem matches the failing element's id or label, `rule` when only the rule type matches (a lead to check, not a diagnosis). Otherwise both are null. The second field test matched an unrelated provider file for every failure because the root element's id was the app name; that match is gone.
 
 ## Exit codes
 
-`0` pass · `1` UI assertion failure, or nothing verified (`report.py` with no `ui.json`, or `verified: false`; `loop.py` without `failures.json` or on an unverified run) · `2` perf failure · `3` build failure, or the app dies at launch · `4` preflight failure (missing tool, wrong Xcode, no `DuoPerfTests` target, no metrics) · `5` pose control unavailable (private protocol changed) · `6` the app refused the cell (`sim.sh rotate` on a portrait-locked app; `run-matrix.sh` and `perf.sh` turn this into a skipped cell and continue).
+`0` pass · `1` UI assertion failure or a flow step that failed, or nothing verified (`report.py` with no `ui.json`, or `verified: false`); for `loop.py`, payloads printed and another iteration expected · `2` perf failure · `3` build failure, or the app dies at launch · `4` preflight failure (missing tool, wrong Xcode, no `DuoPerfTests` target, no metrics); for `loop.py`, nothing to loop on (no `failures.json`, or an unverified run) · `5` pose control unavailable (private protocol changed) · `6` the app refused the cell (`sim.sh rotate` on a portrait-locked app, printed as `duo: refused:`; `run-matrix.sh` and `perf.sh` turn this into a skipped cell and continue).
 
 Every script supports `--help` and `--json` (including on the exit-4 path), and prints a one-line `cannot run on this host: <reason>` with exit 4 when a required tool is missing. Scripts never fake a pass for a stage that didn't run, and a run that measured nothing is reported as `unverified` or `skip`, never as `pass`.

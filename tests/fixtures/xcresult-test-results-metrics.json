@@ -1,0 +1,107 @@
+[
+ {
+  "testIdentifier": "DuoPerfTests/testLaunch()",
+  "testName": "testLaunch()",
+  "testRuns": [
+   {
+    "metrics": [
+     {
+      "identifier": "com.apple.dt.XCTMetric_Memory.physical_peak",
+      "displayName": "Memory Peak Physical",
+      "unitOfMeasurement": "kB",
+      "measurements": [
+       52038.008,
+       52070.776,
+       52087.16,
+       52103.544,
+       52103.544
+      ],
+      "polarity": "prefers smaller"
+     },
+     {
+      "identifier": "com.apple.dt.XCTMetric_Memory.physical",
+      "displayName": "Memory Physical",
+      "unitOfMeasurement": "kB",
+      "measurements": [
+       16.384,
+       32.768,
+       0.0,
+       32.768,
+       0.0
+      ],
+      "polarity": "prefers smaller"
+     },
+     {
+      "identifier": "com.apple.dt.XCTMetric_Clock.time.monotonic",
+      "displayName": "Clock Monotonic Time",
+      "unitOfMeasurement": "s",
+      "measurements": [
+       5.779788,
+       5.896378,
+       5.821147,
+       5.812069,
+       5.743737
+      ],
+      "polarity": "prefers smaller"
+     },
+     {
+      "identifier": "com.apple.dt.XCTMetric_ApplicationLaunch-AppLaunch.duration",
+      "displayName": "Duration",
+      "unitOfMeasurement": "s",
+      "measurements": [
+       0.612,
+       0.598,
+       0.64,
+       0.605,
+       0.611
+      ],
+      "polarity": "prefers smaller"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "testIdentifier": "DuoPerfTests/testFoldRelayout()",
+  "testName": "testFoldRelayout()",
+  "testRuns": [
+   {
+    "metrics": [
+     {
+      "identifier": "com.apple.dt.XCTMetric_Clock.time.monotonic",
+      "displayName": "Clock Monotonic Time",
+      "unitOfMeasurement": "s",
+      "measurements": [
+       0.18,
+       0.192,
+       0.175
+      ],
+      "polarity": "prefers smaller"
+     },
+     {
+      "identifier": "com.apple.dt.XCTMetric_Memory.physical",
+      "displayName": "Memory Physical",
+      "unitOfMeasurement": "kB",
+      "measurements": [
+       1024.0,
+       2048.0,
+       1536.0
+      ],
+      "polarity": "prefers smaller"
+     },
+     {
+      "identifier": "com.apple.dt.XCTMetric_CPU.time",
+      "displayName": "CPU Time",
+      "unitOfMeasurement": "s",
+      "measurements": [
+       0.12,
+       0.11,
+       0.13
+      ],
+      "polarity": "prefers smaller"
+     }
+    ]
+   }
+  ]
+ }
+]

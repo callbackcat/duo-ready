@@ -284,11 +284,20 @@ def check_rn_adjusts_font_fixed_lineheight(rule: dict, path: str, raw: str, stri
     for i, ln in enumerate(stripped.splitlines(), 1):
         if "adjustsFontSizeToFit" not in ln:
             continue
-        m = re.search(r"style=\{\s*styles\.(\w+)", ln)
-        if m:
-            block = re.search(r"\b" + re.escape(m.group(1)) + r"\s*:\s*\{([^}]*)\}", stripped)
-            if block and not _LINEHEIGHT_RE.search(block.group(1)):
-                continue  # that style has no fixed lineHeight
+        # Every styles.X referenced in the style={...} expression counts, array
+        # styles included (`style={[styles.a, styles.b]}`; field test 2 note 31:
+        # an array style with a fixed lineHeight slipped past the single-name match).
+        expr = re.search(r"style=\{(.*)\}", ln)
+        names = re.findall(r"\bstyles\.(\w+)", expr.group(1)) if expr else []
+        if names:
+            fixed = False
+            for name in names:
+                block = re.search(r"\b" + re.escape(name) + r"\s*:\s*\{([^}]*)\}", stripped)
+                if block is None or _LINEHEIGHT_RE.search(block.group(1)):
+                    fixed = True  # unknown style, or one with a fixed lineHeight
+                    break
+            if not fixed:
+                continue  # none of the referenced styles has a fixed lineHeight
         out.append(finding(rule, path, i, ln.find("adjustsFontSizeToFit") + 1, raw_lines[i - 1]))
     return out
 
@@ -483,13 +492,15 @@ def check_expo_no_scene_lifecycle(rule: dict, root: str, files: list[tuple[str, 
                 return []
     else:
         for name in plugins:
-            if re.search(r"scene", name, re.I):
-                return []
             if name.startswith("."):
+                # A local plugin is opened and must mention the scene manifest; a
+                # "scene" in its file name proves nothing (field test 2, note 32).
                 for cand in (name, name + ".js", name + ".ts", name + ".mjs", os.path.join(name, "index.js")):
                     full = os.path.join(root, cand)
                     if os.path.isfile(full) and _EXPO_SCENE_RE.search(_read(full)):
                         return []
+            elif re.search(r"scene", name, re.I):
+                return []  # a package from node_modules; its name is all there is
     cfg = next((n for n in ("app.json", "app.config.ts", "app.config.js", "app.config.mjs") if os.path.exists(os.path.join(root, n))), "app.json")
     raw = _read(os.path.join(root, cfg))
     line = _line_of(raw, '"expo"') if '"expo"' in raw else 1

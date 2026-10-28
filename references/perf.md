@@ -10,13 +10,13 @@ A fold resizes the app mid-session. Apps that recompute layout on every size cha
 
 | Metric | Cells | How measured | Default gate |
 |---|---|---|---|
-| `launch_ms` | every pose cell | `XCTClockMetric` around `XCUIApplication.launch()` in `measure(metrics:)`, 5 iterations, median | warn 800, fail 1500 (absolute); regression: fail at +20% over baseline |
+| `launch_ms` | every pose cell | `XCTApplicationLaunchMetric` in `measure(metrics:)` around `XCUIApplication.launch()`, 5 iterations, median. This is the app's own launch (about 0.6 s on the simulator). The `XCTClockMetric` around the same block is reported as `launch_wall_ms` and includes XCUITest setup, wait and terminate (about 5.8 s), so it is `info`, never gated; the first version of the template gated that number by mistake | warn 800, fail 1500 (absolute); regression: fail at +20% over baseline |
 | `fold_relayout_ms` | every transition (`closed>open`, `open>book`, `open>closed`) | time from the pose command's confirmed angle to the first stable frame. The app under test emits `os_signpost` begin on `viewWillTransition(to:with:)` / `onGeometryChange` and end when `viewDidLayoutSubviews` runs twice with the same bounds; the template reads them through `XCTOSSignpostMetric`. Fallback when the app has no signposts: wall clock from confirmed angle to the first capture whose diff against the previous frame is under 0.5%. | fail 250 |
-| `memory_delta_mb` | every transition | `XCTMemoryMetric` physical footprint before and after the transition | warn 30 |
+| `memory_delta_mb` | every transition | `XCTMemoryMetric` physical footprint before and after the transition (`Memory.physical`); `Memory.physical_peak` is reported as `memory_peak_mb`, info only | warn 30 |
 | `cpu_transition` | every transition | `XCTCPUMetric` during the 500 ms after the pose change | warn above 80% for over 500 ms |
 | `hitch_rate` | scroll flows | `xcrun xctrace record --template 'Animation Hitches'` then `xctrace export`; hitches per second during the scroll steps | fail 5 (v1.1, not in v1) |
 
-Every row carries `flow`, `cell`, `metric`, `value`, `baseline`, `status`.
+Every row carries `flow`, `cell`, `metric`, `value`, `unit`, `baseline`, `status`. `scripts/perfparse.py` names metrics from the test name plus the XCTest identifier (`com.apple.dt.XCTMetric_ApplicationLaunch-AppLaunch.duration`, `..._Clock.time.monotonic`, `..._Memory.physical`, `..._Memory.physical_peak`, `..._CPU.time`) and converts seconds to milliseconds and kB to MB.
 
 ## Regression versus absolute mode
 
@@ -39,7 +39,7 @@ Keys are `<flow>/<cell>/<metric>`. `perf.sh --write-baseline` overwrites after a
 
 ## Test template
 
-`templates/DuoPerfTests.swift` generates one test per flow: launch measurement in each pose (pose set through the same local bridge the UI tests use, see `simulator-control.md` section 9), then the transition measurement block:
+`templates/DuoPerfTests.swift` has two tests: `testLaunch` runs in pose cells (the shell poses the simulator first and passes the cell as `TEST_RUNNER_DUO_CELL`, which the runner sees as `DUO_CELL`), `testFoldRelayout` in transition cells and only when `TEST_RUNNER_DUO_POSE_URL` points at a local hinge bridge (`simulator-control.md` section 9); otherwise it is skipped with a message. The transition block:
 
 ```swift
 let options = XCTMeasureOptions(); options.iterationCount = 3
@@ -49,7 +49,7 @@ measure(metrics: [XCTClockMetric(), XCTMemoryMetric(application: app), XCTCPUMet
 }
 ```
 
-Results come out of the `.xcresult` bundle with `xcrun xcresulttool get --format json`; `perf.sh` maps metric names to the rows above.
+Results come out of the `.xcresult` bundle with `xcrun xcresulttool get test-results metrics --path <bundle>` (Xcode 27.1; the legacy `get --legacy --format json` root object has no measurements). `perf.sh` writes `<cell>.metrics.json` per cell, with `>` spelled `-to-` in file names, and `perfparse.py` maps the identifiers to the rows above. Expect 8 to 10 minutes for six pose cells (five launches each plus XCUITest setup). The target is added with `templates/add-duo-test-targets.rb`; the scheme's Test action must be Release for a React Native or Expo app.
 
 ## Device mode (later)
 

@@ -56,20 +56,16 @@ From **April 2027**, every App Store submission of an app **built with the iOS 2
 
 ## Install
 
-**Claude Code plugin (recommended).** The repo is its own plugin marketplace. In a Claude Code session:
-
-```
-/plugin install duo-ready --marketplace callbackcat/duo-ready
-```
-
-Or in two steps, which also work from the shell with `claude plugin ...`:
+**Claude Code plugin (recommended).** The repo is its own plugin marketplace. In a Claude Code session, two steps (verified on Claude Code 2.1.212, about four seconds):
 
 ```
 /plugin marketplace add callbackcat/duo-ready
 /plugin install duo-ready@callbackcat
 ```
 
-The install dialog asks for a scope: `user` (default, every project on this Mac) or `project` (recorded in the app's `.claude/settings.json`). Update later with `/plugin update duo-ready@callbackcat`. The skill then loads as `duo-ready` and finds its own scripts through `${CLAUDE_SKILL_DIR}`.
+Claude Code 2.1.275 and later also accept the one-liner `/plugin install duo-ready --marketplace callbackcat/duo-ready`; older builds report an unknown `--marketplace` flag, so use the two steps. Both forms also work from the shell with `claude plugin ...`.
+
+The install dialog asks for a scope: `user` (default, every project on this Mac) or `project` (recorded in the app's `.claude/settings.json`). Update later with `/plugin marketplace update callbackcat` followed by `/plugin update duo-ready@callbackcat`. The skill then loads as `duo-ready:duo-ready` and finds its own scripts through `${CLAUDE_SKILL_DIR}` (the plugin cache, `~/.claude/plugins/cache/callbackcat/duo-ready/<version>`).
 
 To have a team's repo offer the plugin to everyone who opens it, commit this to the app's `.claude/settings.json`; each teammate still confirms the install once:
 
@@ -100,15 +96,21 @@ Mac tooling the simulator stages need (one-time):
 sudo xcode-select -s /Applications/Xcode.app
 xcode-select --install                            # Command Line Tools for Xcode 27: Homebrew needs them on macOS 27
 xcodebuild -downloadPlatform iOS                  # iOS 27.1 runtime with the iPhone Duo device type
+brew tap skarol/tap artemnovichkov/tap && brew trust skarol/tap artemnovichkov/tap
 brew install skarol/tap/duoctl artemnovichkov/tap/hinge
-brew tap cameroncooke/axe && brew install axe     # element trees for the layout assertions (duoctl elements)
-curl -fsSL https://get.maestro.mobile.dev | bash  # React Native / Expo closed-pose flows
-gem install fastlane -v '>= 2.241.1'              # optional, only for screenshot upload
+brew tap cameroncooke/axe && brew trust cameroncooke/axe && brew install axe   # element trees (duoctl elements)
+brew tap mobile-dev-inc/tap && brew trust mobile-dev-inc/tap && brew install mobile-dev-inc/tap/maestro
+                                                  # React Native / Expo closed-pose flows (not the unrelated `maestro` cask)
+brew install fastlane                             # optional, only for screenshot upload (2.241.1+; `brew upgrade fastlane`)
 ```
+
+Homebrew 7 refuses formulae from third-party taps until `brew trust` has been run for the tap; every hint the scripts print includes it. The Maestro curl installer is refused by agent sandboxes, hence the tap.
 
 `duoctl` and `hinge` are MIT tools that send the same private HID event Xcode's Device Hub sends to fold the simulator. Apple has no public API for this. `scripts/preflight.sh` proves the angle reads back before any pose stage runs and exits with code 5 when an Xcode update breaks the protocol; nothing is ever faked.
 
-AXe is not optional in practice: without it every element tree is empty, and the report marks the run `unverified` (exit 1) instead of passing it. Keep the project outside iCloud Drive, or set `DUO_DERIVED_DATA`; DerivedData under a synced folder breaks codesign and multiplied the first build time by ten on the field test.
+AXe is not optional in practice: without it every element tree is empty, and the report marks the run `unverified` (exit 1) instead of passing it. Preflight runs one real `duoctl elements` call and reports `"elements": "ok"` only when a list came back. Keep the project outside iCloud Drive, or set `DUO_DERIVED_DATA`; DerivedData under a synced folder breaks codesign and multiplied the first build time by ten on the field test.
+
+The two UI test targets (`DuoUITests` for native element trees, `DuoPerfTests` for metrics) are added without opening Xcode: `ruby "$DUO/templates/add-duo-test-targets.rb" ios/App.xcodeproj App "$DUO/templates"` (xcodeproj gem, shipped with CocoaPods). It also switches the scheme's Test action to Release, which a React Native or Expo app needs because nothing in the pipeline starts Metro.
 
 ## Quick start on a Mac (10 minutes)
 
@@ -136,9 +138,10 @@ python3 "$DUO/scripts/scan.py" --fix --dry-run
 python3 "$DUO/scripts/scan.py" --fix --apply
 bash "$DUO/scripts/build.sh"                # .app + SDK stamp -> .duo/runs/1/build.json
 bash "$DUO/scripts/run-matrix.sh" --run 1   # every flow x pose, captures, element trees, assertions
-bash "$DUO/scripts/perf.sh" --run 1
+                                            # --udid <udid> drives your own signed-in simulator; --driver duoctl skips Maestro
+bash "$DUO/scripts/perf.sh" --run 1         # needs the DuoPerfTests target (templates/add-duo-test-targets.rb)
 python3 "$DUO/scripts/report.py" --run 1    # .duo/runs/1/duo-report.html, exit 0/1/2 (1 also when nothing was verified)
-python3 "$DUO/scripts/loop.py" --run 1      # agent payloads for each failure
+python3 "$DUO/scripts/loop.py" --run 1      # agent payloads for each failure; prints the exact --only-failed rerun
 bash "$DUO/scripts/assets.sh" --run 1       # fastlane/screenshots/<locale>/ + FEATURING.md
 ```
 
@@ -166,17 +169,17 @@ Full numbers, SDK tiers and simulator quirks: `references/device-facts.md`.
 
 ## Verification status
 
-The repository is authored on Windows; one field test has run on a Mac (27 Oct 2026: Mac16,7, macOS 27.0.1, Xcode 27.1 build 27A9275, iOS 27.1 runtime, duoctl 0.2.0, hinge 0.3.0, an Expo SDK 54 app). What has been verified and where:
+The repository is authored on Windows; two field tests have run on a Mac (27 and 28 Oct 2026: Mac16,7, macOS 27.0.1, Xcode 27.1 build 27A9275, iOS 27.1 runtime, Claude Code 2.1.212, Homebrew 7, duoctl 0.2.0, hinge 0.3.0, AXe 1.8.0, Maestro 2.12.0, an Expo SDK 54 app). What has been verified and where:
 
 | Part | Status |
 |---|---|
-| Rule engine (19 native + 17 React Native rules), fixtures, autofix dry-run | Tested with pytest on Windows (115 tests across the suite); precision on the field-test app was 8 real findings of 26 before the rule changes in this version |
-| YAML subset loader, detect, assertions, visual diff, report, loop, assets gate | Tested with pytest on Windows using synthetic trees and PNGs, plus the saved `simctl io enumerate`, `duoctl state` and `hinge posture` output from the field test (`tests/fixtures/`) |
-| Shell scripts | `bash -n`, `--help`, the non-macOS refusal path, and guards against the SIGPIPE and `local` pitfalls the field test hit |
-| Preflight, simulator boot, pose readback through `duoctl`/`hinge` (0, 127, 180 degrees), rotation, per-display capture at 1398x2034 and 2007x2853, SDK stamp 27.1, the UIScene launch kill | **Verified on the field-test Mac** |
-| Layout assertions on real element trees, perf metrics, XCUITest templates compiling, fastlane upload | **Not yet verified.** The field test had neither AXe nor the DuoPerfTests target, so every tree was empty; this version reports that as `unverified` instead of passing. Second iteration planned; checklist in `CONTRIBUTING.md` |
+| Rule engine (19 native + 17 React Native rules), fixtures, autofix dry-run | Tested with pytest on Windows (141 tests across the suite); on the field-test app the second run reported 7 findings, 5 of them real |
+| YAML subset loader, detect, assertions, visual diff, report, loop, assets gate, AXe tree normaliser, xcresult metrics parser | Tested with pytest on Windows using synthetic trees and PNGs, plus output saved on the field tests: `simctl io enumerate`, `duoctl state`, `hinge posture`, four anonymised `duoctl elements` trees (closed portrait, open landscape, book landscape, a closed-to-open transition) and one `xcresulttool get test-results metrics` document (`tests/fixtures/`) |
+| Shell scripts | `bash -n`, `--help`, the non-macOS refusal path, and guards against the SIGPIPE pipelines (`head`, `awk`, `grep -q`), the `local` pitfall, the `duoctl elements --json` flag and the `TEST_RUNNER_` prefix the field tests hit |
+| Plugin install, preflight, simulator boot, pose readback through `duoctl`/`hinge` (0, 127, 180 degrees), rotation, per-display capture at 1398x2034 and 2007x2853, SDK stamp 27.1, the UIScene launch kill, element trees through `duoctl elements`, both XCUITest templates compiling and running, `DuoPerfTests` metrics in the result bundle | **Verified on the field-test Mac** (the trees and metrics were produced by hand-patched 0.2.0 scripts; 0.3.0 ships those patches and awaits its own run) |
+| The 0.3.0 scripts end to end (`--udid`, error cells, thumbnails, perf parser on a live bundle), fastlane upload, Split View | **Not yet verified.** Third iteration planned; checklist in `CONTRIBUTING.md` |
 
-Expected time on a prepared Mac: 15 to 25 minutes for the whole pipeline; a first build 10 to 15 minutes more. The field test took 3 hours because of tool installs, an iCloud-synced DerivedData folder and the launch kill, not the stages.
+Expected time on a prepared Mac: 15 to 25 minutes for build plus matrix, 8 to 10 minutes more for perf, a first build 10 to 15 minutes on top. The second field test's scripted stages took about 40 minutes (build 5, matrix 16, perf 10); the first took 3 hours because of tool installs, an iCloud-synced DerivedData folder and the launch kill, not the stages.
 
 If you run it on a Mac, open an issue with the output of `bash scripts/preflight.sh --json` and `.duo/runs/1/duo-report.html`.
 
@@ -192,7 +195,7 @@ If you run it on a Mac, open an issue with the output of `bash scripts/preflight
 SKILL.md              agent-facing workflow
 references/           device facts, Apple guidance digest, rules, simulator cookbook, ASC specs, assertions, perf
 scripts/              preflight, detect, scan, sdk-stamp, build, sim, capture, run-matrix, assert, diff, perf, report, loop, assets
-templates/            duo.yaml, flows.yaml, XCUITest tour, perf tests, GitHub Actions
+templates/            duo.yaml, flows.yaml, XCUITest tour, perf tests, add-duo-test-targets.rb, GitHub Actions
 examples/             intentionally broken UIKit and React Native fixtures used by the tests
 tests/                pytest suite (runs on any OS)
 evals/                skill eval cases for `claude plugin eval`

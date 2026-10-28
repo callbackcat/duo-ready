@@ -92,7 +92,9 @@ else
   duo_die_host "iOS 27.1 simulator runtime missing (run: xcodebuild -downloadPlatform iOS, or Xcode > Settings > Components)"
 fi
 
-if xcrun simctl list devicetypes 2>/dev/null | grep -q "iPhone-Duo"; then
+DEVTYPES="$(xcrun simctl list devicetypes 2>/dev/null || true)"
+if printf '%s
+' "$DEVTYPES" | grep -F "iPhone-Duo" >/dev/null; then
   DEVTYPE_OK=1
 else
   duo_die_host "device type 'iPhone Duo' not listed by simctl (Xcode $XCODE_VERSION may lack Duo support)"
@@ -100,7 +102,9 @@ fi
 duo_log "iOS 27.1 runtime and iPhone Duo device type present"
 
 # --- pose control tools ----------------------------------------------------
-BREW_HINT="brew install skarol/tap/duoctl artemnovichkov/tap/hinge  (on macOS 27 Homebrew first needs the Command Line Tools for Xcode 27: Software Update, or xcode-select --install)"
+# Homebrew 7 refuses formulae from untrusted third-party taps until `brew trust`
+# has been run for the tap (field test 2); the hints include that step.
+BREW_HINT="brew tap skarol/tap artemnovichkov/tap && brew trust skarol/tap artemnovichkov/tap && brew install skarol/tap/duoctl artemnovichkov/tap/hinge  (on macOS 27 Homebrew first needs the Command Line Tools for Xcode 27: Software Update, or xcode-select --install)"
 duo_require_tool duoctl "$BREW_HINT"
 duo_require_tool hinge "$BREW_HINT"
 DUOCTL_VER="$(duoctl --version 2>/dev/null | sed -n 1p || echo unknown)"
@@ -114,7 +118,13 @@ if command -v fastlane >/dev/null 2>&1; then
   if [ -n "$FASTLANE_VER" ] && duo_version_ge "$FASTLANE_VER" "$MIN_FASTLANE"; then
     FASTLANE_OK=1
   else
-    warn "fastlane ${FASTLANE_VER:-?} is older than $MIN_FASTLANE; deliver will not know the iPhone Duo screenshot sizes (gem update fastlane)"
+    FASTLANE_BIN="$(command -v fastlane)"
+    FASTLANE_REAL="$(readlink "$FASTLANE_BIN" 2>/dev/null || echo "$FASTLANE_BIN")"
+    case "$FASTLANE_REAL" in
+      *Cellar*|*homebrew*|*linuxbrew*) FASTLANE_UPDATE="brew upgrade fastlane" ;;
+      *) FASTLANE_UPDATE="gem update fastlane" ;;
+    esac
+    warn "fastlane ${FASTLANE_VER:-?} is older than $MIN_FASTLANE; deliver will not know the iPhone Duo screenshot sizes ($FASTLANE_UPDATE)"
   fi
 else
   warn "fastlane not installed; the assets stage will print the asc CLI alternative instead"
@@ -129,18 +139,40 @@ MAESTRO_OK=0; AXE_OK=0
 if command -v maestro >/dev/null 2>&1; then
   MAESTRO_OK=1
 else
-  warn "maestro not installed; React Native/Expo closed-pose flows fall back to the duoctl interpreter (launch, deeplink, sleep only): curl -fsSL https://get.maestro.mobile.dev | bash"
+  warn "maestro not installed; React Native/Expo closed-pose flows fall back to the duoctl interpreter (launch, deeplink, wait, sleep; no taps on the outer display): brew tap mobile-dev-inc/tap && brew trust mobile-dev-inc/tap && brew install mobile-dev-inc/tap/maestro  (not the unrelated 'maestro' cask; the curl installer is refused by agent sandboxes)"
 fi
 if command -v axe >/dev/null 2>&1; then
   AXE_OK=1
 else
-  warn "AXe not installed; element trees will be empty and layout assertions skipped: brew tap cameroncooke/axe && brew install axe"
+  warn "AXe not installed; element trees will be empty and layout assertions skipped: brew tap cameroncooke/axe && brew trust cameroncooke/axe && brew install axe"
 fi
 
 # --- simulator -------------------------------------------------------------
 if [ "$NO_BOOT" -eq 0 ]; then
   SIM_UDID="$("$DUO_SCRIPTS/sim.sh" ensure --no-wait --quiet)"
   duo_log "simulator $SIM_UDID booted"
+fi
+
+# --- prove the element tree path -------------------------------------------
+# `command -v axe` is not proof: field test 2 had AXe installed and still got
+# empty trees from a bad flag. One `duoctl elements` against the booted
+# simulator (SpringBoard when nothing is in front) must return a JSON list.
+ELEMENTS_OK="untested"
+if [ "$NO_BOOT" -eq 0 ] && [ "$AXE_OK" -eq 1 ]; then
+  ELEMENTS_OUT="$(DUOCTL_UDID="$SIM_UDID" duoctl elements 2>&1 || true)"
+  if printf '%s' "$ELEMENTS_OUT" | "$DUO_PY" -c '
+import json, sys
+try:
+    d = json.load(sys.stdin)
+except Exception:
+    sys.exit(1)
+sys.exit(0 if isinstance(d, list) and d else 1)'; then
+    ELEMENTS_OK="ok"
+    duo_log "element trees verified (duoctl elements returned a list)"
+  else
+    ELEMENTS_OK="failed"
+    warn "duoctl elements did not return an element list ($(printf '%s' "$ELEMENTS_OUT" | sed -n 1p | cut -c1-120)); trees will be unavailable and layout assertions skipped"
+  fi
 fi
 
 # --- prove pose control ----------------------------------------------------
@@ -173,13 +205,13 @@ print(int(round(float(a))) if a is not None else "")' || true)"
 fi
 
 if [ "$JSON" -eq 1 ]; then
-  printf '{"ok":true,"exit":0,"xcode":"%s","runtime_ios_27_1":%s,"device_type_duo":%s,"duoctl":"%s","hinge":"%s","maestro":%s,"axe":%s,"fastlane":"%s","fastlane_ok":%s,"sim_udid":"%s","pose_control":"%s","warnings":"%s"}\n' \
+  printf '{"ok":true,"exit":0,"xcode":"%s","runtime_ios_27_1":%s,"device_type_duo":%s,"duoctl":"%s","hinge":"%s","maestro":%s,"axe":%s,"elements":"%s","fastlane":"%s","fastlane_ok":%s,"sim_udid":"%s","pose_control":"%s","warnings":"%s"}\n' \
     "$XCODE_VERSION" "$([ $RUNTIME_OK -eq 1 ] && echo true || echo false)" "$([ $DEVTYPE_OK -eq 1 ] && echo true || echo false)" \
     "$(duo_json_escape "$DUOCTL_VER")" "$(duo_json_escape "$HINGE_VER")" \
-    "$([ $MAESTRO_OK -eq 1 ] && echo true || echo false)" "$([ $AXE_OK -eq 1 ] && echo true || echo false)" "$FASTLANE_VER" \
+    "$([ $MAESTRO_OK -eq 1 ] && echo true || echo false)" "$([ $AXE_OK -eq 1 ] && echo true || echo false)" "$ELEMENTS_OK" "$FASTLANE_VER" \
     "$([ $FASTLANE_OK -eq 1 ] && echo true || echo false)" "$SIM_UDID" "$POSE_OK" "$(duo_json_escape "$WARNINGS")"
 else
-  echo "preflight ok: Xcode $XCODE_VERSION, iOS 27.1 runtime, duoctl, hinge, pose control $POSE_OK, maestro $([ $MAESTRO_OK -eq 1 ] && echo yes || echo no), axe $([ $AXE_OK -eq 1 ] && echo yes || echo no)"
+  echo "preflight ok: Xcode $XCODE_VERSION, iOS 27.1 runtime, duoctl, hinge, pose control $POSE_OK, maestro $([ $MAESTRO_OK -eq 1 ] && echo yes || echo no), axe $([ $AXE_OK -eq 1 ] && echo yes || echo no), element trees $ELEMENTS_OK"
   [ -n "$WARNINGS" ] && echo "warnings: $WARNINGS"
 fi
 exit 0

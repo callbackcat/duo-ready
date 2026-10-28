@@ -7,11 +7,15 @@
 
 Reads .duo/runs/<n>/failures.json, prints each payload as one JSON line (or
 pipes them to --agent's stdin), records the iteration in .duo/loop.json and
-prints the `--flows a,b --cells x,y` arguments for scripts/run-matrix.sh so
-only failed cells are rerun. When the cap is reached it writes DUO-TODO.md
-with the remaining failures and fix hints instead of looping forever.
+prints the exact rerun command (`run-matrix.sh --run <n+1> --only-failed
+.duo/runs/<n>/failures.json`) so only the failed (flow, cell) pairs are rerun;
+a flow x cell cross product would also rerun cells that passed. When the cap is
+reached it writes DUO-TODO.md with the remaining failures and fix hints instead
+of looping forever.
 Exit codes: 0 nothing left to do or cap reached (DUO-TODO.md written),
-1 payloads emitted and another iteration is expected.
+1 payloads emitted and another iteration is expected,
+4 nothing to loop on: no failures.json (the matrix never reached assert.py) or
+  a run whose cells had no element trees (unverified).
 """
 from __future__ import annotations
 
@@ -57,6 +61,8 @@ def max_iterations(root: str, override) -> int:
 
 
 def rerun_args(failures) -> str:
+    """`--flows a,b --cells x,y` for the failed pairs (kept for callers that
+    want the subset; note it is a cross product and may include transitions)."""
     flows, cells = [], []
     for f in failures:
         if f.get("flow") and f["flow"] not in flows:
@@ -71,13 +77,20 @@ def rerun_args(failures) -> str:
     return " ".join(parts)
 
 
+def rerun_command(run: int) -> str:
+    """The exact command for the next iteration: only the failed (flow, cell)
+    pairs, into a new run number. $DUO is the skill directory
+    (${CLAUDE_SKILL_DIR} inside Claude Code)."""
+    return f'bash "$DUO/scripts/run-matrix.sh" --run {run + 1} --only-failed .duo/runs/{run}/failures.json'
+
+
 def write_todo(root: str, run: int, failures, state: dict) -> str:
     path = os.path.join(root, "DUO-TODO.md")
     lines = [
         "# DUO-TODO",
         "",
         f"The duo-ready agent loop stopped after {state.get('iterations', 0)} iteration(s) (cap {state.get('max_iterations')}). "
-        f"Run {run} still has {len(failures)} failure(s). Fix these by hand, then rerun `scripts/run-matrix.sh {rerun_args(failures)}`.",
+        f"Run {run} still has {len(failures)} failure(s). Fix these by hand, then rerun `{rerun_command(run)}`.",
         "",
         "Reminder: iPhone Duo screenshots become required from April 2027 for apps built with the iOS 27.1 SDK or later. Apple has not said apps will be removed.",
         "",
@@ -162,7 +175,7 @@ def main(argv=None) -> int:
             print(json.dumps({"run": args.run, "failures": None, "action": "no_assertions", "reason": reason}))
         else:
             print(reason, file=sys.stderr)
-        return duolib.exit_codes.UI_FAIL
+        return duolib.exit_codes.PREFLIGHT_FAIL  # 4: nothing to loop on, distinct from "failures remain" (1)
     failures = duolib.load_json(fpath) or []
     ui_path = os.path.join(rdir, "ui.json")
     ui = duolib.load_json(ui_path) if os.path.exists(ui_path) else None
@@ -177,7 +190,7 @@ def main(argv=None) -> int:
                 print(json.dumps({"run": args.run, "failures": 0, "action": "unverified", "reason": reason}))
             else:
                 print(reason, file=sys.stderr)
-            return duolib.exit_codes.UI_FAIL
+            return duolib.exit_codes.PREFLIGHT_FAIL
         out = {"run": args.run, "failures": 0, "action": "done"}
         print(json.dumps(out) if args.json else "no failures; loop complete")
         return 0
@@ -185,7 +198,8 @@ def main(argv=None) -> int:
     if state.get("iterations", 0) >= cap:
         todo = write_todo(root, args.run, failures, state)
         save_state(root, state)
-        out = {"run": args.run, "failures": len(failures), "action": "cap_reached", "todo": todo, "rerun": rerun_args(failures)}
+        out = {"run": args.run, "failures": len(failures), "action": "cap_reached", "todo": todo,
+               "rerun": rerun_args(failures), "rerun_command": rerun_command(args.run)}
         print(json.dumps(out) if args.json else f"iteration cap {cap} reached; wrote {todo}")
         return 0
 
@@ -194,12 +208,12 @@ def main(argv=None) -> int:
     if not args.json:
         emit(failures, args.agent)
     out = {"run": args.run, "iteration": state["iterations"], "max_iterations": cap, "failures": len(failures),
-           "action": "patch", "rerun": rerun_args(failures)}
+           "action": "patch", "rerun": rerun_args(failures), "rerun_command": rerun_command(args.run)}
     if args.json:
         out["payloads"] = failures
         print(json.dumps(out))
     else:
-        print(f"iteration {state['iterations']}/{cap}: {len(failures)} payload(s) above; after patching rerun: scripts/run-matrix.sh {out['rerun']}", file=sys.stderr)
+        print(f"iteration {state['iterations']}/{cap}: {len(failures)} payload(s) above; after patching rerun: {out['rerun_command']}", file=sys.stderr)
     return 1
 
 

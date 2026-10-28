@@ -196,5 +196,41 @@ def test_simdisplay_parses_xcode_27_1_enumerate():
 
 
 def test_templates_exist():
-    for name in ["duo.yaml", "flows.yaml", "DuoUITests.swift", "DuoPerfTests.swift", "github-actions-duo.yml"]:
+    for name in ["duo.yaml", "flows.yaml", "DuoUITests.swift", "DuoPerfTests.swift", "github-actions-duo.yml", "add-duo-test-targets.rb"]:
         assert os.path.isfile(os.path.join(ROOT, "templates", name)), name
+    for name in ["tree.py", "perfparse.py"]:
+        assert os.path.isfile(os.path.join(SCRIPTS, name)), name
+
+
+@pytest.mark.parametrize("script", SCRIPT_NAMES + ["common.sh"])
+def test_no_grep_q_pipelines(script):
+    """`cmd | grep -q x` under pipefail: grep exits at the first match, the
+    producer gets SIGPIPE and the pipeline reports 141 (field test 2: a running
+    app was reported dead 18 times out of 20). Capture, then grep."""
+    text = open(os.path.join(SCRIPTS, script), encoding="utf-8").read()
+    code = [ln for ln in text.splitlines() if not ln.lstrip().startswith("#")]
+    bad = [ln for ln in code if re.search(r"\|\s*grep\s+(-[A-Za-z]*q|-q)", ln)]
+    assert bad == [], bad
+
+
+def test_field_test_2_contracts():
+    """Things the second field test proved the scripts must do."""
+    rm = open(os.path.join(SCRIPTS, "run-matrix.sh"), encoding="utf-8").read()
+    perf = open(os.path.join(SCRIPTS, "perf.sh"), encoding="utf-8").read()
+    sim = open(os.path.join(SCRIPTS, "sim.sh"), encoding="utf-8").read()
+    pre = open(os.path.join(SCRIPTS, "preflight.sh"), encoding="utf-8").read()
+    build = open(os.path.join(SCRIPTS, "build.sh"), encoding="utf-8").read()
+    assert "elements --json" not in rm, "duoctl elements has no --json flag (duoctl 0.2.0)"
+    assert "tree.py" in rm and "from-axe" in rm
+    assert "TEST_RUNNER_DUO_CELL=" in rm and "TEST_RUNNER_DUO_CELL=" in perf, "xcodebuild forwards only TEST_RUNNER_ variables"
+    assert "TEST_RUNNER_DUO_POSE_URL" in perf
+    assert "-to-" in perf and "test-results metrics" in perf
+    assert "perfparse.py" in perf
+    assert "--udid" in rm and "--udid" in perf and "duo_select_sim" in rm and "duo_select_sim" in perf
+    assert "error_cell" in rm and ".error.json" in rm
+    assert 'process != "log"' in sim, "the log predicate matched its own invocation"
+    assert "orientation)" in sim
+    assert "brew trust" in pre and "mobile-dev-inc/tap" in pre and "get.maestro.mobile.dev" not in pre
+    assert "duoctl elements" in pre and '"elements":"%s"' in pre
+    assert 'build >>"$LOG"' in build, "xcodebuild output truncated the prebuild log"
+    assert "LANG=" in build

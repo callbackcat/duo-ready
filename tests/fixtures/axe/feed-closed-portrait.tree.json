@@ -1,0 +1,440 @@
+{
+  "elements": [
+    {
+      "id": "Demo",
+      "type": "Application",
+      "label": "Demo",
+      "frame": [
+        0,
+        0,
+        466,
+        678
+      ],
+      "interactive": false,
+      "text": "Demo",
+      "truncated": false
+    },
+    {
+      "id": "User",
+      "type": "StaticText",
+      "label": "User",
+      "frame": [
+        36,
+        15.666666507720947,
+        38.666664123535156,
+        20.666664123535156
+      ],
+      "interactive": false,
+      "text": "User",
+      "truncated": false
+    },
+    {
+      "id": "User",
+      "type": "StaticText",
+      "label": "User",
+      "frame": [
+        36,
+        15.666666507720947,
+        38.666664123535156,
+        20.666664123535156
+      ],
+      "interactive": false,
+      "text": "User",
+      "truncated": false
+    },
+    {
+      "id": "home-shop",
+      "type": "Button",
+      "label": "Open Demo’s shop",
+      "frame": [
+        268,
+        6,
+        40,
+        40
+      ],
+      "interactive": false,
+      "text": "Open Demo’s shop",
+      "truncated": false
+    },
+    {
+      "id": "home-profile",
+      "type": "Button",
+      "label": "Open profile",
+      "frame": [
+        318,
+        6,
+        40,
+        40
+      ],
+      "interactive": false,
+      "text": "Open profile",
+      "truncated": false
+    },
+    {
+      "id": "demo-dashboard-hero",
+      "type": "Group",
+      "label": null,
+      "frame": [
+        0,
+        0,
+        466,
+        678
+      ],
+      "interactive": false,
+      "text": null,
+      "truncated": false
+    },
+    {
+      "id": "demo-scene",
+      "type": "Group",
+      "label": null,
+      "frame": [
+        0,
+        0,
+        466,
+        678
+      ],
+      "interactive": false,
+      "text": null,
+      "truncated": false
+    },
+    {
+      "id": "demo-dashboard-cards-scroll",
+      "type": "Group",
+      "label": null,
+      "frame": [
+        0,
+        0,
+        466,
+        678
+      ],
+      "interactive": false,
+      "text": null,
+      "truncated": false
+    },
+    {
+      "id": "demo-dashboard-demo",
+      "type": "Button",
+      "label": "Demo",
+      "frame": [
+        84,
+        65.33333587646484,
+        298,
+        219.66665649414062
+      ],
+      "interactive": false,
+      "text": "Demo",
+      "truncated": false
+    },
+    {
+      "id": "START A SESSION",
+      "type": "StaticText",
+      "label": "START A SESSION",
+      "frame": [
+        24,
+        317,
+        418,
+        13.666656494140625
+      ],
+      "interactive": false,
+      "text": "START A SESSION",
+      "truncated": false
+    },
+    {
+      "id": "START A SESSION",
+      "type": "StaticText",
+      "label": "START A SESSION",
+      "frame": [
+        24,
+        317,
+        418,
+        13.666656494140625
+      ],
+      "interactive": false,
+      "text": "START A SESSION",
+      "truncated": false
+    },
+    {
+      "id": "Who is joining?",
+      "type": "StaticText",
+      "label": "Who is joining?",
+      "frame": [
+        24,
+        332.6666669845581,
+        418,
+        26
+      ],
+      "interactive": false,
+      "text": "Who is joining?",
+      "truncated": false
+    },
+    {
+      "id": "Who is joining?",
+      "type": "StaticText",
+      "label": "Who is joining?",
+      "frame": [
+        24,
+        332.6666669845581,
+        418,
+        26
+      ],
+      "interactive": false,
+      "text": "Who is joining?",
+      "truncated": false
+    },
+    {
+      "id": "Choose Demo",
+      "type": "GenericElement",
+      "label": "Choose Demo",
+      "frame": [
+        28,
+        376.66666412353516,
+        205,
+        46
+      ],
+      "interactive": false,
+      "text": "Choose Demo",
+      "truncated": false
+    },
+    {
+      "id": "Choose Friends",
+      "type": "GenericElement",
+      "label": "Choose Friends",
+      "frame": [
+        233,
+        376.66666412353516,
+        205,
+        46
+      ],
+      "interactive": false,
+      "text": "Choose Friends",
+      "truncated": false
+    },
+    {
+      "id": "Start with Demo",
+      "type": "Button",
+      "label": "Start with Demo",
+      "frame": [
+        24,
+        440.6666717529297,
+        418,
+        58
+      ],
+      "interactive": false,
+      "text": "Start with Demo",
+      "truncated": false
+    },
+    {
+      "id": "TASKS",
+      "type": "StaticText",
+      "label": "TASKS",
+      "frame": [
+        24,
+        542.6666717529297,
+        123.33332824707031,
+        13.6666259765625
+      ],
+      "interactive": false,
+      "text": "TASKS",
+      "truncated": false
+    },
+    {
+      "id": "TASKS",
+      "type": "StaticText",
+      "label": "TASKS",
+      "frame": [
+        24,
+        542.6666717529297,
+        123.33332824707031,
+        13.6666259765625
+      ],
+      "interactive": false,
+      "text": "TASKS",
+      "truncated": false
+    },
+    {
+      "id": "A clear list",
+      "type": "StaticText",
+      "label": "A clear list",
+      "frame": [
+        24,
+        558.3333387374878,
+        123.33332824707031,
+        26
+      ],
+      "interactive": false,
+      "text": "A clear list",
+      "truncated": false
+    },
+    {
+      "id": "A clear list",
+      "type": "StaticText",
+      "label": "A clear list",
+      "frame": [
+        24,
+        558.3333387374878,
+        123.33332824707031,
+        26
+      ],
+      "interactive": false,
+      "text": "A clear list",
+      "truncated": false
+    },
+    {
+      "id": "Nothing waiting",
+      "type": "StaticText",
+      "label": "Nothing waiting",
+      "frame": [
+        38,
+        612.3333358764648,
+        390,
+        22
+      ],
+      "interactive": false,
+      "text": "Nothing waiting",
+      "truncated": false
+    },
+    {
+      "id": "Nothing waiting",
+      "type": "StaticText",
+      "label": "Nothing waiting",
+      "frame": [
+        38,
+        612.3333358764648,
+        390,
+        22
+      ],
+      "interactive": false,
+      "text": "Nothing waiting",
+      "truncated": false
+    },
+    {
+      "id": "Add one item below.",
+      "type": "StaticText",
+      "label": "Add one item below.",
+      "frame": [
+        38,
+        637.3333358764648,
+        390,
+        18
+      ],
+      "interactive": false,
+      "text": "Add one item below.",
+      "truncated": false
+    },
+    {
+      "id": "Add one item below.",
+      "type": "StaticText",
+      "label": "Add one item below.",
+      "frame": [
+        38,
+        637.3333358764648,
+        390,
+        18
+      ],
+      "interactive": false,
+      "text": "Add one item below.",
+      "truncated": false
+    },
+    {
+      "id": "Add a task",
+      "type": "TextField",
+      "label": "Add a task",
+      "frame": [
+        32,
+        691.3333435058594,
+        302,
+        44
+      ],
+      "interactive": false,
+      "text": "Add a task",
+      "truncated": false
+    },
+    {
+      "id": "Dictate a task",
+      "type": "Button",
+      "label": "Dictate a task",
+      "frame": [
+        342,
+        692.3333435058594,
+        42,
+        42
+      ],
+      "interactive": false,
+      "text": "Dictate a task",
+      "truncated": false
+    },
+    {
+      "id": "Add task",
+      "type": "Button",
+      "label": "Add task",
+      "frame": [
+        392,
+        692.3333435058594,
+        42,
+        42
+      ],
+      "interactive": false,
+      "text": "Add task",
+      "truncated": false
+    },
+    {
+      "id": "home-rhythm-card",
+      "type": "Button",
+      "label": "Your progress, 0 of 2 sessions this week. View details.",
+      "frame": [
+        4,
+        767.3333435058594,
+        458,
+        189.66668701171875
+      ],
+      "interactive": false,
+      "text": "Your progress, 0 of 2 sessions this week. View details.",
+      "truncated": false
+    },
+    {
+      "id": "Горизонтальная полоса прокрутки, 1 страница",
+      "type": "Slider",
+      "label": "Горизонтальная полоса прокрутки, 1 страница",
+      "frame": [
+        8,
+        645,
+        399,
+        30
+      ],
+      "interactive": false,
+      "text": "Горизонтальная полоса прокрутки, 1 страница",
+      "truncated": false
+    },
+    {
+      "id": "Горизонтальная полоса прокрутки, 1 страница",
+      "type": "Slider",
+      "label": "Горизонтальная полоса прокрутки, 1 страница",
+      "frame": [
+        8,
+        645,
+        399,
+        30
+      ],
+      "interactive": false,
+      "text": "Горизонтальная полоса прокрутки, 1 страница",
+      "truncated": false
+    },
+    {
+      "id": "Toolbar",
+      "type": "Group",
+      "label": "Toolbar",
+      "frame": [
+        0,
+        0,
+        466,
+        678
+      ],
+      "interactive": false,
+      "text": "Toolbar",
+      "truncated": false
+    }
+  ],
+  "source": "duoctl elements",
+  "udid": "SIMULATOR-UDID"
+}

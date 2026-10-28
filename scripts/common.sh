@@ -37,6 +37,14 @@ duo_die() {  # duo_die <code> <message>
   exit "$code"
 }
 
+# The app refused something that is a cell result, not an error (a portrait
+# lock on the outer display). Printed as "refused", never as "error", so a log
+# reader does not mistake a skipped cell for a broken run (field test 2).
+duo_refuse() {  # duo_refuse <message>
+  printf 'duo: refused: %s\n' "$*" >&2
+  exit "$DUO_EXIT_UNSUPPORTED"
+}
+
 duo_require_macos() {
   if [ "$(uname -s 2>/dev/null)" != "Darwin" ]; then
     duo_die_host "macOS required (this stage drives Xcode and the iOS Simulator)"
@@ -168,4 +176,37 @@ duo_sim_udid() {
     cat "$DUO_DIR/sim.udid"; return 0
   fi
   return 1
+}
+
+# duo_sim_booted <udid>: 0 when simctl lists the device as Booted.
+duo_sim_booted() {
+  local listing
+  listing="$(xcrun simctl list devices -j 2>/dev/null || true)"
+  printf '%s' "$listing" | "$DUO_PY" -c '
+import json, sys
+want = sys.argv[1]
+try:
+    data = json.load(sys.stdin)
+except Exception:
+    sys.exit(1)
+for devices in data.get("devices", {}).values():
+    for d in devices:
+        if d.get("udid") == want and d.get("state") == "Booted":
+            sys.exit(0)
+sys.exit(1)' "$1"
+}
+
+# duo_select_sim [udid]: the simulator a matrix or perf run drives. An explicit
+# --udid (or DUOCTL_UDID) wins, so flows that need a signed-in account can run
+# on the developer's own simulator; otherwise the protected "duo-ready" one is
+# created or reused through sim.sh ensure. Field test 2 had to write its own
+# driver script because both scripts ignored DUOCTL_UDID.
+duo_select_sim() {
+  local want="${1:-${DUOCTL_UDID:-}}"
+  if [ -z "$want" ]; then
+    "$DUO_SCRIPTS/sim.sh" ensure --quiet
+    return
+  fi
+  duo_sim_booted "$want" || duo_die "$DUO_EXIT_PREFLIGHT" "simulator $want is not booted (xcrun simctl boot $want, then retry)"
+  echo "$want"
 }

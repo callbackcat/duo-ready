@@ -1,0 +1,342 @@
+{
+  "elements": [
+    {
+      "id": "Demo",
+      "type": "Application",
+      "label": "Demo",
+      "frame": [
+        0,
+        0,
+        669,
+        951
+      ],
+      "interactive": false,
+      "text": "Demo",
+      "truncated": false
+    },
+    {
+      "id": "shop-back",
+      "type": "Button",
+      "label": "Back",
+      "frame": [
+        20,
+        9,
+        46,
+        46
+      ],
+      "interactive": false,
+      "text": "Back",
+      "truncated": false
+    },
+    {
+      "id": "Shop",
+      "type": "Heading",
+      "label": "Shop",
+      "frame": [
+        425,
+        17.66666603088379,
+        100.66668701171875,
+        28.666664123535156
+      ],
+      "interactive": false,
+      "text": "Shop",
+      "truncated": false
+    },
+    {
+      "id": "Shop",
+      "type": "Heading",
+      "label": "Shop",
+      "frame": [
+        425,
+        17.66666603088379,
+        100.66668701171875,
+        28.666664123535156
+      ],
+      "interactive": false,
+      "text": "Shop",
+      "truncated": false
+    },
+    {
+      "id": "shop-stage",
+      "type": "Group",
+      "label": null,
+      "frame": [
+        20,
+        64,
+        911,
+        207
+      ],
+      "interactive": false,
+      "text": null,
+      "truncated": false
+    },
+    {
+      "id": "demo-scene",
+      "type": "Group",
+      "label": null,
+      "frame": [
+        21,
+        65,
+        909,
+        205
+      ],
+      "interactive": false,
+      "text": null,
+      "truncated": false
+    },
+    {
+      "id": "shop-group-demo",
+      "type": "GenericElement",
+      "label": "Demo",
+      "frame": [
+        23,
+        286,
+        452.6666564941406,
+        40
+      ],
+      "interactive": false,
+      "text": "Demo",
+      "truncated": false
+    },
+    {
+      "id": "shop-group-home",
+      "type": "GenericElement",
+      "label": "The home",
+      "frame": [
+        475.6666564941406,
+        286,
+        452.3333435058594,
+        40
+      ],
+      "interactive": false,
+      "text": "The home",
+      "truncated": false
+    },
+    {
+      "id": "shop-slot-fur",
+      "type": "GenericElement",
+      "label": "Fur",
+      "frame": [
+        20,
+        339,
+        177.3333282470703,
+        38
+      ],
+      "interactive": false,
+      "text": "Fur",
+      "truncated": false
+    },
+    {
+      "id": "shop-slot-hat",
+      "type": "GenericElement",
+      "label": "Hats",
+      "frame": [
+        203.3333282470703,
+        339,
+        177.3333282470703,
+        38
+      ],
+      "interactive": false,
+      "text": "Hats",
+      "truncated": false
+    },
+    {
+      "id": "shop-slot-glasses",
+      "type": "GenericElement",
+      "label": "Glasses",
+      "frame": [
+        386.6666564941406,
+        339,
+        177.66665649414062,
+        38
+      ],
+      "interactive": false,
+      "text": "Glasses",
+      "truncated": false
+    },
+    {
+      "id": "shop-slot-neck",
+      "type": "GenericElement",
+      "label": "Neck",
+      "frame": [
+        570.3333129882812,
+        339,
+        177.3333740234375,
+        38
+      ],
+      "interactive": false,
+      "text": "Neck",
+      "truncated": false
+    },
+    {
+      "id": "shop-slot-top",
+      "type": "GenericElement",
+      "label": "Tops",
+      "frame": [
+        753.6666870117188,
+        339,
+        177.33331298828125,
+        38
+      ],
+      "interactive": false,
+      "text": "Tops",
+      "truncated": false
+    },
+    {
+      "id": "shop-tile-fur.plain",
+      "type": "Button",
+      "label": "Classic, on now",
+      "frame": [
+        20,
+        391,
+        221,
+        255
+      ],
+      "interactive": false,
+      "text": "Classic, on now",
+      "truncated": false
+    },
+    {
+      "id": "shop-tile-fur.brown",
+      "type": "Button",
+      "label": "Cocoa",
+      "frame": [
+        249,
+        391,
+        221,
+        255
+      ],
+      "interactive": false,
+      "text": "Cocoa",
+      "truncated": false
+    },
+    {
+      "id": "shop-tile-fur.sky",
+      "type": "Button",
+      "label": "Sky",
+      "frame": [
+        478,
+        391,
+        221,
+        255
+      ],
+      "interactive": false,
+      "text": "Sky",
+      "truncated": false
+    },
+    {
+      "id": "shop-tile-fur.sage",
+      "type": "Button",
+      "label": "Sage",
+      "frame": [
+        707,
+        391,
+        221,
+        255
+      ],
+      "interactive": false,
+      "text": "Sage",
+      "truncated": false
+    },
+    {
+      "id": "shop-tile-fur.lilac",
+      "type": "Button",
+      "label": "Lilac",
+      "frame": [
+        20,
+        654,
+        221,
+        255
+      ],
+      "interactive": false,
+      "text": "Lilac",
+      "truncated": false
+    },
+    {
+      "id": "shop-tile-fur.ginger",
+      "type": "Button",
+      "label": "Ginger",
+      "frame": [
+        249,
+        654,
+        221,
+        255
+      ],
+      "interactive": false,
+      "text": "Ginger",
+      "truncated": false
+    },
+    {
+      "id": "shop-tile-fur.midnight",
+      "type": "Button",
+      "label": "A small reward for your first week.",
+      "frame": [
+        478,
+        654,
+        221,
+        255
+      ],
+      "interactive": false,
+      "text": "A small reward for your first week.",
+      "truncated": false
+    },
+    {
+      "id": "shop-tile-fur.snow",
+      "type": "Button",
+      "label": "Snow",
+      "frame": [
+        707,
+        654,
+        221,
+        255
+      ],
+      "interactive": false,
+      "text": "Snow",
+      "truncated": false
+    },
+    {
+      "id": "Горизонтальная полоса прокрутки, 1 страница",
+      "type": "Slider",
+      "label": "Горизонтальная полоса прокрутки, 1 страница",
+      "frame": [
+        55,
+        636,
+        841,
+        30
+      ],
+      "interactive": false,
+      "text": "Горизонтальная полоса прокрутки, 1 страница",
+      "truncated": false
+    },
+    {
+      "id": "Горизонтальная полоса прокрутки, 1 страница",
+      "type": "Slider",
+      "label": "Горизонтальная полоса прокрутки, 1 страница",
+      "frame": [
+        55,
+        636,
+        841,
+        30
+      ],
+      "interactive": false,
+      "text": "Горизонтальная полоса прокрутки, 1 страница",
+      "truncated": false
+    },
+    {
+      "id": "Toolbar",
+      "type": "Group",
+      "label": "Toolbar",
+      "frame": [
+        0,
+        0,
+        951,
+        669
+      ],
+      "interactive": false,
+      "text": "Toolbar",
+      "truncated": false
+    }
+  ],
+  "source": "duoctl elements",
+  "udid": "SIMULATOR-UDID"
+}

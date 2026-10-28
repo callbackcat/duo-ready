@@ -16,6 +16,7 @@ Usage: scripts/sim.sh <command> [args]
   udid                           print the UDID in use
   pose <closed|open|book>        set the hinge (0 / 180 / 127 degrees) and wait for readback
   rotate <portrait|landscape>    rotate the active display (exit 6 when the app refuses)
+  orientation                    print portrait|landscape of the lit display (hinge readback)
   wait-posture <closed|open|book> [--timeout <s>]   poll until the hinge reports the pose
   install <App.app>              simctl install
   launch [--no-check] <bundle.id> [args...]   simctl terminate + launch, then verify the
@@ -125,8 +126,8 @@ case "$cmd" in
     ;;
   pose)
     [ $# -ge 1 ] || { usage >&2; exit 4; }
-    duo_require_tool duoctl "brew install skarol/tap/duoctl"
-    duo_require_tool hinge "brew install artemnovichkov/tap/hinge"
+    duo_require_tool duoctl "brew tap skarol/tap && brew trust skarol/tap && brew install skarol/tap/duoctl"
+    duo_require_tool hinge "brew tap artemnovichkov/tap && brew trust artemnovichkov/tap && brew install artemnovichkov/tap/hinge"
     udid="$(duo_sim_udid)" || duo_die "$DUO_EXIT_PREFLIGHT" "no iPhone Duo simulator booted"
     export DUOCTL_UDID="$udid" HINGE_DEVICE="$udid"
     angle="$(pose_angle "$1")"
@@ -139,7 +140,7 @@ case "$cmd" in
     ;;
   rotate)
     [ $# -ge 1 ] || { usage >&2; exit 4; }
-    duo_require_tool duoctl "brew install skarol/tap/duoctl"
+    duo_require_tool duoctl "brew tap skarol/tap && brew trust skarol/tap && brew install skarol/tap/duoctl"
     udid="$(duo_sim_udid)" || duo_die "$DUO_EXIT_PREFLIGHT" "no iPhone Duo simulator booted"
     export DUOCTL_UDID="$udid" HINGE_DEVICE="$udid"
     case "$1" in
@@ -154,7 +155,10 @@ case "$cmd" in
     #   or SpringBoard, which is portrait-only there. That is a cell result
     #   (exit 6), not a protocol change. It is also intermittently reported
     #   right after a fold, so it is retried before being believed.
-    cur="$(duoctl state 2>/dev/null | "$DUO_PY" -c 'import json,sys; print(json.load(sys.stdin).get("orientation",""))' 2>/dev/null || true)"
+    # The current orientation comes from the hinge readback: `duoctl state` can
+    # be stale after a fold (field test 2: it reported inner/landscape while the
+    # outer display showed a 466 x 678 portrait app).
+    cur="$("$0" orientation 2>/dev/null || true)"
     if [ "$cur" = "$1" ]; then exit 0; fi
     err=""; ok=0; i=0
     while [ "$i" -lt 3 ]; do
@@ -167,15 +171,38 @@ case "$cmd" in
     if [ "$ok" -ne 1 ]; then
       case "$err" in
         *"did not rotate"*|*"may not support"*)
-          duo_die "$DUO_EXIT_UNSUPPORTED" "the app in front refused to rotate to $1 on the active display (portrait-only there, or no app in front); duoctl: $err" ;;
+          duo_refuse "the app in front refused to rotate to $1 on the active display (portrait-only there, or no app in front); $err" ;;
         *) duo_die "$DUO_EXIT_POSE" "duoctl could not rotate to $1: ${err:-no output} (private protocol changed?)" ;;
       esac
     fi
     sleep 1
     ;;
+  orientation)
+    udid="$(duo_sim_udid)" || duo_die "$DUO_EXIT_PREFLIGHT" "no iPhone Duo simulator booted"
+    export DUOCTL_UDID="$udid" HINGE_DEVICE="$udid"
+    posture="$(hinge posture --json 2>/dev/null || true)"
+    orient="$(printf '%s' "$posture" | "$DUO_PY" -c 'import json,sys
+try:
+    print(json.load(sys.stdin).get("orientation", ""))
+except Exception:
+    print("")' 2>/dev/null || true)"
+    if [ -z "$orient" ]; then
+      state="$(duoctl state 2>/dev/null || true)"
+      orient="$(printf '%s' "$state" | "$DUO_PY" -c 'import json,sys
+try:
+    print(json.load(sys.stdin).get("orientation", ""))
+except Exception:
+    print("")' 2>/dev/null || true)"
+    fi
+    case "$orient" in
+      *landscape*) echo landscape ;;
+      *portrait*) echo portrait ;;
+      *) exit 1 ;;
+    esac
+    ;;
   wait-posture)
     [ $# -ge 1 ] || { usage >&2; exit 4; }
-    duo_require_tool hinge "brew install artemnovichkov/tap/hinge"
+    duo_require_tool hinge "brew tap artemnovichkov/tap && brew trust artemnovichkov/tap && brew install artemnovichkov/tap/hinge"
     want="$1"; shift; timeout=5
     while [ $# -gt 0 ]; do case "$1" in --timeout) timeout="$2"; shift ;; esac; shift; done
     udid="$(duo_sim_udid)" || duo_die "$DUO_EXIT_PREFLIGHT" "no iPhone Duo simulator booted"
@@ -213,9 +240,17 @@ case "$cmd" in
     # 2026). So wait and check the process is still there.
     if [ "$CHECK" -eq 1 ]; then
       sleep 3
-      if ! xcrun simctl spawn "$udid" launchctl list 2>/dev/null | grep -q "$bundle"; then
+      # Capture the list, then search it. `launchctl list | grep -q` under
+      # pipefail returned SIGPIPE (141) 18 times out of 20 on the field test,
+      # which reported a running app as dead and the matrix stopped at the
+      # third cell.
+      jobs="$(xcrun simctl spawn "$udid" launchctl list 2>/dev/null || true)"
+      if ! printf '%s\n' "$jobs" | grep -F "$bundle" >/dev/null; then
         reason="exited within 3 s of launch"
-        if xcrun simctl spawn "$udid" log show --last 1m --predicate 'eventMessage CONTAINS "UIScene life cycle is required"' 2>/dev/null | grep -q "UIScene life cycle"; then
+        # Exclude the `log` process itself: it logs its own command line, which
+        # contains the predicate text and matched it (field test 2, note 13).
+        killed="$(xcrun simctl spawn "$udid" log show --last 1m --style compact --predicate 'eventMessage CONTAINS "UIScene life cycle is required" AND process != "log"' 2>/dev/null || true)"
+        if printf '%s\n' "$killed" | grep -F "UIScene life cycle" >/dev/null; then
           reason="killed by UIKit: 'UIScene life cycle is required for apps built with this SDK'. The build is stamped with the iOS 27 SDK but the app has no UIApplicationSceneManifest / scene delegate (scan rule no-scene-delegate; Expo and React Native templates up to SDK 54 / 0.81 are in this state). Fix the life cycle before measuring anything"
         fi
         duo_die "$DUO_EXIT_BUILD" "$bundle $reason (log: xcrun simctl spawn $udid log show --last 2m --predicate 'process == \"<executable name>\"')"

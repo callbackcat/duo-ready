@@ -4,7 +4,11 @@ Specification for `scripts/assert.py`. Inputs per cell: the element tree `<flow>
 
 ## Tree fields used
 
-`id`, `type`, `label`, `frame` `[x, y, w, h]` in points with origin at the app window's top-left, `interactive` (bool), `text`, `truncated` (bool), optional `parent` (id) and `scrollable` (bool). Elements with `type` in `window`, `other` with no label and no children are treated as containers.
+`id`, `type`, `label`, `frame` `[x, y, w, h]` in points with origin at the app window's top-left, `interactive` (bool), `text`, `truncated` (bool), optional `parent` (id) and `scrollable` (bool). The tree's `source` and `ancestry` fields say where it came from and whether parents are known.
+
+An element is interactive when the flag says so or its type is one of `Button`, `TextField`, `SecureTextField`, `Switch`, `Slider`, `Link`, `Tab`, `Cell`, `SegmentedControl`, `Stepper`, `PageIndicator`, `SearchField`, `TabBar` items (case-insensitive; AXe capitalises, XCUITest does not). Containers are dropped before any assertion: the `Application` root, and `Group`, `Other`, `Window`, `ScrollView`, `Table`, `CollectionView`, `NavigationBar` and similar whose frame covers 90% or more of the window or of the window rotated (AXe reports the root unrotated in landscape, so a 669 x 951 frame in a 951 x 669 cell is the root, not an overflow).
+
+The window size comes from the geometry table below, except when the capture's pixel size says the display came up in the other orientation (2007 x 2853 after an unfold); then the window is taken from the capture and the cell carries `window_source: screenshot`.
 
 ## Cell geometry (iOS 27.1 SDK, points)
 
@@ -27,16 +31,16 @@ With a 27.0 stamp the windows are 386 × 678 and 871 × 669, there are no vertic
 ## Assertions
 
 ### offscreen_elements
-Any element whose frame is not fully inside the window rectangle, after clamping tiny overshoots (≤ 1 pt). Containers and scrollable content children with `scrollable` ancestors are exempt (scrolled-off rows are normal). Report the offending `id`s and frames. False positives: lazily sized collection cells during animation; capture only after the wait-for-posture rule and a 500 ms settle. Typical cause: hardcoded widths from `UIScreen.main.bounds` or `Dimensions.get` captured at launch.
+Any element whose frame is not fully inside the window rectangle, after clamping tiny overshoots (≤ 1 pt). Containers and scrollable content children with `scrollable` ancestors are exempt (scrolled-off rows are normal). Report the offending `id`s and frames. Horizontal overflow is a `fail`. Vertical-only overflow is a `fail` with an XCUITest tree (ancestry known) and a `warn` with an AXe tree, because a flat tree cannot tell a row scrolled below the fold of a list from a clipped one; the `reason` says so and the capture decides. False positives: lazily sized collection cells during animation; capture only after the wait-for-posture rule and a 500 ms settle. Typical cause: hardcoded widths from `UIScreen.main.bounds` or `Dimensions.get` captured at launch.
 
 ### clipped_text
 An element with `text` is clipped when `truncated` is true, or its `text` ends with an ellipsis character, while its width is smaller than the parent's available width minus 16 pt. Multi-line labels with `numberOfLines` set are not visible in the tree, so warn, never fail, unless `duo.yaml` says fail. Typical cause: fixed widths or a layout computed for 375 pt.
 
 ### tap_target_min
-Interactive elements (buttons, links, toggles, cells with actions) with width or height below `tap_target_min` (default 44 pt). Exempt system bar items and elements inside the trailing vertical bar column. Report the element and the measured size.
+Interactive elements (buttons, links, toggles, cells with actions) with width or height below `tap_target_min` (default 44 pt). Exempt system bar items and elements inside the trailing vertical bar column. Report the element and the measured size. 42 x 42 pt icon buttons are the common real finding (second field test); they are 2 pt short and the fix is padding, not a threshold change.
 
 ### bars_vertical_expected
-Applies only with a 27.1 or later stamp and only in cells that expect vertical bars: `closed-portrait`, `closed-landscape`, `open-landscape`, `book-landscape`, `split-view-*`. Detection: a group of two or more bar-type elements (`button`, `tab`) whose frames sit inside the trailing 84 pt column and are stacked vertically, or any element with `type` in `tabBar`, `toolbar`, `navigationBar` whose width is about 84 pt and height exceeds its width. Pass when found. Fail when the tree contains bar-type elements laid out horizontally at the top or bottom edge instead (custom `UIToolbar`/`UITabBar`/JS tab bar), warn when no bars are found at all (the screen may legitimately have none). `open-portrait` and `book-portrait` expect horizontal bars and are skipped.
+Applies only with a 27.1 or later stamp and only in cells that expect vertical bars: `closed-portrait`, `closed-landscape`, `open-landscape`, `book-landscape`, `split-view-*`. Detection: a group of two or more bar-type elements (`button`, `tab`) whose frames sit inside the trailing 84 pt column and are stacked vertically, or any element with `type` in `tabBar`, `toolbar`, `navigationBar` whose width is about 84 pt and height exceeds its width. Pass when found. Fail when the tree contains bar-type elements laid out horizontally at the top or bottom edge instead (custom `UIToolbar`/`UITabBar`/JS tab bar), warn when no bars are found at all (the screen may legitimately have none). `open-portrait` and `book-portrait` expect horizontal bars and are skipped. The assertion is also skipped, not warned, when the tree has no bar-typed element and fewer than two interactive elements in the bottom band or the trailing column: a screen without bars (an onboarding page, a full-screen hero) is not a finding.
 
 ### content_under_outer_camera
 Closed cells only. Fail when any non-background, non-container element intersects the 37 × 37 pt occlusion in the top-trailing corner (inside the 84 pt status column). Background images that ignore the safe area are allowed to pass under it, so exempt elements with `type` `image` that span the full window width. Typical cause: `ignoresSafeArea()` on a card stage or a hero view that also holds controls.
@@ -52,20 +56,24 @@ For each transition in `duo.yaml` (`closed>open`, `open>book`, `open>closed`) th
 
 ## matched_rule and source_hint
 
-For every failure, look up `.duo/scan.json`. If a finding's file stem (`PlayerView` from `Sources/PlayerView.swift`) is a case-insensitive substring of the failing element's `id`, `label`, or the flow's screen name, set `matched_rule` to that finding's rule and `source_hint` to `file:line`. If several match, prefer rules associated with the assertion:
+For every failure, look up `.duo/scan.json`, restricted to the rules that can cause that assertion:
 
-| Assertion | Preferred rules |
+| Assertion | Rules considered |
 |---|---|
-| offscreen_elements, clipped_text | screen-main-bounds, hardcoded-size, layout-once, rn-dimensions-module-scope, rn-stylesheet-fixed-width |
-| bars_vertical_expected | custom-bar-class, rn-js-tab-bar, toolbar-item-no-symbol |
-| content_under_outer_camera | symmetric-safe-area, rn-safe-area-missing, fill-media |
-| interactive_in_fold | centered-grid-odd-columns, cached-reserved-regions |
-| transition_stable | layout-once, orientation-layout, rn-orientation-lock |
+| offscreen_elements | screen-main-bounds, hardcoded-size, layout-once, rn-dimensions-module-scope, rn-stylesheet-fixed-width, rn-fixed-height, rn-window-height-fraction, window-frame-init, stored-uiscreen |
+| clipped_text | hardcoded-size, rn-stylesheet-fixed-width, rn-adjusts-font-fixed-lineheight, rn-hardcoded-breakpoint, layout-once |
+| tap_target_min | hardcoded-size, rn-fixed-height |
+| bars_vertical_expected | custom-bar-class, rn-js-tab-bar, toolbar-item-no-symbol, custom-overflow-menu |
+| content_under_outer_camera | symmetric-safe-area, rn-safe-area-missing, fill-media, rn-symmetric-insets, rn-image-cover |
+| interactive_in_fold | centered-grid-odd-columns, cached-reserved-regions, rn-expo-hinge-for-layout |
+| transition_stable | layout-once, orientation-layout, rn-orientation-lock, rn-dimensions-no-listener, fixed-orientation-plist |
+| visual_diff, flow | none |
 
-Otherwise both fields are null; the payload still carries the assertion's generic `fix_hint`.
+Among those, a finding whose file stem (`PlayerView` from `Sources/PlayerView.swift`) is a case-insensitive substring of the failing element's `id` or `label` wins with `source_confidence: file`; otherwise the first finding of a considered rule is offered with `source_confidence: rule` (a lead, not a diagnosis). Otherwise both fields are null; the payload still carries the assertion's generic `fix_hint`. The second field test showed why the restriction matters: the root element's id was the app name, which is a substring of every file named after the app, so one unrelated provider file was blamed for all 19 failures.
 
 ## Known gaps
 
 - Split View cells depend on scripting Split View in the simulator, which is unverified; `assert.py` must accept their geometry but the runner may skip them.
-- Trees from AXe list only labelled elements, so `offscreen_elements` is weaker for React Native screens without `accessibilityLabel`/`testID`. Say so in the report when the tree source is AXe.
+- Trees from AXe list only labelled elements, so `offscreen_elements` is weaker for React Native screens without `accessibilityLabel`/`testID`; they also carry no ancestry, so vertical overflow is a warn. The report says so when any cell's tree came from AXe.
+- The assertions see geometry, not design: centred controls and odd-column grids that straddle the fold in `book-landscape` only fail when an interactive element intersects the 40 pt band; a layout that merely looks wrong around the hinge needs a human look at the capture.
 - The clock region exclusion in `visual_diff` is a fixed rectangle; apps that draw their own status area will see small diffs.

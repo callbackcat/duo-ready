@@ -128,7 +128,7 @@
   apple_ref: https://docs.expo.dev/versions/v58.0.0/sdk/hinge/
   doc: references/rules-react-native.md#rn-sdk-floor
 
-# --- added after the first field test (Momo, Expo 54, 27 Oct 2026) ----------
+# --- added after the first field test (Expo 54 app, 27 Oct 2026) ----------
 # The outer display is 678 pt tall, shorter than any current iPhone; every real
 # outer-display bug on that app was a height problem no rule above looked at.
 

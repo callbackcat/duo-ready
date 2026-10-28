@@ -92,17 +92,20 @@ def test_loop_iterations_cap_and_todo(tmp_path, capsys):
     out = capsys.readouterr()
     payload = json.loads(out.out.strip().splitlines()[0])
     assert payload["assertion"] == "interactive_in_fold"
-    assert "--flows feed --cells book-landscape" in out.err
+    # the hint is the exact command, into the next run, only the failed pairs
+    assert 'run-matrix.sh" --run 2 --only-failed .duo/runs/1/failures.json' in out.err
     # iteration 2 (cap from duo.yaml is 2)
     assert loop.main(["--run", "1", "--root", root, "--json"]) == 1
     data = json.loads(capsys.readouterr().out)
     assert data["iteration"] == 2 and data["rerun"] == "--flows feed --cells book-landscape"
+    assert data["rerun_command"].endswith("--run 2 --only-failed .duo/runs/1/failures.json")
     # iteration 3: cap reached -> DUO-TODO.md
     assert loop.main(["--run", "1", "--root", root]) == 0
     todo = os.path.join(root, "DUO-TODO.md")
     assert os.path.exists(todo)
     body = open(todo, encoding="utf-8").read()
     assert "interactive_in_fold" in body and "Keep interactive elements out of the fold." in body and "PlayerView.swift:88" in body
+    assert "--only-failed .duo/runs/1/failures.json" in body
     assert "April 2027" in body and "iOS 27.1 SDK or later" in body
     capsys.readouterr()
     # mark-fixed records the commit format
@@ -141,7 +144,7 @@ def test_report_and_loop_refuse_unverified_run(tmp_path, capsys):
     assert summary["overall"] == "unverified"
     text = open(os.path.join(rdir, "duo-report.html"), encoding="utf-8").read()
     assert "skipped, not passed" in text and "AXe" in text
-    assert loop.main(["--run", "4", "--root", root, "--json"]) == 1
+    assert loop.main(["--run", "4", "--root", root, "--json"]) == 4  # nothing to loop on, not "failures remain"
     out = json.loads(capsys.readouterr().out)
     assert out["action"] == "unverified" and out["failures"] == 0
 
@@ -150,7 +153,7 @@ def test_loop_without_failures_json_is_not_done(tmp_path, capsys):
     root = str(tmp_path)
     rdir = seed(root, run=5, ui_fail=False)
     os.remove(os.path.join(rdir, "failures.json"))
-    assert loop.main(["--run", "5", "--root", root, "--json"]) == 1
+    assert loop.main(["--run", "5", "--root", root, "--json"]) == 4
     out = json.loads(capsys.readouterr().out)
     assert out["action"] == "no_assertions" and out["failures"] is None
 
@@ -164,4 +167,63 @@ def test_report_perf_without_metrics_is_skip(tmp_path, capsys):
     summary = json.loads(capsys.readouterr().out)
     assert summary["overall"] == "pass"
     text = open(os.path.join(rdir, "duo-report.html"), encoding="utf-8").read()
-    assert "DuoPerfTests target missing" in text
+    assert "no metrics collected" in text  # the perf.json reason is shown verbatim
+
+
+def test_report_embeds_thumbnails_not_full_captures(tmp_path):
+    """Field test 2: 56 MB report from full captures embedded twice. The report
+    embeds a thumbnail, links the PNG on disk, and stays small."""
+    root = str(tmp_path)
+    rdir = seed(root, run=7)
+    cap = os.path.join(rdir, "captures")
+    big = os.path.join(cap, "feed-book-landscape.png")
+    w, h = 2853, 2007  # an inner-display landscape capture
+    pngio.write(big, w, h, 3, pngio.solid(w, h, (200, 200, 200)))
+    ui = duolib.load_json(os.path.join(rdir, "ui.json"))
+    for c in ui["cells"]:
+        c["screenshot"] = os.path.relpath(big, root)
+    duolib.write_json(os.path.join(rdir, "ui.json"), ui)
+    failures = duolib.load_json(os.path.join(rdir, "failures.json"))
+    for f in failures:
+        f["screenshot"] = os.path.relpath(big, root)
+    duolib.write_json(os.path.join(rdir, "failures.json"), failures)
+    report.main(["--run", "7", "--root", root, "--json"])
+    html_path = os.path.join(rdir, "duo-report.html")
+    assert os.path.getsize(html_path) < 400_000, os.path.getsize(html_path)
+    text = open(html_path, encoding="utf-8").read()
+    assert 'href="captures/feed-book-landscape.png"' in text
+    thumbs = sorted(os.listdir(os.path.join(rdir, "thumbs")))
+    assert thumbs == ["feed-book-landscape.240.png", "feed-book-landscape.720.png"]
+    assert pngio.info(os.path.join(rdir, "thumbs", "feed-book-landscape.720.png"))["width"] == 720
+    # the overlay keeps full-capture coordinates so frames line up on the thumbnail
+    assert f'viewBox="0 0 {w} {h}"' in text
+
+
+def test_report_perf_reason_and_errored_cells(tmp_path, capsys):
+    root = str(tmp_path)
+    rdir = seed(root, run=8, ui_fail=False)
+    duolib.write_json(os.path.join(rdir, "perf.json"), {"schema": 1, "run": 8, "mode": "regression", "metrics": [],
+                                                        "status": "skip", "reason": "xcresulttool returned no measurements although the log shows measured values"})
+    ui = duolib.load_json(os.path.join(rdir, "ui.json"))
+    ui["cells"].append({"flow": "checkout", "cell": "open-landscape", "errored": True, "screenshot": None, "ancestry": False,
+                        "results": [{"assertion": "flow", "status": "fail", "reason": "step timed out: wait \"Pay\""}]})
+    duolib.write_json(os.path.join(rdir, "ui.json"), ui)
+    assert report.main(["--run", "8", "--root", root, "--json"]) == 1
+    summary = json.loads(capsys.readouterr().out)
+    text = open(os.path.join(rdir, "duo-report.html"), encoding="utf-8").read()
+    assert "xcresulttool returned no measurements" in text
+    assert "stopped on a flow step" in text and "checkout/open-landscape" in text
+    assert "vertical overflow is reported as warn" in text
+    assert any("captures exist" not in s for s in summary["skipped"])
+
+
+def test_report_names_captures_without_assertions(tmp_path, capsys):
+    """run-matrix stopped before assert.py but captures exist: say so, with the command."""
+    root = str(tmp_path)
+    rdir = seed(root, run=9, with_ui=False, with_perf=False)
+    cap = os.path.join(rdir, "captures")
+    os.makedirs(cap, exist_ok=True)
+    pngio.write(os.path.join(cap, "feed-closed-portrait.png"), 4, 4, 3, pngio.solid(4, 4))
+    report.main(["--run", "9", "--root", root, "--json"])
+    summary = json.loads(capsys.readouterr().out)
+    assert any("assert.py did not run" in s and "--run 9" in s for s in summary["skipped"])

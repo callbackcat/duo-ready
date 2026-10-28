@@ -23,7 +23,7 @@ export function OnboardingScreen() {
         <Image source={require('../art/hero.png')} height={320} /> {/* duo: rn-fixed-height */}
       </View>
       <Text adjustsFontSizeToFit numberOfLines={1} style={styles.title}> {/* duo: rn-adjusts-font-fixed-lineheight */}
-        Welcome to Momo
+        Welcome to Demo
       </Text>
       <Text style={styles.body} ref={ref}>Swipe to continue</Text>
     </View>

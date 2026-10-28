@@ -1,0 +1,343 @@
+[
+  {
+    "type": "Application",
+    "label": "Demo",
+    "identifier": null,
+    "frame": {
+      "width": 466,
+      "x": 0,
+      "height": 678,
+      "y": 0
+    }
+  },
+  {
+    "type": "StaticText",
+    "label": "User",
+    "identifier": null,
+    "frame": {
+      "width": 38.666664123535156,
+      "x": 36,
+      "height": 20.666664123535156,
+      "y": 15.666666507720947
+    }
+  },
+  {
+    "type": "StaticText",
+    "label": "User",
+    "identifier": null,
+    "frame": {
+      "width": 38.666664123535156,
+      "x": 36,
+      "height": 20.666664123535156,
+      "y": 15.666666507720947
+    }
+  },
+  {
+    "type": "Button",
+    "label": "Open Demo’s shop",
+    "identifier": "home-shop",
+    "frame": {
+      "width": 40,
+      "x": 268,
+      "height": 40,
+      "y": 6
+    }
+  },
+  {
+    "type": "Button",
+    "label": "Open profile",
+    "identifier": "home-profile",
+    "frame": {
+      "width": 40,
+      "x": 318,
+      "height": 40,
+      "y": 6
+    }
+  },
+  {
+    "type": "Group",
+    "label": null,
+    "identifier": "demo-dashboard-hero",
+    "frame": {
+      "width": 466,
+      "x": 0,
+      "height": 678,
+      "y": 0
+    }
+  },
+  {
+    "type": "Group",
+    "label": null,
+    "identifier": "demo-scene",
+    "frame": {
+      "width": 466,
+      "x": 0,
+      "height": 678,
+      "y": 0
+    }
+  },
+  {
+    "type": "Group",
+    "label": null,
+    "identifier": "demo-dashboard-cards-scroll",
+    "frame": {
+      "width": 466,
+      "x": 0,
+      "height": 678,
+      "y": 0
+    }
+  },
+  {
+    "type": "Button",
+    "label": "Demo",
+    "identifier": "demo-dashboard-demo",
+    "frame": {
+      "width": 298,
+      "x": 84,
+      "height": 219.66665649414062,
+      "y": 65.33333587646484
+    }
+  },
+  {
+    "type": "StaticText",
+    "label": "START A SESSION",
+    "identifier": null,
+    "frame": {
+      "width": 418,
+      "x": 24,
+      "height": 13.666656494140625,
+      "y": 317
+    }
+  },
+  {
+    "type": "StaticText",
+    "label": "START A SESSION",
+    "identifier": null,
+    "frame": {
+      "width": 418,
+      "x": 24,
+      "height": 13.666656494140625,
+      "y": 317
+    }
+  },
+  {
+    "type": "StaticText",
+    "label": "Who is joining?",
+    "identifier": null,
+    "frame": {
+      "width": 418,
+      "x": 24,
+      "height": 26,
+      "y": 332.6666669845581
+    }
+  },
+  {
+    "type": "StaticText",
+    "label": "Who is joining?",
+    "identifier": null,
+    "frame": {
+      "width": 418,
+      "x": 24,
+      "height": 26,
+      "y": 332.6666669845581
+    }
+  },
+  {
+    "type": "GenericElement",
+    "label": "Choose Demo",
+    "identifier": null,
+    "frame": {
+      "width": 205,
+      "x": 28,
+      "height": 46,
+      "y": 376.66666412353516
+    }
+  },
+  {
+    "type": "GenericElement",
+    "label": "Choose Friends",
+    "identifier": null,
+    "frame": {
+      "width": 205,
+      "x": 233,
+      "height": 46,
+      "y": 376.66666412353516
+    }
+  },
+  {
+    "type": "Button",
+    "label": "Start with Demo",
+    "identifier": null,
+    "frame": {
+      "width": 418,
+      "x": 24,
+      "height": 58,
+      "y": 440.6666717529297
+    }
+  },
+  {
+    "type": "StaticText",
+    "label": "TASKS",
+    "identifier": null,
+    "frame": {
+      "width": 123.33332824707031,
+      "x": 24,
+      "height": 13.6666259765625,
+      "y": 542.6666717529297
+    }
+  },
+  {
+    "type": "StaticText",
+    "label": "TASKS",
+    "identifier": null,
+    "frame": {
+      "width": 123.33332824707031,
+      "x": 24,
+      "height": 13.6666259765625,
+      "y": 542.6666717529297
+    }
+  },
+  {
+    "type": "StaticText",
+    "label": "A clear list",
+    "identifier": null,
+    "frame": {
+      "width": 123.33332824707031,
+      "x": 24,
+      "height": 26,
+      "y": 558.3333387374878
+    }
+  },
+  {
+    "type": "StaticText",
+    "label": "A clear list",
+    "identifier": null,
+    "frame": {
+      "width": 123.33332824707031,
+      "x": 24,
+      "height": 26,
+      "y": 558.3333387374878
+    }
+  },
+  {
+    "type": "StaticText",
+    "label": "Nothing waiting",
+    "identifier": null,
+    "frame": {
+      "width": 390,
+      "x": 38,
+      "height": 22,
+      "y": 612.3333358764648
+    }
+  },
+  {
+    "type": "StaticText",
+    "label": "Nothing waiting",
+    "identifier": null,
+    "frame": {
+      "width": 390,
+      "x": 38,
+      "height": 22,
+      "y": 612.3333358764648
+    }
+  },
+  {
+    "type": "StaticText",
+    "label": "Add one item below.",
+    "identifier": null,
+    "frame": {
+      "width": 390,
+      "x": 38,
+      "height": 18,
+      "y": 637.3333358764648
+    }
+  },
+  {
+    "type": "StaticText",
+    "label": "Add one item below.",
+    "identifier": null,
+    "frame": {
+      "width": 390,
+      "x": 38,
+      "height": 18,
+      "y": 637.3333358764648
+    }
+  },
+  {
+    "type": "TextField",
+    "label": "Add a task",
+    "identifier": null,
+    "frame": {
+      "width": 302,
+      "x": 32,
+      "height": 44,
+      "y": 691.3333435058594
+    }
+  },
+  {
+    "type": "Button",
+    "label": "Dictate a task",
+    "identifier": null,
+    "frame": {
+      "width": 42,
+      "x": 342,
+      "height": 42,
+      "y": 692.3333435058594
+    }
+  },
+  {
+    "type": "Button",
+    "label": "Add task",
+    "identifier": null,
+    "frame": {
+      "width": 42,
+      "x": 392,
+      "height": 42,
+      "y": 692.3333435058594
+    }
+  },
+  {
+    "type": "Button",
+    "label": "Your progress, 0 of 2 sessions this week. View details.",
+    "identifier": "home-rhythm-card",
+    "frame": {
+      "width": 458,
+      "x": 4,
+      "height": 189.66668701171875,
+      "y": 767.3333435058594
+    }
+  },
+  {
+    "type": "Slider",
+    "label": "Горизонтальная полоса прокрутки, 1 страница",
+    "identifier": null,
+    "frame": {
+      "width": 399,
+      "x": 8,
+      "height": 30,
+      "y": 645
+    }
+  },
+  {
+    "type": "Slider",
+    "label": "Горизонтальная полоса прокрутки, 1 страница",
+    "identifier": null,
+    "frame": {
+      "width": 399,
+      "x": 8,
+      "height": 30,
+      "y": 645
+    }
+  },
+  {
+    "type": "Group",
+    "label": "Toolbar",
+    "identifier": "Toolbar",
+    "frame": {
+      "width": 466,
+      "x": 0,
+      "height": 678,
+      "y": 0
+    }
+  }
+]

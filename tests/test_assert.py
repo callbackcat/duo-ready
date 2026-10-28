@@ -176,15 +176,19 @@ def test_source_hint_from_scan(tmp_path):
     root = str(tmp_path)
     write_build(root, 1)
     duolib.write_json(os.path.join(root, ".duo", "scan.json"), {"findings": [
-        {"rule": "hardcoded-size", "severity": "warn", "file": "Sources/PlayerView.swift", "line": 88, "fix_hint": "Remove hardcoded dimensions."},
+        {"rule": "centered-grid-odd-columns", "severity": "warn", "file": "Sources/PlayerView.swift", "line": 88, "fix_hint": "Remove hardcoded dimensions."},
+        {"rule": "hardcoded-size", "severity": "warn", "file": "Sources/PlayerView.swift", "line": 12, "fix_hint": "unrelated to the fold"},
         {"rule": "screen-main-bounds", "severity": "error", "file": "Sources/AppDelegate.swift", "line": 10, "fix_hint": "x"},
     ]})
     write_capture(root, 1, "player", "book-landscape", [el("PlayButton", 440, 300, 60, 44, interactive=True)])
     _, failures = asrt.evaluate_run(root, 1)
     f = [x for x in failures if x["assertion"] == "interactive_in_fold"][0]
-    assert f["matched_rule"] == "hardcoded-size"
+    # only rules that can cause this assertion are matched (field test 2: a root id
+    # token matched an unrelated file for every failure)
+    assert f["matched_rule"] == "centered-grid-odd-columns"
     assert f["source_hint"] == "Sources/PlayerView.swift:88"
     assert f["fix_hint"] == "Remove hardcoded dimensions."
+    assert f["source_confidence"] == "file"
 
 
 def test_visual_diff_thresholds(tmp_path):

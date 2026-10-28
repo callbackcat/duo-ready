@@ -1,18 +1,23 @@
 // DuoPerfTests.swift - duo-ready performance template.
 //
-// Add this file to a UI test target named `DuoPerfTests`. scripts/perf.sh runs
-// it once per cell (and per transition) with DUO_CELL set and the simulator
-// already posed. Metrics are read from the xcresult bundle by perf.sh.
+// Add this file to a UI test target named `DuoPerfTests` (templates/add-duo-test-targets.rb
+// does it without opening Xcode). scripts/perf.sh runs it once per cell (and
+// per transition) with the simulator already posed and the cell name passed
+// as TEST_RUNNER_DUO_CELL. xcodebuild forwards only TEST_RUNNER_-prefixed
+// variables to a UI test runner, where they arrive without the prefix
+// (verified 28 Oct 2026: a plain DUO_CELL never reached the test). Metrics are
+// read from the xcresult bundle by scripts/perfparse.py.
 //
 // Simulator numbers are not device numbers. By default the pipeline treats
 // them as a regression baseline for your own project; absolute thresholds are
 // for `--device` runs on real hardware.
 //
-// Metric identifiers perf.sh looks for (substring match, see perf.sh NAME_MAP):
-//   "launch"   XCTClockMetric around XCUIApplication.launch         -> launch_ms
-//   "relayout" XCTClockMetric from pose change to stable frame       -> fold_relayout_ms
-//   "memory"   XCTMemoryMetric across the transition                 -> memory_delta_mb
-//   "cpu"      XCTCPUMetric across the transition                    -> cpu_pct
+// Metric identifiers perfparse.py looks for (by test name + metric identifier):
+//   testLaunch        XCTApplicationLaunchMetric  -> launch_ms        (app launch itself)
+//                     XCTClockMetric              -> launch_wall_ms   (whole measure block incl. XCUITest setup; reported, not gated)
+//                     XCTMemoryMetric             -> memory_peak_mb / memory_delta_mb
+//   testFoldRelayout  XCTClockMetric              -> fold_relayout_ms
+//                     XCTMemoryMetric, XCTCPUMetric -> memory_delta_mb, cpu_s
 
 import XCTest
 
@@ -26,8 +31,8 @@ final class DuoPerfTests: XCTestCase {
         try XCTSkipIf(isTransition, "launch is measured per pose, not per transition")
         let options = XCTMeasureOptions()
         options.iterationCount = 5
-        measure(metrics: [XCTClockMetric(), XCTMemoryMetric()], options: options) {
-            let app = XCUIApplication()
+        let app = XCUIApplication()
+        measure(metrics: [XCTApplicationLaunchMetric(), XCTClockMetric(), XCTMemoryMetric()], options: options) {
             app.launch()
             _ = app.windows.firstMatch.waitForExistence(timeout: 10)
             app.terminate()
@@ -36,7 +41,8 @@ final class DuoPerfTests: XCTestCase {
 
     /// Fold/unfold re-layout: time from the pose change to the first stable frame,
     /// plus memory and CPU across it. Needs DUO_POSE_URL (local hinge bridge, see
-    /// DuoUITests.swift) because XCUITest cannot move the hinge itself.
+    /// DuoUITests.swift) because XCUITest cannot move the hinge itself; perf.sh
+    /// passes TEST_RUNNER_DUO_POSE_URL through when DUO_POSE_URL is set.
     func testFoldRelayout() throws {
         try XCTSkipUnless(isTransition, "relayout is measured on transitions such as closed>open")
         guard let base = ProcessInfo.processInfo.environment["DUO_POSE_URL"] else {

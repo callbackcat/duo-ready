@@ -1,0 +1,6 @@
+{
+  "flow": "feed",
+  "cell": "closed-landscape",
+  "skipped": true,
+  "reason": "the app refused to rotate to landscape in pose closed (portrait-only there; orientation locks are honoured on the outer display)"
+}

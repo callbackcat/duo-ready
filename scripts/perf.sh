@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # perf.sh - run DuoPerfTests per cell and gate against the baseline.
 #
-# Metrics (references/perf.md): launch_ms per pose (XCTClockMetric around
-# XCUIApplication.launch), fold_relayout_ms (signpost from the pose change to
-# the first stable frame), memory_delta_mb and cpu across a transition.
+# Metrics (references/perf.md): launch_ms per pose (XCTApplicationLaunchMetric),
+# fold_relayout_ms (XCTClockMetric from the pose change to the first stable
+# frame), memory_delta_mb and cpu across a transition; parsed by perfparse.py.
 # Simulator numbers are not device numbers, so the default mode compares to
 # the project's own baseline (.duo/baselines/perf.json); absolute thresholds
 # apply only with `mode: absolute` or --absolute (meant for real hardware).
@@ -11,10 +11,11 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: scripts/perf.sh [--run <n>] [--cells c1,c2] [--absolute] [--write-baseline] [--json]
+Usage: scripts/perf.sh [--run <n>] [--cells c1,c2] [--udid <udid>] [--absolute] [--write-baseline] [--json]
 
   --run <n>          run number (default: latest)
   --cells            comma-separated cells (default: duo.yaml cells + transitions)
+  --udid <udid>      measure on this booted simulator instead of the "duo-ready" one
   --absolute         gate on duo.yaml thresholds instead of the baseline
   --write-baseline   copy this run's perf.json to .duo/baselines/perf.json
   --json             print perf.json on stdout
@@ -26,12 +27,13 @@ or target or no metrics at all.
 EOF
 }
 
-RUN=""; CELLS=""; ABSOLUTE=0; WRITE_BASELINE=0; JSON=0
+RUN=""; CELLS=""; ABSOLUTE=0; WRITE_BASELINE=0; JSON=0; UDID_OPT=""
 while [ $# -gt 0 ]; do
   case "$1" in
     -h|--help) usage; exit 0 ;;
     --run) RUN="$2"; shift ;;
     --cells) CELLS="$2"; shift ;;
+    --udid) UDID_OPT="$2"; shift ;;
     --absolute) ABSOLUTE=1 ;;
     --write-baseline) WRITE_BASELINE=1 ;;
     --json) JSON=1 ;;
@@ -70,9 +72,11 @@ else
 fi
 [ -n "$CELL_LIST" ] || CELL_LIST="$(printf 'closed-portrait\nopen-landscape\nclosed>open\n')"
 
-UDID="$("$DUO_SCRIPTS/sim.sh" ensure --quiet)"
+UDID="$(duo_select_sim "$UDID_OPT")"
 export DUOCTL_UDID="$UDID" HINGE_DEVICE="$UDID"
 DERIVED="$(duo_derived_data)"
+POSE_ENV=()
+[ -n "${DUO_POSE_URL:-}" ] && POSE_ENV=(TEST_RUNNER_DUO_POSE_URL="$DUO_POSE_URL")
 XB_ARGS=()
 while IFS= read -r xb_arg; do [ -n "$xb_arg" ] && XB_ARGS+=("$xb_arg"); done <<EOF
 $(duo_xcodebuild_args)
@@ -92,102 +96,39 @@ printf '%s\n' "$CELL_LIST" | while IFS= read -r cell; do
   st=0; "$DUO_SCRIPTS/sim.sh" rotate "$orient" >/dev/null || st=$?
   if [ "$st" -eq "$DUO_EXIT_UNSUPPORTED" ]; then duo_warn "perf: $cell skipped (the app refused the $orient orientation)"; continue; fi
   [ "$st" -eq 0 ] || exit "$st"
-  result="$PERF_DIR/$cell.xcresult"
+  # Transition names carry ">" which is not a valid file name everywhere; files
+  # use "-to-" and perfparse.py maps them back to the contract name.
+  cell_file="$(printf '%s' "$cell" | sed 's/>/-to-/g')"
+  result="$PERF_DIR/$cell_file.xcresult"
   rm -rf "$result"
   duo_log "perf: $cell"
-  env DUO_CELL="$cell" DUO_SCRIPTS_DIR="$DUO_SCRIPTS" \
+  # xcodebuild forwards only TEST_RUNNER_-prefixed variables to a UI test
+  # runner (they arrive without the prefix); a plain DUO_CELL never reached the
+  # test on field test 2, so launch was measured in transition cells.
+  env TEST_RUNNER_DUO_CELL="$cell" ${POSE_ENV[@]+"${POSE_ENV[@]}"} \
     xcodebuild ${CONTAINER[@]+"${CONTAINER[@]}"} -scheme "$SCHEME" -derivedDataPath "$DERIVED" \
       -destination "platform=iOS Simulator,id=$UDID" -only-testing:DuoPerfTests \
-      -resultBundlePath "$result" ${XB_ARGS[@]+"${XB_ARGS[@]}"} test-without-building >"$PERF_DIR/$cell.log" 2>&1 \
-    || duo_warn "DuoPerfTests reported failures for $cell (log: $PERF_DIR/$cell.log)"
-  if grep -q "no test bundles available to test" "$PERF_DIR/$cell.log"; then
-    duo_die_host "DuoPerfTests target not found in scheme $SCHEME: add templates/DuoPerfTests.swift to a UI test target named DuoPerfTests (SKILL.md stage 6); without it there are no metrics"
+      -resultBundlePath "$result" ${XB_ARGS[@]+"${XB_ARGS[@]}"} test-without-building >"$PERF_DIR/$cell_file.log" 2>&1 \
+    || duo_warn "DuoPerfTests reported failures for $cell (log: $PERF_DIR/$cell_file.log)"
+  if grep "no test bundles available to test" "$PERF_DIR/$cell_file.log" >/dev/null; then
+    duo_die_host "DuoPerfTests target not found in scheme $SCHEME: add templates/DuoPerfTests.swift to a UI test target named DuoPerfTests (templates/add-duo-test-targets.rb does it without Xcode; SKILL.md stage 6); without it there are no metrics"
   fi
-  # Extract metrics. Xcode 27.1 requires --legacy for `get --format json`
-  # (verified 27 Oct 2026); newer builds may drop it, hence the fallback. The
-  # parser below looks for any object carrying "identifier"/"name" +
-  # "measurements" and keeps the median. TODO-VERIFY against a real
-  # DuoPerfTests result bundle (the field test had no target).
-  xcrun xcresulttool get --legacy --format json --path "$result" >"$PERF_DIR/$cell.json" 2>/dev/null \
-    || xcrun xcresulttool get --format json --path "$result" >"$PERF_DIR/$cell.json" 2>/dev/null \
-    || printf '{}' >"$PERF_DIR/$cell.json"
+  # Extract metrics. On Xcode 27.1 `xcresulttool get test-results metrics` is
+  # the form that carries measurements; the legacy root object
+  # (`get --legacy --format json`) has none and produced exit 4 with real
+  # numbers in the log (field test 2). The legacy dump is kept as a fallback
+  # for older toolchains.
+  if ! xcrun xcresulttool get test-results metrics --path "$result" >"$PERF_DIR/$cell_file.metrics.json" 2>/dev/null; then
+    rm -f "$PERF_DIR/$cell_file.metrics.json"
+    xcrun xcresulttool get --legacy --format json --path "$result" >"$PERF_DIR/$cell_file.json" 2>/dev/null \
+      || xcrun xcresulttool get --format json --path "$result" >"$PERF_DIR/$cell_file.json" 2>/dev/null \
+      || printf '{}' >"$PERF_DIR/$cell_file.json"
+  fi
 done
 
 STATUS=0
-"$DUO_PY" - "$RUN" "$PERF_DIR" "$RUN_DIR/perf.json" "$DUO_DIR/baselines/perf.json" "$MODE" "$DUO_CONFIG" "$DUO_SCRIPTS" <<'PY' || STATUS=$?
-import json, os, sys, statistics, datetime
-run, perf_dir, out, baseline_path, mode, cfg_path, scripts = sys.argv[1:]
-sys.path.insert(0, scripts)
-import duolib
-cfg = duolib.load_yaml(cfg_path).get("perf", {}) or {}
-
-NAME_MAP = {
-    "launch": "launch_ms", "clock": "launch_ms", "duration": "launch_ms",
-    "relayout": "fold_relayout_ms", "fold": "fold_relayout_ms",
-    "memory": "memory_delta_mb", "physical": "memory_delta_mb",
-    "cpu": "cpu_pct",
-}
-
-def walk(node, found):
-    if isinstance(node, dict):
-        ident = str(node.get("identifier", node.get("name", node.get("displayName", ""))))
-        meas = node.get("measurements")
-        if meas is not None:
-            vals = []
-            if isinstance(meas, dict):
-                meas = meas.get("_values", [])
-            for m in meas:
-                v = m.get("_value", m) if isinstance(m, dict) else m
-                try: vals.append(float(v))
-                except (TypeError, ValueError): pass
-            if vals:
-                found.append((ident.lower(), statistics.median(vals), str(node.get("unitOfMeasurement", node.get("unit", "")))))
-        for v in node.values(): walk(v, found)
-    elif isinstance(node, list):
-        for v in node: walk(v, found)
-
-baseline = {}
-if os.path.isfile(baseline_path):
-    for m in json.load(open(baseline_path)).get("metrics", []):
-        baseline[(m["flow"], m["cell"], m["metric"])] = m["value"]
-
-metrics = []
-for fn in sorted(os.listdir(perf_dir)):
-    if not fn.endswith(".json"): continue
-    cell = fn[:-5]
-    try: doc = json.load(open(os.path.join(perf_dir, fn)))
-    except Exception: doc = {}
-    found = []
-    walk(doc, found)
-    for ident, value, unit in found:
-        metric = next((v for k, v in NAME_MAP.items() if k in ident), None)
-        if not metric: continue
-        if metric == "launch_ms" and unit.startswith("s"): value *= 1000.0
-        if metric == "memory_delta_mb" and unit.lower().startswith("kb"): value /= 1024.0
-        key = ("*", cell, metric)
-        base = baseline.get(key)
-        status = "pass"
-        thr = cfg.get(metric) or {}
-        if mode == "absolute":
-            if "fail" in thr and value > thr["fail"]: status = "fail"
-            elif "warn" in thr and value > thr["warn"]: status = "warn"
-        else:
-            if base is None: status = "baseline"
-            elif value > base * 1.25: status = "fail"
-            elif value > base * 1.10: status = "warn"
-        metrics.append({"flow": "*", "cell": cell, "metric": metric, "value": round(value, 2), "baseline": base, "status": status, "unit": unit})
-
-doc = {"schema": 1, "run": int(run), "mode": mode, "generated": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "metrics": metrics}
-if not metrics:
-    # No metrics is not a pass: the target is missing, every cell was skipped,
-    # or the result bundles carried no measurements.
-    doc["status"] = "skip"
-    doc["reason"] = "no metrics collected (DuoPerfTests target missing, every cell skipped, or no measurements in the result bundles)"
-json.dump(doc, open(out, "w"), indent=2); open(out, "a").write("\n")
-if not metrics:
-    sys.exit(4)
-sys.exit(2 if any(m["status"] == "fail" for m in metrics) else 0)
-PY
+"$DUO_PY" "$DUO_SCRIPTS/perfparse.py" --run "$RUN" --perf-dir "$PERF_DIR" --out "$RUN_DIR/perf.json" \
+  --baseline "$DUO_DIR/baselines/perf.json" --mode "$MODE" --config "$DUO_CONFIG" --log-dir "$PERF_DIR" || STATUS=$?
 
 if [ "$WRITE_BASELINE" -eq 1 ] && [ "$STATUS" -ne 4 ]; then
   mkdir -p "$DUO_DIR/baselines"
@@ -197,7 +138,7 @@ fi
 [ "$JSON" -eq 1 ] && cat "$RUN_DIR/perf.json"
 case "$STATUS" in
   0) echo "perf: pass ($MODE mode) -> $RUN_DIR/perf.json" ;;
-  4) echo "perf: NO METRICS (DuoPerfTests target missing or nothing measured) -> $RUN_DIR/perf.json" ;;
+  4) echo "perf: NO METRICS -> $RUN_DIR/perf.json (its reason field says whether the target is missing or the parser found nothing)" ;;
   *) echo "perf: FAIL ($MODE mode) -> $RUN_DIR/perf.json" ;;
 esac
 exit "$STATUS"

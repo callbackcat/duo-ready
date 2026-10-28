@@ -228,6 +228,34 @@ def test_expo_scene_lifecycle_needs_a_registered_plugin(tmp_path, rules):
     assert [f for f in scan.scan(root, rules) if f["rule"] == "expo-no-scene-lifecycle"] == []
 
 
+def test_expo_scene_plugin_name_is_not_trusted(tmp_path, rules):
+    """A registered local plugin named withScene*.js that does not add the scene
+    manifest is still a finding (field test 2, note 32); a package name is all
+    there is to go on for node_modules plugins."""
+    root = str(tmp_path)
+    _write(root, "app.json", '{"expo": {"name": "x", "orientation": "default", "plugins": ["./plugins/withSceneLifecycle.js"]}}')
+    _write(root, "plugins/withSceneLifecycle.js", "// placeholder, does nothing yet\nmodule.exports = (c) => c;\n")
+    assert len([f for f in scan.scan(root, rules) if f["rule"] == "expo-no-scene-lifecycle"]) == 1
+    _write(root, "plugins/withSceneLifecycle.js", "// adds UIApplicationSceneManifest\n")
+    assert [f for f in scan.scan(root, rules) if f["rule"] == "expo-no-scene-lifecycle"] == []
+    _write(root, "app.json", '{"expo": {"name": "x", "orientation": "default", "plugins": ["expo-scene-lifecycle"]}}')
+    assert [f for f in scan.scan(root, rules) if f["rule"] == "expo-no-scene-lifecycle"] == []
+
+
+def test_rn_adjusts_font_checks_every_style_in_an_array(tmp_path, rules):
+    root = str(tmp_path)
+    _write(root, "package.json", '{"dependencies": {"react-native": "0.81.0"}}')
+    src = (
+        "import { StyleSheet, Text } from 'react-native';\n"
+        "export function A() { return <Text adjustsFontSizeToFit numberOfLines={1} style={[styles.base, styles.title]}>a</Text>; }\n"
+        "export function B() { return <Text adjustsFontSizeToFit numberOfLines={1} style={[styles.base, styles.plain]}>b</Text>; }\n"
+        "const styles = StyleSheet.create({ base: { color: 'red' }, title: { fontSize: 20, lineHeight: 24 }, plain: { fontSize: 20 } });\n"
+    )
+    _write(root, "src/Hero.tsx", src)
+    found = [f for f in scan.scan(root, rules) if f["rule"] == "rn-adjusts-font-fixed-lineheight"]
+    assert [f["line"] for f in found] == [2]
+
+
 def test_test_files_are_not_scanned(tmp_path, rules):
     root = str(tmp_path)
     _write(root, "src/__tests__/a.test.tsx", "const { width } = Dimensions.get('window');\n")

@@ -6,8 +6,10 @@
 #
 # Step grammar (one step per item, Maestro-compatible verbs):
 #   launch                        launch the app fresh
-#   tap "<label or id>"           tap by accessibility label or identifier
-#   wait "<label or id>"          wait up to 10 s for the element to appear
+#   reset                         clear app state first (reinstall; Maestro clearState)
+#   tap "<label>" | tap id:<id>   tap by accessibility label, or by testID / accessibilityIdentifier
+#   wait "<label>" | wait id:<id> wait up to 10 s for the element (a bare string is matched as text;
+#                                 use id: for testIDs, which Maestro does not match as text)
 #   scroll <n>                    n swipes up in the main scroll view
 #   deeplink <url>                open a URL scheme / universal link
 #   pose <closed|open|book>       change the pose mid-flow (in addition to duo.yaml transitions)
@@ -41,3 +43,7 @@ flows:
 
   - name: fold-mid-edit
     steps: [launch, tap "Compose", pose book, wait "Compose"]   # explicit mid-flow fold
+
+  - name: home-signed-in
+    steps: [reset, deeplink myapp://home, wait id:home-root]    # ids survive copy changes; reset first so
+                                                                # a previous cell's state does not leak

@@ -101,7 +101,7 @@ run_xcodebuild() {
   # ${arr[@]+"${arr[@]}"} keeps bash 3.2 + set -u happy when the array is empty.
   if ! xcodebuild ${container[@]+"${container[@]}"} -scheme "$SCHEME" -configuration "$CONFIGURATION" \
       -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
-      -derivedDataPath "$DERIVED" ${XB_ARGS[@]+"${XB_ARGS[@]}"} build >"$LOG" 2>&1; then
+      -derivedDataPath "$DERIVED" ${XB_ARGS[@]+"${XB_ARGS[@]}"} build >>"$LOG" 2>&1; then
     tail -n 40 "$LOG" >&2
     build_hints "$LOG"
     duo_die "$DUO_EXIT_BUILD" "xcodebuild failed (full log: $LOG)"
@@ -122,7 +122,9 @@ case "$STACK" in
       (cd "$DUO_ROOT" && npx expo prebuild --platform ios --no-install $prebuild_flags >>"$LOG" 2>&1) \
         || duo_die "$DUO_EXIT_BUILD" "expo prebuild failed (log: $LOG)"
       if command -v pod >/dev/null 2>&1; then
-        (cd "$DUO_ROOT/ios" && pod install >>"$LOG" 2>&1) || duo_die "$DUO_EXIT_BUILD" "pod install failed (log: $LOG)"
+        # CocoaPods needs a UTF-8 locale (it warns, and crashes on non-ASCII
+        # paths); agent shells often have none set (field test 2).
+        (cd "$DUO_ROOT/ios" && LANG="${LANG:-en_US.UTF-8}" LC_ALL="${LC_ALL:-en_US.UTF-8}" pod install >>"$LOG" 2>&1) || duo_die "$DUO_EXIT_BUILD" "pod install failed (log: $LOG)"
       fi
     else
       duo_log "using the existing ios/ (pass --prebuild after changing app.json or a config plugin; the scan reports Duo fixes against app.json, not ios/)"

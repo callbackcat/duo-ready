@@ -44,7 +44,7 @@ The device boots closed, on the outer display. Boot with `simctl`, not through D
 
 | | duoctl (skarol) | hinge (artemnovichkov) |
 |---|---|---|
-| Install | `brew install skarol/tap/duoctl`; agent skill `npx skills add skarol/duoctl` | `brew install artemnovichkov/tap/hinge`; `npx skills add artemnovichkov/hinge`; Claude plugin `/plugin marketplace add artemnovichkov/hinge` |
+| Install | `brew tap skarol/tap && brew trust skarol/tap && brew install skarol/tap/duoctl`; agent skill `npx skills add skarol/duoctl` | `brew tap artemnovichkov/tap && brew trust artemnovichkov/tap && brew install artemnovichkov/tap/hinge`; `npx skills add artemnovichkov/hinge`; Claude plugin `/plugin marketplace add artemnovichkov/hinge` |
 | License | MIT | MIT |
 | Mechanism | helper spawned with `xcrun simctl spawn` sends vendor HID events (usage page 0xFF61, usage 0x5B); touches cloned onto the active display's touchscreen | same HID event through the simulator `IOHIDEventSystem`; angle read back from private `CMAngleManager` |
 | Readback | `duoctl state` (JSON, verified 27 Oct 2026 with duoctl 0.2.0: `udid`, `hingeAngle` (null on the simulator), `activeScreen` `cover` or `inner`, `displayId` 1 or 3, `displayUUID`, `rotation` `rot0` or `rot90`, `orientation`, `sizePoints [w, h]`) | `hinge get` (bare angle), `hinge posture --json` (`angle`, `orientation`, `activeDisplay` `LCD` or `LCD-1`, `displays[]` with `name`, `id`, `primary`, `active`, `backlight`, `rotation`, `size` in px, `scale`); samples in `tests/fixtures/` |
@@ -123,7 +123,13 @@ Do not use `xcrun simctl io screenConfig` to switch or power displays: it can tu
 
 Each display has its own touchscreen. AXe, XcodeBuildMCP, RocketSim and Maestro inject touches into the outer (cover) touchscreen only, so taps aimed at the open inner display land on the cover. Use `duoctl tap` (coordinates in interface points of the lit display, converted for the current rotation) or XCUITest running inside the app. The reverse also holds: `duoctl tap` (0.2.0) cannot touch the outer display, so closed-pose steps for React Native apps go through Maestro, and a flow that must reach a screen on either display should expose a deep link. Deep links can show an "Open in <App>?" prompt the first time; `run-matrix.sh` waits 1.5 s after `deeplink` and notes the prompt in the log.
 
-`duoctl elements` needs AXe (`brew tap cameroncooke/axe && brew install axe`). Without it the command fails, `run-matrix.sh` writes a tree with `source: unavailable`, and `assert.py` skips the layout assertions instead of passing them.
+`duoctl elements` needs AXe (`brew tap cameroncooke/axe && brew trust cameroncooke/axe && brew install axe`). Without it the command fails, `run-matrix.sh` writes a tree with `source: unavailable`, and `assert.py` skips the layout assertions instead of passing them. The command prints JSON by default and has no `--json` flag (duoctl 0.2.0; passing one fails and produced empty trees for a whole field test). Output is a flat list of `{"type","label","identifier","frame":{"x","y","width","height"}}` in points of the lit display; `scripts/tree.py from-axe` turns it into the pipeline's tree format. Verified 28 Oct 2026 (AXe 1.8.0) and worth knowing when reading a tree:
+
+- types are capitalised (`Application`, `Group`, `Button`, `TextField`, `StaticText`, `Slider`, `Heading`, `GenericElement`);
+- the root `Application` frame is reported unrotated in landscape (669 x 951 inside a 951 x 669 window), and a full-window `Group` labelled "Toolbar" sits under it;
+- every `StaticText` appears twice; `tree.py` drops the duplicates;
+- there is no parent or scrollable information (`ancestry: false` in the tree file);
+- `duoctl state` can lag behind the hinge after `hinge close` (it reported the inner display in landscape while `hinge posture` and the capture showed the outer display in portrait); `sim.sh orientation` therefore reads the hinge first.
 
 Element frames for `scripts/assert.py` come from:
 - XCUITest: `app.descendants(matching: .any)` with `frame`, `identifier`, `label`, `elementType`, `isHittable`; the template dumps them to `<flow>-<cell>.tree.json`.
@@ -158,7 +164,7 @@ Device Hub (Xcode 27.1) has buttons Closed, Book, Open and Rotate Right; holding
 ```bash
 sudo xcode-select -s /Applications/Xcode_27.1.app
 xcodebuild -downloadPlatform iOS            # retry; downloads can fail on hosted runners
-brew install skarol/tap/duoctl artemnovichkov/tap/hinge
+brew tap skarol/tap artemnovichkov/tap && brew trust skarol/tap artemnovichkov/tap && brew install skarol/tap/duoctl artemnovichkov/tap/hinge
 UDID=$(xcrun simctl create ci-duo "iPhone Duo" com.apple.CoreSimulator.SimRuntime.iOS-27-1)
 xcrun simctl boot "$UDID" && xcrun simctl bootstatus "$UDID" -b
 export DUOCTL_UDID="$UDID" HINGE_DEVICE="$UDID"
@@ -187,8 +193,17 @@ Verified on the first field test (27 Oct 2026, macOS 27.0.1, Xcode 27.1 build 27
 - Xcode 27.1 refuses deployment targets below iOS 15; CocoaPods resource bundles often still declare 11 or 12. `build.sh` prints the fix.
 - `brew install` of duoctl and hinge on macOS 27 needs the Command Line Tools for Xcode 27 (13 minute download); preflight's hint says so.
 - DerivedData inside an iCloud-synced folder makes codesign fail on Finder attributes ("resource fork, Finder information, or similar detritus") and multiplied the build time by ten. `build.sh` defaults DerivedData to `~/Library/Developer/Xcode/DerivedData/duo-ready-<scheme>`.
-- `xcrun xcresulttool get --format json` requires `--legacy` on Xcode 27.1; `get test-results summary` is the non-deprecated form. `perf.sh` tries `--legacy` first.
-- `cmd | awk '... exit'` and `cmd | head -n 1` under `set -o pipefail` die with SIGPIPE (exit 141) about one run in eight; the scripts capture output first and parse afterwards, and a test guards against the pattern.
+- `xcrun xcresulttool get --format json` requires `--legacy` on Xcode 27.1 and the legacy root object carries no measurements; `xcrun xcresulttool get test-results metrics --path <bundle>` returns `[{testIdentifier, testRuns:[{metrics:[{identifier, measurements, unitOfMeasurement}]}]}]` with the numbers (verified 28 Oct 2026, fixture in `tests/fixtures/xcresult-test-results-metrics.json`). `perf.sh` uses that form and `scripts/perfparse.py` reads it.
+- `cmd | awk '... exit'`, `cmd | head -n 1` and `cmd | grep -q` under `set -o pipefail` die with SIGPIPE (exit 141); `launchctl list | grep -q` reported a running app as dead 18 times out of 20 on the second field test. The scripts capture output first and parse afterwards, and tests guard against the patterns.
+
+Verified on the second field test (28 Oct 2026, macOS 27.0.1, Xcode 27.1 build 27A9275, Homebrew 7, Claude Code 2.1.212):
+
+- Homebrew 7 refuses formulae from untrusted third-party taps: `brew trust <tap>` (or `brew trust --formula <tap>/<formula>`) once per tap before `brew install`. Maestro comes from `mobile-dev-inc/tap` (the bare `brew install maestro` is an unrelated cask; the curl installer is refused by agent sandboxes). Homebrew fastlane updates with `brew upgrade fastlane`, not `gem update`.
+- `xcodebuild test-without-building` forwards environment to a UI test runner only for variables named `TEST_RUNNER_<NAME>`, which arrive in the runner as `<NAME>`. A plain `DUO_CELL` never reaches the test.
+- The scheme's Test action must build Release for a React Native or Expo host app (Debug loads JavaScript from Metro, which nothing starts). `templates/add-duo-test-targets.rb` sets it.
+- `log show --predicate 'eventMessage CONTAINS "..."'` matches its own invocation, because the `log` process logs its command line; add `AND process != "log"`.
+- After an unfold the inner display comes up in portrait (2007 x 2853 captures) even when the cell is named `open-landscape`; the runner records what the hinge reports and `assert.py` sizes the window from the capture.
+- The macOS keychain prompt that appears during `brew` or `git` operations on private repositories is `git-credential-osxkeychain` asking for the HTTPS token; it goes to the keychain, not to the agent. A public skill repository avoids it for installs and updates.
 
 ## 14. Sources
 

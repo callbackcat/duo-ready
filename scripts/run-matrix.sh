@@ -32,21 +32,27 @@ set -euo pipefail
 usage() {
   cat <<'EOF'
 Usage: scripts/run-matrix.sh [--run <n>] [--flows a,b] [--cells c1,c2] [--only-failed <failures.json>]
-                             [--skip-transitions] [--no-assert] [--json]
+                             [--udid <udid>] [--driver duoctl] [--skip-transitions] [--no-assert] [--json]
 
   --run <n>              run number (default: latest build's run)
   --flows / --cells      comma-separated subsets of duo.yaml
   --only-failed <file>   rerun only the (flow, cell) pairs listed in failures.json
+  --udid <udid>          drive this booted simulator instead of the "duo-ready" one
+                         (for flows behind a sign-in; DUOCTL_UDID does the same)
+  --driver duoctl        never use Maestro, even for closed cells (deeplink/wait/sleep
+                         only on the outer display; nothing extra is installed)
   --skip-transitions     do not execute mid-flow pose transitions
   --no-assert            capture only; do not call scripts/assert.py
   --json                 print ui.json on stdout when done
 
-Exit 0 pass, 1 assertion failures, 3 no build for the run (or the app dies at launch),
-4 missing tool, 5 pose control failed. Cells the app refuses (portrait-only) are skipped, not fatal.
+Exit 0 pass, 1 assertion failures or a flow step that failed, 3 no build for the run (or the
+app dies at launch), 4 missing tool, 5 pose control failed. Cells the app refuses (portrait-only)
+are skipped, not fatal; a flow whose step fails is recorded as <flow>-<cell>.error.json and the
+matrix carries on with the next cell.
 EOF
 }
 
-RUN=""; FLOWS=""; CELLS=""; ONLY_FAILED=""; SKIP_TRANSITIONS=0; NO_ASSERT=0; JSON=0
+RUN=""; FLOWS=""; CELLS=""; ONLY_FAILED=""; SKIP_TRANSITIONS=0; NO_ASSERT=0; JSON=0; UDID_OPT=""; DRIVER=""
 while [ $# -gt 0 ]; do
   case "$1" in
     -h|--help) usage; exit 0 ;;
@@ -54,6 +60,8 @@ while [ $# -gt 0 ]; do
     --flows) FLOWS="$2"; shift ;;
     --cells) CELLS="$2"; shift ;;
     --only-failed) ONLY_FAILED="$2"; shift ;;
+    --udid) UDID_OPT="$2"; shift ;;
+    --driver) DRIVER="$2"; shift ;;
     --skip-transitions) SKIP_TRANSITIONS=1 ;;
     --no-assert) NO_ASSERT=1 ;;
     --json) JSON=1 ;;
@@ -129,10 +137,11 @@ sys.exit(1)' "$ONLY_FAILED" "$1" "$2"
 }
 
 # --- simulator -------------------------------------------------------------
-UDID="$("$DUO_SCRIPTS/sim.sh" ensure --quiet)"
+[ -n "${DUOCTL_UDID:-}" ] && DUOCTL_UDID_GIVEN=1
+UDID="$(duo_select_sim "$UDID_OPT")"
 export DUOCTL_UDID="$UDID" HINGE_DEVICE="$UDID"
 "$DUO_SCRIPTS/sim.sh" install "$APP_PATH" >/dev/null
-duo_log "run $RUN: app $BUNDLE_ID (sdk $SDK_STAMP) installed on $UDID"
+duo_log "run $RUN: app $BUNDLE_ID (sdk $SDK_STAMP) installed on $UDID$([ -n "$UDID_OPT${DUOCTL_UDID_GIVEN:-}" ] && echo ' (chosen with --udid)')"
 DERIVED="$(duo_derived_data)"
 XB_ARGS=()
 while IFS= read -r xb_arg; do [ -n "$xb_arg" ] && XB_ARGS+=("$xb_arg"); done <<EOF
@@ -149,6 +158,40 @@ out, flow, cell, reason = sys.argv[1:]
 json.dump({"flow": flow, "cell": cell, "skipped": True, "reason": reason}, open(out, "w"), indent=2)
 PY
   duo_warn "skipped $2 / $3: $4"
+}
+
+# A flow step that fails (timed-out wait, Maestro assertion, tap not found) is a
+# result for that cell, not the end of the matrix: the cell gets
+# <flow>-<cell>.error.json, assert.py reports it as a failed "flow" assertion,
+# and the other cells still produce evidence. Field test 2 lost 16 good cells
+# because one removed flow ended the run before assert.py (note 23).
+error_cell() {  # error_cell <capture-base> <flow> <cell-label> <reason>
+  rm -f "$1.tree.json" "$1.png" "$1.before.tree.json"
+  "$DUO_PY" - "$1.error.json" "$2" "$3" "$4" <<'PY'
+import json, sys
+out, flow, cell, reason = sys.argv[1:]
+json.dump({"flow": flow, "cell": cell, "error": True, "reason": reason}, open(out, "w"), indent=2)
+PY
+  duo_warn "flow $2 failed in $3: $4 (recorded, continuing with the next cell)"
+}
+
+# guarded <run_cell|run_transition> <flow> <cell-label> <capture-base> <args...>
+# Runs the cell in a subshell so a duo_die inside a step (exit 1) becomes an
+# error cell; build, tool and pose failures (3, 4, 5) still stop the matrix.
+guarded() {
+  local fn="$1" flow="$2" label="$3" base="$4"
+  shift 4
+  local st=0 errf="$RUN_DIR/last-cell.stderr" reason
+  ( "$fn" "$@" ) 2>"$errf" || st=$?
+  cat "$errf" >&2
+  case "$st" in
+    0) ;;
+    "$DUO_EXIT_UI")
+      reason="$(grep 'duo: error:' "$errf" | tail -n 1 | sed 's/^duo: error: //')"
+      error_cell "$base" "$flow" "$label" "${reason:-step failed (see $errf)}" ;;
+    *) exit "$st" ;;
+  esac
+  return 0
 }
 
 set_pose() {  # set_pose <cell>
@@ -172,8 +215,8 @@ set_orientation() {  # set_orientation <cell>
 }
 
 # --- step interpreter for non-native stacks (duoctl based) -----------------
-# Grammar (references/pipeline-contracts.md): launch | tap "x" | wait "x" |
-# scroll n | deeplink url | pose p | rotate o | sleep s
+# Grammar (references/pipeline-contracts.md): launch | reset | tap "x" | wait "x" |
+# wait id:x | scroll n | deeplink url | pose p | rotate o | sleep s
 run_steps_duoctl() {  # run_steps_duoctl <steps separated by US>
   local steps="$1" step verb arg
   # printf '%s\n': without the trailing newline `read` drops the last step.
@@ -188,10 +231,18 @@ run_steps_duoctl() {  # run_steps_duoctl <steps separated by US>
         # on the cover); closed cells need Maestro or a deep link for taps.
         duoctl tap --label "$arg" >/dev/null || duo_die "$DUO_EXIT_UI" "step failed: $step (duoctl cannot tap the outer display; use Maestro for closed cells, or reach the screen by deep link)" ;;
       wait)
-        local i=0
-        until duoctl elements 2>/dev/null | grep -Fq "$arg"; do
-          i=$(( i + 1 )); [ "$i" -ge 20 ] && duo_die "$DUO_EXIT_UI" "step timed out: $step"; sleep 0.5
+        # `wait "label"` or `wait id:some-test-id`; the AXe tree lists both.
+        local i=0 needle="${arg#id:}" listing=""
+        while :; do
+          listing="$(duoctl elements 2>/dev/null || true)"
+          if printf '%s' "$listing" | grep -F "$needle" >/dev/null; then break; fi
+          i=$(( i + 1 )); [ "$i" -ge 20 ] && duo_die "$DUO_EXIT_UI" "step timed out: $step (not in the element tree after 10 s)"; sleep 0.5
         done ;;
+      reset)
+        # Clear app state: there is no simctl "clear data", so reinstall.
+        xcrun simctl terminate "$UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
+        xcrun simctl uninstall "$UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
+        "$DUO_SCRIPTS/sim.sh" install "$APP_PATH" >/dev/null ;;
       scroll)
         # duoctl state (0.2.0) reports sizePoints: [w, h] of the active screen.
         local n="${arg:-1}" k=0 state w h
@@ -228,8 +279,13 @@ for s in steps:
     verb, _, arg = s.partition(" ")
     arg = arg.strip().strip('"')
     if verb == "launch": lines.append("- launchApp")
-    elif verb == "tap": lines.append(f'- tapOn: "{arg}"')
-    elif verb == "wait": lines.append(f'- extendedWaitUntil:\n    visible: "{arg}"\n    timeout: 10000')
+    elif verb == "reset": lines.append("- clearState")
+    elif verb == "tap":
+        # a bare string is a text/label regex to Maestro; `id:` selects a testID
+        lines.append(f'- tapOn:\n    id: "{arg[3:]}"' if arg.startswith("id:") else f'- tapOn: "{arg}"')
+    elif verb == "wait":
+        sel = f'visible:\n      id: "{arg[3:]}"' if arg.startswith("id:") else f'visible: "{arg}"'
+        lines.append(f'- extendedWaitUntil:\n    {sel}\n    timeout: 10000')
     elif verb == "scroll": lines += ["- scroll"] * int(arg or 1)
     elif verb == "deeplink": lines.append(f'- openLink: "{arg}"')
     elif verb == "sleep": lines.append(f"- waitForAnimationToEnd:\n    timeout: {int(float(arg or 1) * 1000)}")
@@ -242,7 +298,7 @@ PY
 run_steps() {  # run_steps <flow> <cell> <steps>: Maestro for closed cells when installed, else duoctl
   case "$2" in
     closed-*)
-      if command -v maestro >/dev/null 2>&1; then
+      if [ "$DRIVER" != "duoctl" ] && command -v maestro >/dev/null 2>&1; then
         run_steps_maestro "$1" "$3"
       else
         [ -n "${MAESTRO_WARNED:-}" ] || { duo_warn "maestro not installed: closed cells use the duoctl interpreter (launch, deeplink, sleep, pose, rotate; no taps on the outer display)"; MAESTRO_WARNED=1; }
@@ -253,28 +309,21 @@ run_steps() {  # run_steps <flow> <cell> <steps>: Maestro for closed cells when 
 }
 
 dump_tree_duoctl() {  # dump_tree_duoctl <out.tree.json>
-  if duoctl elements --json >"$1.raw" 2>/dev/null; then
-    "$DUO_PY" - "$1.raw" "$1" <<'PY'
-import json, sys
-raw = json.load(open(sys.argv[1]))
-items = raw if isinstance(raw, list) else raw.get("elements", [])
-out = []
-for e in items:
-    fr = e.get("frame") or {}
-    frame = fr if isinstance(fr, list) else [fr.get("x", 0), fr.get("y", 0), fr.get("width", 0), fr.get("height", 0)]
-    out.append({
-        "id": e.get("identifier") or e.get("id") or e.get("label") or "",
-        "type": e.get("type", "other"), "label": e.get("label", ""),
-        "frame": frame, "interactive": e.get("type", "") in ("button", "link", "textField", "switch", "tab"),
-        "text": e.get("value", e.get("label", "")), "truncated": False,
-    })
-json.dump({"elements": out, "source": "duoctl elements"}, open(sys.argv[2], "w"), indent=2)
-PY
-    rm -f "$1.raw"
+  # `duoctl elements` prints JSON by default and has no --json flag (duoctl
+  # 0.2.0; the flag made every tree "unavailable" on field test 2). The raw
+  # list is normalised by scripts/tree.py (types, duplicates, interactive).
+  if duoctl elements >"$1.raw" 2>"$1.err" && "$DUO_PY" "$DUO_SCRIPTS/tree.py" from-axe "$1.raw" "$1" --udid "$UDID" --driver run-matrix 2>>"$1.err"; then
+    rm -f "$1.raw" "$1.err"
   else
-    rm -f "$1.raw"
-    printf '{"elements":[],"source":"unavailable","note":"duoctl elements needs AXe installed (brew tap cameroncooke/axe && brew install axe)"}\n' >"$1"
-    [ -n "${AXE_WARNED:-}" ] || { duo_warn "duoctl elements failed (AXe not installed?): element trees are empty and assert.py reports tree-based assertions as skipped, not passed"; AXE_WARNED=1; }
+    local why
+    why="$(sed -n 1p "$1.err" 2>/dev/null || true)"
+    rm -f "$1.raw" "$1.err"
+    "$DUO_PY" - "$1" "${why:-no output}" <<'PY'
+import json, sys
+json.dump({"elements": [], "source": "unavailable",
+           "note": "duoctl elements failed: " + sys.argv[2] + " (AXe missing? brew tap cameroncooke/axe && brew trust cameroncooke/axe && brew install axe)"}, open(sys.argv[1], "w"), indent=2)
+PY
+    [ -n "${AXE_WARNED:-}" ] || { duo_warn "duoctl elements failed (${why:-no output}): element trees are unavailable and assert.py reports tree-based assertions as skipped, not passed (AXe missing? brew tap cameroncooke/axe && brew trust cameroncooke/axe && brew install axe)"; AXE_WARNED=1; }
   fi
 }
 
@@ -285,8 +334,13 @@ run_native_cell() {  # run_native_cell <flow> <cell> <steps> <capture-base>
   if [ -n "$ws" ]; then container=(-workspace "$ws"); elif [ -n "$proj" ]; then container=(-project "$proj"); fi
   rm -rf "$result"
   # DuoUITests is the template target; the user adds templates/DuoUITests.swift
-  # to a UI test target of that name (SKILL.md stage 5).
-  if ! env DUO_FLOW="$1" DUO_CELL="$2" DUO_STEPS="$3" DUO_TREE_OUT="$4.tree.json" \
+  # to a UI test target of that name (SKILL.md stage 5). xcodebuild forwards
+  # only TEST_RUNNER_-prefixed variables to a UI test runner, where they arrive
+  # without the prefix (field test 2: a plain DUO_CELL never reached the test).
+  local pose_env=()
+  [ -n "${DUO_POSE_URL:-}" ] && pose_env=(TEST_RUNNER_DUO_POSE_URL="$DUO_POSE_URL")
+  if ! env TEST_RUNNER_DUO_FLOW="$1" TEST_RUNNER_DUO_CELL="$2" TEST_RUNNER_DUO_STEPS="$3" TEST_RUNNER_DUO_TREE_OUT="$4.tree.json" \
+      ${pose_env[@]+"${pose_env[@]}"} \
       xcodebuild ${container[@]+"${container[@]}"} -scheme "$scheme" -derivedDataPath "$DERIVED" \
       -destination "platform=iOS Simulator,id=$UDID" -only-testing:DuoUITests \
       -resultBundlePath "$result" ${XB_ARGS[@]+"${XB_ARGS[@]}"} test-without-building >"$RUN_DIR/xcodebuild-$1-$2.log" 2>&1; then
@@ -363,12 +417,18 @@ run_transition() {  # run_transition <flow> <steps> <from>to<to>
   esac
   "$DUO_SCRIPTS/sim.sh" pose "$to" >/dev/null
   sleep 1
+  # The inner display comes up portrait after an unfold (2007 x 2853 captures on
+  # field test 2), not in the landscape the cell name suggests; record what the
+  # hinge reports and let assert.py size the window from the capture.
+  local actual
+  actual="$("$DUO_SCRIPTS/sim.sh" orientation 2>/dev/null || true)"
+  [ -n "$actual" ] && [ "$to" != "closed" ] && to_cell="$to-$actual"
   case "$STACK" in
     uikit|swiftui|mixed) : ;;  # tree after transition comes from the next cell run
     *) dump_tree_duoctl "$base.tree.json" ;;
   esac
   "$DUO_SCRIPTS/capture.sh" "$base.png" --cell "$to_cell" >/dev/null
-  duo_log "captured transition $1 / $3"
+  duo_log "captured transition $1 / $3 (after: $to_cell)"
 }
 
 # --- main loop ---------------------------------------------------------------
@@ -377,13 +437,13 @@ printf '%s\n' "$FLOW_LINES" | while IFS="$(printf '\t')" read -r flow steps; do
   printf '%s\n' "$CELL_LIST" | while IFS= read -r cell; do
     [ -n "$cell" ] || continue
     pair_wanted "$flow" "$cell" || continue
-    run_cell "$flow" "$cell" "$steps"
+    guarded run_cell "$flow" "$cell" "$CAPTURES/$flow-$cell" "$flow" "$cell" "$steps"
   done
   if [ -n "$TRANSITION_LIST" ]; then
     printf '%s\n' "$TRANSITION_LIST" | while IFS= read -r tr; do
       [ -n "$tr" ] || continue
       pair_wanted "$flow" "$tr" || continue
-      run_transition "$flow" "$steps" "$tr"
+      guarded run_transition "$flow" "$tr" "$CAPTURES/$flow-${tr%%>*}-to-${tr#*>}" "$flow" "$steps" "$tr"
     done
   fi
 done

@@ -1,0 +1,131 @@
+{
+  "elements": [
+    {
+      "id": "Demo",
+      "type": "Application",
+      "label": "Demo",
+      "frame": [
+        0,
+        0,
+        669,
+        951
+      ],
+      "interactive": false,
+      "text": "Demo",
+      "truncated": false
+    },
+    {
+      "id": "Hi, I’m Demo.",
+      "type": "StaticText",
+      "label": "Hi, I’m Demo.",
+      "frame": [
+        223.3333282470703,
+        601.6666564941406,
+        222.66668701171875,
+        58
+      ],
+      "interactive": false,
+      "text": "Hi, I’m Demo.",
+      "truncated": false
+    },
+    {
+      "id": "Hi, I’m Demo.",
+      "type": "StaticText",
+      "label": "Hi, I’m Demo.",
+      "frame": [
+        223.3333282470703,
+        601.6666564941406,
+        222.66668701171875,
+        58
+      ],
+      "interactive": false,
+      "text": "Hi, I’m Demo.",
+      "truncated": false
+    },
+    {
+      "id": "I’ll help you get\nstarted.",
+      "type": "StaticText",
+      "label": "I’ll help you get\nstarted.",
+      "frame": [
+        223.3333282470703,
+        667.6666564941406,
+        222.66668701171875,
+        46
+      ],
+      "interactive": false,
+      "text": "I’ll help you get\nstarted.",
+      "truncated": false
+    },
+    {
+      "id": "I’ll help you get\nstarted.",
+      "type": "StaticText",
+      "label": "I’ll help you get\nstarted.",
+      "frame": [
+        223.3333282470703,
+        667.6666564941406,
+        222.66668701171875,
+        46
+      ],
+      "interactive": false,
+      "text": "I’ll help you get\nstarted.",
+      "truncated": false
+    },
+    {
+      "id": "welcome-begin",
+      "type": "Button",
+      "label": "Let’s begin, 󰅂",
+      "frame": [
+        143.66666412353516,
+        811,
+        382,
+        56
+      ],
+      "interactive": false,
+      "text": "Let’s begin, 󰅂",
+      "truncated": false
+    },
+    {
+      "id": "welcome-sign-in",
+      "type": "Button",
+      "label": "I already have an account",
+      "frame": [
+        143.66666412353516,
+        869,
+        382,
+        44
+      ],
+      "interactive": false,
+      "text": "I already have an account",
+      "truncated": false
+    },
+    {
+      "id": "Toolbar",
+      "type": "Group",
+      "label": "Toolbar",
+      "frame": [
+        0,
+        0,
+        669,
+        951
+      ],
+      "interactive": false,
+      "text": "Toolbar",
+      "truncated": false
+    },
+    {
+      "id": "Toolbar",
+      "type": "Group",
+      "label": "Toolbar",
+      "frame": [
+        0,
+        0,
+        669,
+        951
+      ],
+      "interactive": false,
+      "text": "Toolbar",
+      "truncated": false
+    }
+  ],
+  "source": "duoctl elements"
+}

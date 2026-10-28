@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import argparse
 import base64
+import shutil
+import subprocess
 import datetime as _dt
 import html
 import json
@@ -58,6 +60,69 @@ def _data_uri(path: str) -> str | None:
         return f"data:{mime};base64," + base64.b64encode(f.read()).decode("ascii")
 
 
+# Full-size captures are 2007 x 2853 px; embedding every one of them twice made
+# a 56 MB report on field test 2 (note 26). The report embeds thumbnails and
+# links the full PNG on disk instead.
+THUMB_MATRIX = 240   # longest edge, px, matrix cells
+THUMB_FAILURE = 720  # longest edge, px, failure overlays
+
+
+def _thumb_path(rdir: str, shot: str, edge: int) -> str:
+    stem = os.path.splitext(os.path.basename(shot))[0]
+    return os.path.join(rdir, "thumbs", f"{stem}.{edge}.png")
+
+
+def _downscale_py(src: str, dst: str, edge: int) -> bool:
+    """Nearest-neighbour downscale with the standard library (slow on big
+    captures but needs nothing installed); sips is preferred on macOS."""
+    try:
+        w, h, ch, rows = pngio.read(src)
+    except Exception:  # noqa: BLE001
+        return False
+    scale = max(w, h) / float(edge)
+    if scale <= 1:
+        shutil.copyfile(src, dst)
+        return True
+    nw, nh = max(1, int(w / scale)), max(1, int(h / scale))
+    xs = [min(w - 1, int(x * scale)) * ch for x in range(nw)]
+    out = []
+    for y in range(nh):
+        row = rows[min(h - 1, int(y * scale))]
+        line = bytearray()
+        for x0 in xs:
+            line += row[x0:x0 + ch]
+        out.append(line)
+    pngio.write(dst, nw, nh, ch, out)
+    return True
+
+
+def thumbnail(rdir: str, shot: str, edge: int) -> str | None:
+    """Path of a cached thumbnail of `shot` (longest edge `edge` px), made with
+    sips on macOS and a pure-python fallback elsewhere; None when it cannot be made."""
+    if not shot or not os.path.exists(shot):
+        return None
+    dst = _thumb_path(rdir, shot, edge)
+    if os.path.exists(dst) and os.path.getmtime(dst) >= os.path.getmtime(shot):
+        return dst
+    os.makedirs(os.path.dirname(dst), exist_ok=True)
+    size = _img_size(shot)
+    if size and max(size) <= edge:
+        shutil.copyfile(shot, dst)
+        return dst
+    if shutil.which("sips"):
+        r = subprocess.run(["sips", "-Z", str(edge), shot, "--out", dst], capture_output=True, text=True)
+        if r.returncode == 0 and os.path.exists(dst):
+            return dst
+    return dst if _downscale_py(shot, dst, edge) else None
+
+
+def _rel(root: str, path: str) -> str:
+    try:
+        return os.path.relpath(path, root).replace(os.sep, "/")
+    except ValueError:
+        return path
+
+
 def _img_size(path: str):
     try:
         inf = pngio.info(path)
@@ -79,8 +144,11 @@ def badge(status: str) -> str:
     return f'<span class="badge {html.escape(status)}">{html.escape(status)}</span>'
 
 
-def overlay_svg(shot_path: str, elements, window) -> str:
-    uri = _data_uri(shot_path)
+def overlay_svg(shot_path: str, elements, window, thumb_path: str | None = None) -> str:
+    """SVG of the capture with element frames drawn over it. The image is the
+    thumbnail when one is given (the viewBox stays in full-capture pixels so the
+    frames line up); the full PNG is linked by the caller."""
+    uri = _data_uri(thumb_path or shot_path)
     size = _img_size(shot_path) if shot_path else None
     if not uri or not size:
         return '<div class="muted">no screenshot</div>'
@@ -130,14 +198,27 @@ def build_report(root: str, run: int) -> tuple[str, dict]:
     if build is None:
         skipped.append("build: no build.json, the app was not built by this run")
     if ui is None:
-        skipped.append("UI matrix: no ui.json, no pose matrix was executed")
+        cap_dir = os.path.join(rdir, "captures")
+        if os.path.isdir(cap_dir) and any(n.endswith(".png") for n in os.listdir(cap_dir)):
+            skipped.append("UI matrix: no ui.json, but captures exist: assert.py did not run (the matrix stopped early); "
+                           f"run `scripts/assert.py --run {run}` to evaluate what was captured")
+        else:
+            skipped.append("UI matrix: no ui.json, no pose matrix was executed")
     if perf is None:
         skipped.append("performance: no perf.json, no metrics were collected")
     elif perf_skip:
-        skipped.append("performance: perf.json has no metrics (DuoPerfTests target missing or nothing measured; perf.sh exit 4)")
+        skipped.append("performance: perf.json has no metrics (" + str(perf.get("reason") or "DuoPerfTests target missing or nothing measured; perf.sh exit 4") + ")")
     if ui_unverified:
         skipped.append("UI matrix: no cell had an element tree (AXe not installed, or no DuoUITests attachment); "
                        "offscreen, clipped, tap-target, camera and fold assertions were skipped, not passed")
+    errored = [c for c in (ui or {}).get("cells", []) if c.get("errored")]
+    if errored:
+        skipped.append(f"UI matrix: {len(errored)} cell(s) stopped on a flow step and have no capture: "
+                       + ", ".join(f"{c['flow']}/{c['cell']}" for c in errored[:6]) + (" ..." if len(errored) > 6 else ""))
+    axe_cells = [c for c in (ui or {}).get("cells", []) if c.get("ancestry") is False]
+    if axe_cells:
+        skipped.append("element trees came from duoctl elements (AXe): flat, no parent or scroll information, so "
+                       "vertical overflow is reported as warn, not fail; the native DuoUITests tree is needed to fail it")
     if scan is None:
         skipped.append("scan: no .duo/scan.json")
     for note in (build or {}).get("skipped", []) or []:
@@ -198,10 +279,15 @@ def build_report(root: str, run: int) -> tuple[str, dict]:
                     continue
                 st = worst(r["status"] for r in c["results"])
                 shot = os.path.join(root, c["screenshot"]) if c.get("screenshot") else None
-                uri = _data_uri(shot) if shot else None
-                img = f'<img src="{uri}" alt="{html.escape(fl)} {html.escape(ce)}">' if uri else ""
+                thumb = thumbnail(rdir, shot, THUMB_MATRIX) if shot else None
+                uri = _data_uri(thumb) if thumb else None
+                img = (f'<a href="{html.escape(_rel(rdir, shot))}" title="open the full capture"><img src="{uri}" alt="{html.escape(fl)} {html.escape(ce)}"></a>'
+                       if uri else ('<div class="muted" style="font-size:11px">no capture</div>' if c.get("errored") else ""))
                 bad = [r["assertion"] for r in c["results"] if r["status"] in ("fail", "warn")]
-                row.append(f"<td>{badge(st)}{img}<div class=\"muted\" style=\"font-size:11px\">{html.escape(', '.join(bad))}</div></td>")
+                extra = []
+                if c.get("window_source") == "screenshot":
+                    extra.append(f"window from capture {c.get('window')}")
+                row.append(f"<td>{badge(st)}{img}<div class=\"muted\" style=\"font-size:11px\">{html.escape(', '.join(bad + extra))}</div></td>")
             parts.append("<tr>" + "".join(row) + "</tr>")
         parts.append("</table>")
     else:
@@ -213,16 +299,26 @@ def build_report(root: str, run: int) -> tuple[str, dict]:
         window_lookup = {(c["flow"], c["cell"]): c.get("window") for c in (ui or {}).get("cells", [])}
         for f in failures:
             shot = os.path.join(root, f["screenshot"]) if f.get("screenshot") else None
-            svg = overlay_svg(shot, f.get("elements"), window_lookup.get((f["flow"], f["cell"])))
+            thumb = thumbnail(rdir, shot, THUMB_FAILURE) if shot else None
+            svg = overlay_svg(shot, f.get("elements"), window_lookup.get((f["flow"], f["cell"])), thumb)
+            link = f'<div class="muted" style="font-size:11px"><a href="{html.escape(_rel(rdir, shot))}">full capture</a></div>' if shot and os.path.exists(shot) else ""
             els = "".join(f"<li><code>{html.escape(str(e.get('id')))}</code> {html.escape(str(e.get('frame') or ''))}</li>" for e in f.get("elements") or [])
             hint = f.get("fix_hint") or ""
             src = f.get("source_hint")
             rule = f.get("matched_rule")
+            conf = f.get("source_confidence")
+            reason = f.get("reason")
+            cause = ""
+            if rule:
+                how = {"file": "the screen's name matches the file", "rule": "a rule that causes this assertion is present in the scan"}.get(conf, "")
+                cause = (f'<div>Likely cause: scan rule <code>{html.escape(rule)}</code> at <code>{html.escape(src or "")}</code>'
+                         + (f' <span class="muted">({html.escape(how)})</span>' if how else "") + "</div>")
             parts.append(
-                f'<div class="failure"><div>{svg}</div><div>'
+                f'<div class="failure"><div>{svg}{link}</div><div>'
                 f'<div>{badge(f.get("status","fail"))} <strong>{html.escape(f["flow"])}</strong> / {html.escape(f["cell"])} · <code>{html.escape(f["assertion"])}</code></div>'
-                f"<ul>{els}</ul>"
-                + (f'<div>Likely cause: scan rule <code>{html.escape(rule)}</code> at <code>{html.escape(src or "")}</code></div>' if rule else "")
+                + (f'<div>{html.escape(str(reason))}</div>' if reason else "")
+                + f"<ul>{els}</ul>"
+                + cause
                 + f'<div class="muted">{html.escape(hint)}</div></div></div>'
             )
     else:
