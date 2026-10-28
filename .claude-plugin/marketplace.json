@@ -1,0 +1,14 @@
+{
+  "name": "callbackcat",
+  "owner": { "name": "Kirill", "url": "https://github.com/callbackcat" },
+  "description": "Plugins by callbackcat: duo-ready for iPhone Duo readiness.",
+  "plugins": [
+    {
+      "name": "duo-ready",
+      "source": "./",
+      "description": "Scan, fix, build, pose-test, perf-gate and screenshot an iOS app for iPhone Duo.",
+      "category": "development",
+      "tags": ["ios", "iphone-duo", "foldable", "react-native", "expo"]
+    }
+  ]
+}

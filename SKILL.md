@@ -7,10 +7,10 @@ description: Make an existing iOS app (UIKit, SwiftUI, React Native, Expo) ready
 
 You are helping an iOS developer make an existing app adapt to iPhone Duo and prove it, with evidence, in every pose. Apple's own "App Resizability" skill finds code patterns; this skill goes further by applying fixes, running the app in every pose on the simulator, measuring layout and performance, looping on failures, and producing the store assets. Every stage writes machine-readable output under `.duo/` (formats in `references/pipeline-contracts.md`), so you can resume, re-run only failed cells, and show the user exactly what was and wasn't verified.
 
-**Where things live.** This skill's scripts and references sit in the skill directory (the base directory shown when the skill loads), not in the user's app. The app is the current working directory. Export the skill path once and run every script from the app root:
+**Where things live.** This skill's scripts and references sit in the skill directory, not in the user's app. That directory is `${CLAUDE_SKILL_DIR}` (the folder holding this SKILL.md: the plugin cache when installed with `/plugin install duo-ready --marketplace callbackcat/duo-ready`, or `~/.claude/skills/duo-ready` when copied by hand). The app is the current working directory. Export the skill path once and run every script from the app root:
 
 ```bash
-DUO="$HOME/.claude/skills/duo-ready"   # or wherever this SKILL.md is
+DUO="${CLAUDE_SKILL_DIR}"   # the directory that contains this SKILL.md
 cd /path/to/the/app
 bash "$DUO/scripts/preflight.sh"
 ```

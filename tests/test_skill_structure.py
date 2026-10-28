@@ -42,3 +42,18 @@ def test_wording_rule():
 
 def test_no_em_dashes_in_skill():
     assert "—" not in _read(SKILL)
+
+
+def test_plugin_and_marketplace_manifests_agree():
+    """The repo is its own marketplace: `/plugin install duo-ready --marketplace callbackcat/duo-ready`."""
+    import json
+    plugin = json.load(open(os.path.join(ROOT, ".claude-plugin", "plugin.json"), encoding="utf-8"))
+    market = json.load(open(os.path.join(ROOT, ".claude-plugin", "marketplace.json"), encoding="utf-8"))
+    assert plugin["name"] == "duo-ready"
+    assert re.fullmatch(r"\d+\.\d+\.\d+", plugin["version"])
+    assert market["name"] == "callbackcat" and market["owner"]["name"]
+    entries = {p["name"]: p for p in market["plugins"]}
+    assert entries["duo-ready"]["source"] == "./"
+    assert os.path.isfile(os.path.join(ROOT, ".claude-plugin", "icon.png"))
+    # the skill locates its scripts through the variable Claude Code substitutes on load
+    assert "${CLAUDE_SKILL_DIR}" in _read(SKILL)

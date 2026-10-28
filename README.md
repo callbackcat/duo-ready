@@ -56,14 +56,42 @@ From **April 2027**, every App Store submission of an app **built with the iOS 2
 
 ## Install
 
-Get the skill folder onto the Mac (clone the repo, or unzip the archive you were given), then copy or symlink it where Claude Code looks for skills:
+**Claude Code plugin (recommended).** The repo is its own plugin marketplace. In a Claude Code session:
+
+```
+/plugin install duo-ready --marketplace callbackcat/duo-ready
+```
+
+Or in two steps, which also work from the shell with `claude plugin ...`:
+
+```
+/plugin marketplace add callbackcat/duo-ready
+/plugin install duo-ready@callbackcat
+```
+
+The install dialog asks for a scope: `user` (default, every project on this Mac) or `project` (recorded in the app's `.claude/settings.json`). Update later with `/plugin update duo-ready@callbackcat`. The skill then loads as `duo-ready` and finds its own scripts through `${CLAUDE_SKILL_DIR}`.
+
+To have a team's repo offer the plugin to everyone who opens it, commit this to the app's `.claude/settings.json`; each teammate still confirms the install once:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "callbackcat": { "source": { "source": "github", "repo": "callbackcat/duo-ready" } }
+  },
+  "enabledPlugins": { "duo-ready@callbackcat": true }
+}
+```
+
+**skills.sh CLI.** For other agents, or without the plugin system: `npx skills add callbackcat/duo-ready` copies the skill into the current project (`-g` for global).
+
+**By hand.** Clone and symlink into the skills folder; Claude Code picks it up at the next session (`/reload-skills` if one is open):
 
 ```bash
-git clone <repo-url> ~/duo-ready        # or: unzip duo-ready-skill.zip -d ~/
+git clone https://github.com/callbackcat/duo-ready ~/duo-ready
 ln -s ~/duo-ready ~/.claude/skills/duo-ready
 ```
 
-Claude Code picks it up at the next session (`/reload-skills` if the session is already open). Nothing else is installed on the Mac by the skill itself.
+Nothing else is installed on the Mac by the skill itself.
 
 Mac tooling the simulator stages need (one-time):
 
