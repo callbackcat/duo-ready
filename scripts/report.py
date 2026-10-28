@@ -32,7 +32,7 @@ h1{font-size:24px;margin:0 0 4px}h2{font-size:18px;margin:32px 0 12px;border-bot
 .muted{color:var(--mut)}.note{background:var(--card);border-left:4px solid var(--warn);padding:10px 14px;border-radius:6px;margin:12px 0}
 table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
 .matrix td{text-align:center;padding:4px}.matrix img{max-width:120px;max-height:120px;display:block;margin:4px auto;border:1px solid var(--line);border-radius:4px}
-.badge{display:inline-block;padding:1px 8px;border-radius:10px;color:#fff;font-size:12px}.pass{background:var(--pass)}.warn{background:var(--warn)}.fail{background:var(--fail)}.skip{background:var(--skip)}.unverified{background:var(--warn)}
+.badge{display:inline-block;padding:1px 8px;border-radius:10px;color:#fff;font-size:12px}.pass{background:var(--pass)}.warn{background:var(--warn)}.fail{background:var(--fail)}.skip,.baseline,.info{background:var(--skip)}.unverified{background:var(--warn)}
 .failure{background:var(--card);border-radius:8px;padding:12px;margin:12px 0;display:grid;grid-template-columns:minmax(200px,360px) 1fr;gap:16px}
 .failure svg{width:100%;height:auto;border:1px solid var(--line);border-radius:4px}
 .failure code{font-size:12px}.skipbox{background:var(--card);border:1px dashed var(--line);padding:12px;border-radius:8px}
@@ -102,14 +102,22 @@ def thumbnail(rdir: str, shot: str, edge: int) -> str | None:
     if not shot or not os.path.exists(shot):
         return None
     dst = _thumb_path(rdir, shot, edge)
-    if os.path.exists(dst) and os.path.getmtime(dst) >= os.path.getmtime(shot):
-        return dst
+    jpg = os.path.splitext(dst)[0] + ".jpg"
+    for cached in (jpg, dst):
+        if os.path.exists(cached) and os.path.getmtime(cached) >= os.path.getmtime(shot):
+            return cached
     os.makedirs(os.path.dirname(dst), exist_ok=True)
     size = _img_size(shot)
     if size and max(size) <= edge:
         shutil.copyfile(shot, dst)
         return dst
     if shutil.which("sips"):
+        # JPEG on macOS: PNG thumbnails of 36 cells made a 4.1 MB report on
+        # field test 3 (a 720 px failure overlay was 138 KB); JPEG is a quarter.
+        r = subprocess.run(["sips", "-s", "format", "jpeg", "-s", "formatOptions", "70", "-Z", str(edge), shot, "--out", jpg],
+                           capture_output=True, text=True)
+        if r.returncode == 0 and os.path.exists(jpg):
+            return jpg
         r = subprocess.run(["sips", "-Z", str(edge), shot, "--out", dst], capture_output=True, text=True)
         if r.returncode == 0 and os.path.exists(dst):
             return dst
@@ -208,6 +216,12 @@ def build_report(root: str, run: int) -> tuple[str, dict]:
         skipped.append("performance: no perf.json, no metrics were collected")
     elif perf_skip:
         skipped.append("performance: perf.json has no metrics (" + str(perf.get("reason") or "DuoPerfTests target missing or nothing measured; perf.sh exit 4") + ")")
+    if perf and perf.get("status") == "baseline":
+        skipped.append("performance: no baseline in .duo/baselines/perf.json, so nothing was gated; this run's numbers are "
+                       "the candidates (perf.sh --write-baseline records them)")
+    for m in (perf or {}).get("metrics", []) or []:
+        if m.get("status") == "skip" and m.get("reason"):
+            skipped.append(f"performance: {m.get('cell')}: {m.get('reason')}")
     if ui_unverified:
         skipped.append("UI matrix: no cell had an element tree (AXe not installed, or no DuoUITests attachment); "
                        "offscreen, clipped, tap-target, camera and fold assertions were skipped, not passed")
@@ -245,7 +259,7 @@ def build_report(root: str, run: int) -> tuple[str, dict]:
     else:
         overall = "pass" if ui else "skip"
     ui_badge = "fail" if ui_fail else ("unverified" if ui_unverified else ("pass" if ui else "skip"))
-    perf_badge = "fail" if perf_fail else ("skip" if (perf is None or perf_skip) else "pass")
+    perf_badge = "fail" if perf_fail else ("skip" if (perf is None or perf_skip) else ("baseline" if perf.get("status") == "baseline" else "pass"))
     parts.append(f"<p>Overall: {badge(overall)} &nbsp; UI {badge(ui_badge)} &nbsp; perf {badge(perf_badge)}</p>")
 
     # skipped stages
@@ -331,7 +345,8 @@ def build_report(root: str, run: int) -> tuple[str, dict]:
         parts.append("<table><tr><th>flow</th><th>cell</th><th>metric</th><th>value</th><th>baseline</th><th>status</th></tr>")
         for m in perf["metrics"]:
             parts.append(f"<tr><td>{html.escape(str(m.get('flow','')))}</td><td>{html.escape(str(m.get('cell','')))}</td><td>{html.escape(str(m.get('metric','')))}</td>"
-                         f"<td>{html.escape(str(m.get('value','')))}</td><td>{html.escape(str(m.get('baseline') if m.get('baseline') is not None else '—'))}</td><td>{badge(str(m.get('status','skip')))}</td></tr>")
+                         f"<td>{html.escape(str(m.get('value')) if m.get('value') is not None else '—')}</td><td>{html.escape(str(m.get('baseline') if m.get('baseline') is not None else '—'))}</td>"
+                         f"<td>{badge(str(m.get('status','skip')))}{(' <span class=\"muted\">' + html.escape(str(m.get('reason'))) + '</span>') if m.get('reason') else ''}</td></tr>")
         parts.append("</table>")
     else:
         parts.append('<p class="muted">No performance data.</p>')

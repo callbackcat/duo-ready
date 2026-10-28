@@ -128,7 +128,8 @@ def test_clipped_text(tmp_path):
 def test_bars_vertical_missing_is_warn_by_default(tmp_path):
     root = str(tmp_path)
     write_build(root, 1)
-    elements = [el("Tab1", 0, 630, 100, 48, interactive=True), el("Tab2", 120, 630, 100, 48, interactive=True)]
+    # two items inside the window, spread over half of its width: a bottom bar
+    elements = [el("Tab1", 0, 630, 100, 48, interactive=True), el("Tab2", 300, 630, 100, 48, interactive=True)]
     write_capture(root, 1, "feed", "closed-portrait", elements)
     ui, failures = asrt.evaluate_run(root, 1)
     assert results_for(ui, "feed", "closed-portrait")["bars_vertical_expected"]["status"] == "warn"
@@ -324,3 +325,76 @@ def test_skip_json_cell_is_listed_as_skipped(tmp_path):
     assert ui["summary"]["skipped_cells"] == 1 and ui["summary"]["cells"] == 2
     assert ui["verified"] is True
     assert failures == []
+
+
+def test_scroll_indicator_is_not_a_target_or_a_fold_control(tmp_path):
+    """Field test 3, note 12: AXe reports a UIScrollView's indicator as an
+    adjustable `Slider` (841 x 30 at x 55); it failed tap_target_min in ten cells
+    and interactive_in_fold in two."""
+    root = str(tmp_path)
+    write_build(root, 1)
+    slider = el("scroll-indicator", 55, 630, 841, 30, type_="Slider")
+    tile = el("tile-2", 249, 200, 221, 255, interactive=True, type_="Button")
+    write_capture(root, 1, "wardrobe", "book-landscape", [slider, tile], size=(2853, 2007))
+    write_capture(root, 1, "wardrobe", "open-landscape", [slider], size=(2853, 2007))
+    ui, failures = asrt.evaluate_run(root, 1)
+    book = results_for(ui, "wardrobe", "book-landscape")
+    assert book["tap_target_min"]["status"] == "pass"
+    fold = book["interactive_in_fold"]
+    assert fold["status"] == "fail" and [e["id"] for e in fold["elements"]] == ["tile-2"]
+    assert results_for(ui, "wardrobe", "open-landscape")["tap_target_min"]["status"] == "pass"
+    assert asrt.is_scroll_indicator(slider, 951, 669)
+    assert not asrt.is_scroll_indicator(el("volume", 20, 300, 300, 30, type_="Slider"), 951, 669)  # a real slider
+
+
+def test_controls_below_the_window_are_not_a_bottom_bar(tmp_path):
+    """Field test 3, note 12: a task field, two 42 pt buttons and the scroll
+    indicator below the window bottom were read as a bottom bar and
+    bars_vertical_expected warned; the den draws no bar."""
+    root = str(tmp_path)
+    write_build(root, 1)
+    elements = [
+        el("task-field", 24, 688, 300, 44, interactive=True, type_="TextField"),
+        el("mic", 342, 692, 42, 42, interactive=True, type_="Button"),
+        el("add", 392, 692, 42, 42, interactive=True, type_="Button"),
+        el("scroll-indicator", 55, 640, 400, 30, type_="Slider"),
+    ]
+    write_capture(root, 1, "feed", "closed-portrait", elements, size=(1398, 2034))
+    ui, failures = asrt.evaluate_run(root, 1)
+    r = results_for(ui, "feed", "closed-portrait")
+    assert r["bars_vertical_expected"]["status"] == "skip"
+    assert r["tap_target_min"]["status"] == "fail"
+    assert sorted(e["id"] for e in r["tap_target_min"]["elements"]) == ["add", "mic"]
+
+
+def test_rule_level_match_names_the_rule_but_no_file(tmp_path):
+    """Field test 3, note 12: with only a rule-level match, source_hint pointed
+    at an onboarding video for den buttons."""
+    root = str(tmp_path)
+    write_build(root, 1)
+    duolib.write_json(os.path.join(root, ".duo", "scan.json"), {"findings": [
+        {"rule": "rn-fixed-height", "severity": "warn", "file": "src/features/onboarding/WelcomeVideo.tsx", "line": 45},
+    ]})
+    write_capture(root, 1, "feed", "closed-portrait", [el("mic", 342, 500, 42, 42, interactive=True, type_="Button")])
+    _, failures = asrt.evaluate_run(root, 1)
+    f = [x for x in failures if x["assertion"] == "tap_target_min"][0]
+    assert f["matched_rule"] == "rn-fixed-height" and f["source_confidence"] == "rule"
+    assert f["source_hint"] is None
+
+
+def test_transition_into_book_checks_the_fold(tmp_path):
+    """Field test 3, note 12: after open>book the wardrobe tiles sat on the
+    hinge, but transition cells only checked stability and overflow."""
+    root = str(tmp_path)
+    write_build(root, 1)
+    cap = os.path.join(root, ".duo", "runs", "1", "captures")
+    os.makedirs(cap)
+    tile = el("tile-2", 249, 200, 221, 255, interactive=True, type_="Button")
+    duolib.write_json(os.path.join(cap, "wardrobe-open-to-book.before.tree.json"), {"elements": [tile]})
+    duolib.write_json(os.path.join(cap, "wardrobe-open-to-book.tree.json"), {"elements": [tile]})
+    duolib.write_json(os.path.join(cap, "wardrobe-closed-to-open.before.tree.json"), {"elements": [tile]})
+    duolib.write_json(os.path.join(cap, "wardrobe-closed-to-open.tree.json"), {"elements": [tile]})
+    ui, failures = asrt.evaluate_run(root, 1)
+    r = results_for(ui, "wardrobe", "open>book")
+    assert r["interactive_in_fold"]["status"] == "fail" and r["transition_stable"]["status"] == "pass"
+    assert "interactive_in_fold" not in results_for(ui, "wardrobe", "closed>open")

@@ -33,7 +33,7 @@ def test_metric_names_by_test_and_identifier():
 def test_parse_and_gate_regression(tmp_path):
     perf_dir = _seed(tmp_path)
     doc, code = perfparse.build(11, perf_dir, None, "regression", {})
-    assert code == 0 and "status" not in doc
+    assert code == 0 and doc["status"] == "baseline" and doc["gated"] == 0  # nothing compared: not "pass"
     rows = {(m["cell"], m["metric"]): m for m in doc["metrics"]}
     assert ("closed>open", "launch_ms") in rows  # the `-to-` file name becomes the contract cell name
     assert rows[("closed>open", "launch_ms")]["value"] == 611.0 and rows[("closed>open", "launch_ms")]["unit"] == "ms"
@@ -84,3 +84,27 @@ def test_cli(tmp_path):
     assert perfparse.main(["--run", "3", "--perf-dir", perf_dir, "--out", str(out)]) == 0
     doc = json.loads(out.read_text(encoding="utf-8"))
     assert doc["run"] == 3 and any(m["cell"] == "open-landscape" for m in doc["metrics"])
+
+
+def test_cells_without_measurements_are_skip_rows_and_launch_memory_delta_is_info(tmp_path):
+    """Field test 3, note 10: the three transition cells ran, measured nothing
+    (no hinge bridge) and vanished from perf.json; memory_delta_mb from
+    testLaunch is a launch-to-terminate delta and looked like a gate."""
+    perf_dir = _seed(tmp_path, "closed-portrait.metrics.json")
+    (tmp_path / "perf" / "open-to-book.metrics.json").write_text("[]", encoding="utf-8")
+    (tmp_path / "perf" / "open-to-book.log").write_text("Test Case 'testFoldRelayout' skipped\n", encoding="utf-8")
+    doc, code = perfparse.build(13, perf_dir, None, "regression", {})
+    assert code == 0 and doc["status"] == "baseline"
+    rows = {(m["cell"], m["metric"]): m for m in doc["metrics"]}
+    skip = rows[("open>book", "fold_relayout_ms")]
+    assert skip["status"] == "skip" and skip["value"] is None and "DUO_POSE_URL" in skip["reason"]
+    # the fixture holds both tests: memory_delta_mb is gated from testFoldRelayout only
+    by_test = {(m["metric"], m["test"]): m["status"] for m in doc["metrics"] if m.get("test")}
+    assert by_test[("memory_delta_mb", "DuoPerfTests/testLaunch()")] == "info"
+    assert by_test[("memory_delta_mb", "DuoPerfTests/testFoldRelayout()")] == "baseline"
+    # with a baseline the launch metric is compared and the document passes
+    base = tmp_path / "baseline.json"
+    duolib.write_json(str(base), {"metrics": [{"flow": "*", "cell": "closed-portrait", "metric": "launch_ms", "value": 600}]})
+    doc, code = perfparse.build(14, perf_dir, str(base), "regression", {})
+    assert code == 0 and doc["status"] == "pass" and doc["gated"] == 1
+    assert rows[("closed-portrait", "launch_ms")]["value"] == 611.0

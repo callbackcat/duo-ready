@@ -86,6 +86,16 @@ BUILD_JSON="$RUN_DIR/build.json"
 CAPTURES="$RUN_DIR/captures"
 mkdir -p "$CAPTURES"
 
+# A rerun records where it came from, so loop.py counts iterations per rerun
+# chain rather than per project (field test 3, note 14).
+if [ -n "$ONLY_FAILED" ]; then
+  "$DUO_PY" - "$RUN_DIR/rerun-of.json" "$ONLY_FAILED" <<'PY'
+import json, re, sys
+m = re.search(r"runs[/\\](\d+)[/\\]failures\.json$", sys.argv[2])
+json.dump({"from": int(m.group(1)) if m else None, "failures": sys.argv[2]}, open(sys.argv[1], "w"), indent=2)
+PY
+fi
+
 bjson() { "$DUO_PY" -c 'import json,sys; print(json.load(open(sys.argv[1])).get(sys.argv[2], ""))' "$BUILD_JSON" "$1"; }
 APP_PATH="$(bjson app)"
 BUNDLE_ID="$(bjson bundle_id)"
@@ -182,7 +192,15 @@ guarded() {
   local fn="$1" flow="$2" label="$3" base="$4"
   shift 4
   local st=0 errf="$RUN_DIR/last-cell.stderr" reason
-  ( "$fn" "$@" ) 2>"$errf" || st=$?
+  # Not `( ... ) || st=$?`: a command on the left of `||` runs with errexit
+  # off, subshell included, so a step that failed inside a pipeline (duo_die in
+  # run_steps_duoctl's while-read loop) was ignored and the cell was captured
+  # and passed (field test 3, note 9). Errexit is switched back on inside the
+  # subshell and the status read afterwards.
+  set +e
+  ( set -e; "$fn" "$@" ) 2>"$errf"
+  st=$?
+  set -e
   cat "$errf" >&2
   case "$st" in
     0) ;;
@@ -292,7 +310,13 @@ for s in steps:
     # pose / rotate are handled by the shell around Maestro
 open(out, "w").write("\n".join(lines) + "\n")
 PY
-  maestro --udid "$UDID" test "$yaml" >"$RUN_DIR/maestro-$1.log" 2>&1 || duo_die "$DUO_EXIT_UI" "maestro flow $1 failed (log: $RUN_DIR/maestro-$1.log)"
+  if ! maestro --udid "$UDID" test "$yaml" >"$RUN_DIR/maestro-$1.log" 2>&1; then
+    # The failing step is in the log; carry its line in the reason so the
+    # payload says what did not appear, not only where to look (field test 3).
+    local why
+    why="$(grep -E -i 'selector|timed out|timeout|not found|assertion|failed|error' "$RUN_DIR/maestro-$1.log" | tail -n 1 | sed 's/^[[:space:]]*//' | cut -c1-160 || true)"
+    duo_die "$DUO_EXIT_UI" "maestro flow $1 failed${why:+: $why} (log: $RUN_DIR/maestro-$1.log)"
+  fi
 }
 
 run_steps() {  # run_steps <flow> <cell> <steps>: Maestro for closed cells when installed, else duoctl
@@ -301,7 +325,6 @@ run_steps() {  # run_steps <flow> <cell> <steps>: Maestro for closed cells when 
       if [ "$DRIVER" != "duoctl" ] && command -v maestro >/dev/null 2>&1; then
         run_steps_maestro "$1" "$3"
       else
-        [ -n "${MAESTRO_WARNED:-}" ] || { duo_warn "maestro not installed: closed cells use the duoctl interpreter (launch, deeplink, sleep, pose, rotate; no taps on the outer display)"; MAESTRO_WARNED=1; }
         run_steps_duoctl "$3"
       fi ;;
     *) run_steps_duoctl "$3" ;;
@@ -374,7 +397,7 @@ run_cell() {  # run_cell <flow> <cell> <steps>
       fi
       run_native_cell "$1" "$2" "$3" "$base" ;;
     *)
-      run_steps "$1" "$2" "$3"
+      run_steps "$1" "$2" "$3" || exit "$DUO_EXIT_UI"
       if ! set_orientation "$2"; then
         skip_cell "$base" "$1" "$2" "the app refused to rotate to $(duo_cell_orientation "$2") in pose $(duo_cell_pose "$2") (portrait-only there; orientation locks are honoured on the outer display)"
         return 0
@@ -408,7 +431,7 @@ run_transition() {  # run_transition <flow> <steps> <from>to<to>
       # element tree before the pose change feeds assert.py's transition_stable check
       [ -f "$CAPTURES/$1-$from_cell.tree.json" ] && cp "$CAPTURES/$1-$from_cell.tree.json" "$base.before.tree.json" ;;
     *)
-      run_steps "$1" "$from_cell" "$2"
+      run_steps "$1" "$from_cell" "$2" || exit "$DUO_EXIT_UI"
       if ! set_orientation "$from_cell"; then
         skip_cell "$base" "$1" "$3" "the app refused the $from_cell orientation before the transition"
         return 0
@@ -430,6 +453,15 @@ run_transition() {  # run_transition <flow> <steps> <from>to<to>
   "$DUO_SCRIPTS/capture.sh" "$base.png" --cell "$to_cell" >/dev/null
   duo_log "captured transition $1 / $3 (after: $to_cell)"
 }
+
+# Said once, here: a flag set inside guarded's subshell does not survive it,
+# so 0.3.0 repeated the warning for every closed cell and called a chosen
+# `--driver duoctl` "maestro not installed" (field test 3, note 11).
+if [ "$DRIVER" = "duoctl" ]; then
+  duo_log "driver duoctl: closed cells use the duoctl interpreter (launch, deeplink, wait, sleep, pose, rotate; no taps on the outer display)"
+elif ! command -v maestro >/dev/null 2>&1; then
+  duo_warn "maestro not installed: closed cells use the duoctl interpreter (launch, deeplink, wait, sleep, pose, rotate; no taps on the outer display)"
+fi
 
 # --- main loop ---------------------------------------------------------------
 printf '%s\n' "$FLOW_LINES" | while IFS="$(printf '\t')" read -r flow steps; do

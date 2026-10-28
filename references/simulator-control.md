@@ -129,7 +129,7 @@ Each display has its own touchscreen. AXe, XcodeBuildMCP, RocketSim and Maestro 
 - the root `Application` frame is reported unrotated in landscape (669 x 951 inside a 951 x 669 window), and a full-window `Group` labelled "Toolbar" sits under it;
 - every `StaticText` appears twice; `tree.py` drops the duplicates;
 - there is no parent or scrollable information (`ancestry: false` in the tree file);
-- `duoctl state` can lag behind the hinge after `hinge close` (it reported the inner display in landscape while `hinge posture` and the capture showed the outer display in portrait); `sim.sh orientation` therefore reads the hinge first.
+- `duoctl state` can lag behind the hinge after `hinge close` (it reported the inner display in landscape while `hinge posture` and the capture showed the outer display in portrait). `hinge posture`'s `orientation`, in turn, is the device's, not the window's: on the inner display it reads `portrait` for the 951 x 669 landscape window and lags a rotation by 2 to 4 s (field test 3). `sim.sh orientation` therefore takes which display is lit from the hinge (`activeDisplay`: `LCD` outer, `LCD-1` inner), the orientation from `duoctl state`'s `sizePoints` once its `activeScreen` agrees with the hinge (`[951, 669]` at `rot90`, `[669, 951]` at `rot0` on the inner display), and the capture size as the last resort. `sim.sh rotate` then waits until that readback agrees with the target.
 
 Element frames for `scripts/assert.py` come from:
 - XCUITest: `app.descendants(matching: .any)` with `frame`, `identifier`, `label`, `elementType`, `isHittable`; the template dumps them to `<flow>-<cell>.tree.json`.
@@ -202,7 +202,8 @@ Verified on the second field test (28 Oct 2026, macOS 27.0.1, Xcode 27.1 build 2
 - `xcodebuild test-without-building` forwards environment to a UI test runner only for variables named `TEST_RUNNER_<NAME>`, which arrive in the runner as `<NAME>`. A plain `DUO_CELL` never reaches the test.
 - The scheme's Test action must build Release for a React Native or Expo host app (Debug loads JavaScript from Metro, which nothing starts). `templates/add-duo-test-targets.rb` sets it.
 - `log show --predicate 'eventMessage CONTAINS "..."'` matches its own invocation, because the `log` process logs its command line; add `AND process != "log"`.
-- After an unfold the inner display comes up in portrait (2007 x 2853 captures) even when the cell is named `open-landscape`; the runner records what the hinge reports and `assert.py` sizes the window from the capture.
+- After an unfold the inner display keeps the rotation it had last (field test 2 saw portrait because the cell before every `closed>open` was `book-portrait`; field test 3 saw landscape); the runner reads the orientation back and `assert.py` sizes the window from the capture when it differs from the cell's nominal size.
+- SpringBoard's accessibility tree is reachable only some seconds after `simctl bootstatus -b` returns: `duoctl elements` right after a cold boot fails (`axe describe-ui ... failed`) and works 30 s later, so `preflight.sh` retries for 30 s before reporting `elements: failed`.
 - The macOS keychain prompt that appears during `brew` or `git` operations on private repositories is `git-credential-osxkeychain` asking for the HTTPS token; it goes to the keychain, not to the agent. A public skill repository avoids it for installs and updates.
 
 ## 14. Sources

@@ -194,6 +194,36 @@ def is_interactive(el) -> bool:
     return bool(el.get("interactive")) or _tree.is_interactive_type(el.get("type"))
 
 
+def is_scroll_indicator(el, W, H) -> bool:
+    """A UIScrollView indicator: AXe reports it as an adjustable `Slider`, thin
+    (32 pt or less) and as long as most of the window along its axis. VoiceOver
+    can adjust it; nothing taps it, so it is neither a tap target nor a control
+    on the fold (field test 3, note 12: one in every den and wardrobe cell)."""
+    if str(el.get("type", "")).lower() != "slider":
+        return False
+    _, _, w, h = frame_of(el)
+    if w <= 0 or h <= 0:
+        return False
+    if w >= h:
+        return h <= 32 and w >= 0.4 * W
+    return w <= 32 and h >= 0.4 * H
+
+
+def interactive_elements(elements, W, H):
+    return [el for el in elements if is_interactive(el) and not is_scroll_indicator(el, W, H)]
+
+
+def _bar_row(items, extent, axis):
+    """Items that form a bar along `axis` (0: a row across the width, 1: a
+    column down the height): at least two, spread over half of `extent`.
+    Used for the bottom band, where a bar spans the width."""
+    if len(items) < 2:
+        return []
+    starts = [frame_of(e)[axis] for e in items]
+    ends = [frame_of(e)[axis] + frame_of(e)[axis + 2] for e in items]
+    return items if max(ends) - min(starts) >= 0.5 * extent else []
+
+
 def is_container(el, W, H) -> bool:
     """Root and full-window groups are structure, not content. The AXe root
     `Application` element is also reported unrotated in landscape cells
@@ -288,10 +318,10 @@ def a_clipped_text(elements, W, H):
     return ("fail" if bad else "pass"), {"elements": bad}
 
 
-def a_tap_target(elements, minimum):
+def a_tap_target(elements, minimum, W=None, H=None):
     bad = []
     for el in elements:
-        if not is_interactive(el):
+        if not is_interactive(el) or (W and H and is_scroll_indicator(el, W, H)):
             continue
         _, _, w, h = frame_of(el)
         if w <= 0 or h <= 0:
@@ -307,8 +337,17 @@ def a_bars_vertical(elements, cell, W, H, tier):
     if tier != "27.1":
         return "skip", {"reason": f"SDK tier {tier} does not place bars vertically"}
     bar_typed = any(str(e.get("type", "")).lower() in BAR_TYPES for e in elements)
-    bottom = [e for e in elements if is_interactive(e) and frame_of(e)[1] >= H - STATUS_COLUMN_PT and frame_of(e)[3] < STATUS_COLUMN_PT]
-    trailing = [e for e in elements if is_interactive(e) and frame_of(e)[0] >= W - STATUS_COLUMN_PT]
+    # A bar is a row (or column) of items inside the window that spans most of
+    # it. Controls that merely sit low on a scrolled screen, below the window
+    # bottom, are content (field test 3, note 12: a task field, two 42 pt
+    # buttons and a scroll indicator were read as a bottom bar).
+    bottom = _bar_row([e for e in interactive_elements(elements, W, H)
+                       if frame_of(e)[1] >= H - STATUS_COLUMN_PT and frame_of(e)[1] + frame_of(e)[3] <= H + 1
+                       and frame_of(e)[3] < STATUS_COLUMN_PT], W, axis=0)
+    # A vertical bar is short (two or three items near the top of the trailing
+    # column), so the trailing test asks only that the items be inside the window.
+    trailing = [e for e in interactive_elements(elements, W, H)
+                if frame_of(e)[0] >= W - STATUS_COLUMN_PT and frame_of(e)[0] + frame_of(e)[2] <= W + 1]
     if not bar_typed and len(bottom) < 2 and len(trailing) < 2:
         return "skip", {"reason": "no tab bar or toolbar elements in the tree; nothing to move to the trailing edge (a JS-drawn bar is reported by scan rule rn-js-tab-bar)"}
     column = [el for el in elements if is_interactive(el) and frame_of(el)[0] >= W - STATUS_COLUMN_PT]
@@ -359,7 +398,7 @@ def a_fold(elements, cell, W, H):
         band = (0.0, H / 2.0 - FOLD_HALF_WIDTH_PT, float(W), 2.0 * FOLD_HALF_WIDTH_PT)
     bad = []
     for el in elements:
-        if not is_interactive(el) or is_scroll(el):
+        if not is_interactive(el) or is_scroll(el) or is_scroll_indicator(el, W, H):
             continue
         f = frame_of(el)
         if f[2] <= 0 or f[3] <= 0:
@@ -601,7 +640,9 @@ def evaluate_run(root: str, run: int, include_warn: bool = False) -> tuple[dict,
                     "elements": extra.get("elements", []),
                     "screenshot": _rel(root, shot) if os.path.exists(shot) else None,
                     "matched_rule": hit.get("rule") if hit else None,
-                    "source_hint": f"{hit['file']}:{hit.get('line')}" if hit else None,
+                    # A rule-level match names a rule, not a file: the first finding
+                    # of that rule blamed an onboarding video for den buttons (field test 3).
+                    "source_hint": f"{hit['file']}:{hit.get('line')}" if hit and hit.get("confidence") == "file" else None,
                     "source_confidence": hit.get("confidence") if hit else None,
                     "fix_hint": (hit.get("fix_hint") if hit and hit.get("fix_hint") else FIX_HINTS[aname]),
                 })
@@ -619,10 +660,15 @@ def evaluate_run(root: str, run: int, include_warn: bool = False) -> tuple[dict,
             may_remove = (flows_cfg.get(flow) or {}).get("may_remove") or []
             add("transition_stable", *checked(lambda: a_transition(before, elements, may_remove)))
             add("offscreen_elements", *checked(lambda: a_offscreen(elements, W, H, ancestry)))
+            if cell.split(">")[-1] == "book":
+                # The after-tree is the book pose: a grid on the hinge is caught
+                # here too, not only in the book-landscape cell (field test 3, note 12).
+                after_cell = "book-landscape" if W >= H else "book-portrait"
+                add("interactive_in_fold", *checked(lambda: a_fold(elements, after_cell, W, H)))
         else:
             add("offscreen_elements", *checked(lambda: a_offscreen(elements, W, H, ancestry)))
             add("clipped_text", *checked(lambda: a_clipped_text(elements, W, H)))
-            add("tap_target_min", *checked(lambda: a_tap_target(elements, tap_min)))
+            add("tap_target_min", *checked(lambda: a_tap_target(elements, tap_min, W, H)))
             add("bars_vertical_expected", *checked(lambda: a_bars_vertical(elements, cell, W, H, tier)))
             add("content_under_outer_camera", *checked(lambda: a_outer_camera(elements, cell, W, H)))
             add("interactive_in_fold", *checked(lambda: a_fold(elements, cell, W, H)))

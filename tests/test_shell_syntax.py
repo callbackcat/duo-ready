@@ -234,3 +234,22 @@ def test_field_test_2_contracts():
     assert "duoctl elements" in pre and '"elements":"%s"' in pre
     assert 'build >>"$LOG"' in build, "xcodebuild output truncated the prebuild log"
     assert "LANG=" in build
+
+
+def test_field_test_3_contracts():
+    """Things the third field test proved the scripts must do."""
+    rm = open(os.path.join(SCRIPTS, "run-matrix.sh"), encoding="utf-8").read()
+    perf = open(os.path.join(SCRIPTS, "perf.sh"), encoding="utf-8").read()
+    sim = open(os.path.join(SCRIPTS, "sim.sh"), encoding="utf-8").read()
+    pre = open(os.path.join(SCRIPTS, "preflight.sh"), encoding="utf-8").read()
+    orientation = sim[sim.index("  orientation)"):]
+    orientation = orientation[:orientation.index("    esac")]
+    assert 'get("orientation"' not in orientation, "the hinge's orientation label is the device's, inverted on the inner display"
+    assert "sizePoints" in orientation and "activeDisplay" in orientation and "capture.sh" in orientation
+    assert "did not take effect" in sim, "rotate must verify the readback"
+    assert '( set -e; "$fn" "$@" )' in rm and "set +e" in rm, "errexit is off inside `( ... ) || st=$?`"
+    assert rm.count('|| exit "$DUO_EXIT_UI"') >= 2, "a failed run_steps must end the cell"
+    assert "MAESTRO_WARNED" not in rm and "driver duoctl:" in rm
+    assert "rerun-of.json" in rm
+    assert "deadline" in pre and "sleep 2" in pre, "preflight retries the elements probe after a cold boot"
+    assert "nothing gated" in perf

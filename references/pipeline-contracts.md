@@ -86,7 +86,7 @@ sleep <seconds>
 
 Native runner translates to XCUITest (template in `templates/DuoUITests.swift`; the shell passes `TEST_RUNNER_DUO_FLOW`, `TEST_RUNNER_DUO_CELL`, `TEST_RUNNER_DUO_STEPS`, `TEST_RUNNER_DUO_TREE_OUT`, which xcodebuild delivers to the runner without the prefix); RN runner uses Maestro for closed cells and `duoctl tap --label` for open/book cells (Maestro misreports inner-display geometry, issue mobile-dev-inc/maestro#3617). `--driver duoctl` forces the duoctl interpreter for closed cells too (deeplink, wait, sleep; no taps on the outer display). `--udid <udid>` (or `DUOCTL_UDID`) drives an already booted simulator instead of the protected `duo-ready` one, for flows behind a sign-in.
 
-A step that fails ends the cell, not the matrix: the runner writes `<flow>-<cell>.error.json` (`{"flow","cell","error":true,"reason"}`), `assert.py` records the cell with `errored: true` and one result `{"assertion":"flow","status":"fail","reason":...}`, and `failures.json` carries it with `assertion: "flow"`. Tool, build and pose failures (exit 3, 4, 5) still stop the run.
+A step that fails ends the cell, not the matrix: the runner writes `<flow>-<cell>.error.json` (`{"flow","cell","error":true,"reason"}`), `assert.py` records the cell with `errored: true` and one result `{"assertion":"flow","status":"fail","reason":...}`, and `failures.json` carries it with `assertion: "flow"`. This holds for every driver: Maestro cells, duoctl cells and native cells alike (0.3.0 let a failed `wait` in a duoctl cell pass; fixed in 0.3.1). Tool, build and pose failures (exit 3, 4, 5) still stop the run. `--only-failed` also writes `<run>/rerun-of.json` (`{"from": <run>, "failures": <path>}`), which `loop.py` uses to count iterations per rerun chain.
 
 ## scan.json
 
@@ -185,11 +185,15 @@ When `duoctl elements` fails (AXe missing) or the DuoUITests attachment is absen
     { "flow": "*", "cell": "closed-portrait", "metric": "launch_ms", "value": 612.0, "unit": "ms", "baseline": 590, "status": "pass" },
     { "flow": "*", "cell": "closed-portrait", "metric": "launch_wall_ms", "value": 5810.0, "unit": "ms", "baseline": null, "status": "info" },
     { "flow": "*", "cell": "closed-portrait", "metric": "memory_peak_mb", "value": 50.9, "unit": "MB", "baseline": null, "status": "info" },
-    { "flow": "*", "cell": "closed>open", "metric": "fold_relayout_ms", "value": 310.0, "unit": "ms", "baseline": null, "status": "baseline" }
-  ] }
+    { "flow": "*", "cell": "closed>open", "metric": "fold_relayout_ms", "value": 310.0, "unit": "ms", "baseline": null, "status": "baseline" },
+    { "flow": "*", "cell": "open>book", "metric": "fold_relayout_ms", "value": null, "unit": "ms", "baseline": null, "status": "skip",
+      "reason": "DuoPerfTests skipped testFoldRelayout: TEST_RUNNER_DUO_POSE_URL is not set (the skill ships no hinge bridge), so fold_relayout_ms and memory_delta_mb were not measured" }
+  ],
+  "status": "baseline", "gated": 0,
+  "reason": "no .duo/baselines/perf.json: every gated metric is a candidate baseline, nothing was gated" }
 ```
 
-Metric names come from the test name plus the XCTest metric identifier (`scripts/perfparse.py`): `launch_ms` is `XCTApplicationLaunchMetric` in `testLaunch`, `launch_wall_ms` the `XCTClockMetric` around the whole launch block (XCUITest setup included, so seconds; reported, never gated), `fold_relayout_ms` the clock metric in `testFoldRelayout`, `memory_delta_mb`/`memory_peak_mb` the memory metrics, `cpu_s` CPU time. Gated metrics are `launch_ms`, `fold_relayout_ms`, `memory_delta_mb`; the rest are `info`. Statuses: `pass`, `warn`, `fail`, `info`, `baseline` (no baseline yet; the value becomes one on `--write-baseline`). Source files are `<cell>.metrics.json` from `xcrun xcresulttool get test-results metrics --path <cell>.xcresult` (`>` spelled `-to-` on disk), with the legacy `<cell>.json` root object as a fallback for older toolchains.
+Metric names come from the test name plus the XCTest metric identifier (`scripts/perfparse.py`): `launch_ms` is `XCTApplicationLaunchMetric` in `testLaunch`, `launch_wall_ms` the `XCTClockMetric` around the whole launch block (XCUITest setup included, so seconds; reported, never gated), `fold_relayout_ms` the clock metric in `testFoldRelayout`, `memory_delta_mb`/`memory_peak_mb` the memory metrics, `cpu_s` CPU time. Gated metrics are `launch_ms`, `fold_relayout_ms` and `memory_delta_mb` across a transition; the rest are `info`, including `memory_delta_mb` from `testLaunch`. Row statuses: `pass`, `warn`, `fail`, `info`, `baseline` (no baseline yet; the value becomes one on `--write-baseline`), `skip` (the cell ran and measured nothing; `reason` says why). The document carries `status`: `fail`, `pass`, or `baseline` when no gated metric had a baseline to compare with (exit 0, but `perf.sh` says `nothing gated` and the report lists it as skipped), and `gated`, the number of rows that were compared. Source files are `<cell>.metrics.json` from `xcrun xcresulttool get test-results metrics --path <cell>.xcresult` (`>` spelled `-to-` on disk), with the legacy `<cell>.json` root object as a fallback for older toolchains.
 
 With no `DuoPerfTests` target there is nothing to measure: `perf.sh` exits 4, writes `"metrics": [], "status": "skip", "reason": "..."`, and never writes a baseline. The `reason` distinguishes a missing target from a result bundle that carried no measurements although the log shows `measured [` lines. The report shows perf as skipped with that reason.
 

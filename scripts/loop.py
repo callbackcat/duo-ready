@@ -77,11 +77,24 @@ def rerun_args(failures) -> str:
     return " ".join(parts)
 
 
-def rerun_command(run: int) -> str:
+def next_run(root, run: int) -> int:
+    """The first unused run number after `run`. Field test 3 was told to rerun
+    into a run that a by-hand run already occupied; assert.py would then have
+    judged both runs' captures together."""
+    nxt = int(run) + 1
+    runs = os.path.join(duolib.duo_dir(root), "runs") if root else None
+    if runs and os.path.isdir(runs):
+        for name in os.listdir(runs):
+            if name.isdigit() and int(name) >= nxt:
+                nxt = int(name) + 1
+    return nxt
+
+
+def rerun_command(run: int, root=None) -> str:
     """The exact command for the next iteration: only the failed (flow, cell)
-    pairs, into a new run number. $DUO is the skill directory
+    pairs, into the next free run number. $DUO is the skill directory
     (${CLAUDE_SKILL_DIR} inside Claude Code)."""
-    return f'bash "$DUO/scripts/run-matrix.sh" --run {run + 1} --only-failed .duo/runs/{run}/failures.json'
+    return f'bash "$DUO/scripts/run-matrix.sh" --run {next_run(root, run)} --only-failed .duo/runs/{run}/failures.json'
 
 
 def write_todo(root: str, run: int, failures, state: dict) -> str:
@@ -90,7 +103,7 @@ def write_todo(root: str, run: int, failures, state: dict) -> str:
         "# DUO-TODO",
         "",
         f"The duo-ready agent loop stopped after {state.get('iterations', 0)} iteration(s) (cap {state.get('max_iterations')}). "
-        f"Run {run} still has {len(failures)} failure(s). Fix these by hand, then rerun `{rerun_command(run)}`.",
+        f"Run {run} still has {len(failures)} failure(s). Fix these by hand, then rerun `{rerun_command(run, root)}`.",
         "",
         "Reminder: iPhone Duo screenshots become required from April 2027 for apps built with the iOS 27.1 SDK or later. Apple has not said apps will be removed.",
         "",
@@ -177,6 +190,15 @@ def main(argv=None) -> int:
             print(reason, file=sys.stderr)
         return duolib.exit_codes.PREFLIGHT_FAIL  # 4: nothing to loop on, distinct from "failures remain" (1)
     failures = duolib.load_json(fpath) or []
+    # The counter belongs to a rerun chain, not to the project: a matrix run
+    # that is neither the last looped run nor an --only-failed rerun of it
+    # starts again at 1 (field test 3 inherited "3/3" from the previous day).
+    last = state.get("last_run")
+    origin_path = os.path.join(rdir, "rerun-of.json")
+    origin = (duolib.load_json(origin_path) or {}).get("from") if os.path.exists(origin_path) else None
+    if last is not None and args.run != last and origin != last:
+        state["iterations"] = 0
+    state["last_run"] = args.run
     ui_path = os.path.join(rdir, "ui.json")
     ui = duolib.load_json(ui_path) if os.path.exists(ui_path) else None
 
@@ -199,7 +221,7 @@ def main(argv=None) -> int:
         todo = write_todo(root, args.run, failures, state)
         save_state(root, state)
         out = {"run": args.run, "failures": len(failures), "action": "cap_reached", "todo": todo,
-               "rerun": rerun_args(failures), "rerun_command": rerun_command(args.run)}
+               "rerun": rerun_args(failures), "rerun_command": rerun_command(args.run, root)}
         print(json.dumps(out) if args.json else f"iteration cap {cap} reached; wrote {todo}")
         return 0
 
@@ -208,7 +230,7 @@ def main(argv=None) -> int:
     if not args.json:
         emit(failures, args.agent)
     out = {"run": args.run, "iteration": state["iterations"], "max_iterations": cap, "failures": len(failures),
-           "action": "patch", "rerun": rerun_args(failures), "rerun_command": rerun_command(args.run)}
+           "action": "patch", "rerun": rerun_args(failures), "rerun_command": rerun_command(args.run, root)}
     if args.json:
         out["payloads"] = failures
         print(json.dumps(out))

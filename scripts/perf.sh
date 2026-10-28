@@ -137,7 +137,18 @@ if [ "$WRITE_BASELINE" -eq 1 ] && [ "$STATUS" -ne 4 ]; then
 fi
 [ "$JSON" -eq 1 ] && cat "$RUN_DIR/perf.json"
 case "$STATUS" in
-  0) echo "perf: pass ($MODE mode) -> $RUN_DIR/perf.json" ;;
+  0)
+    # "pass" with nothing compared is not a pass (field test 3, note 10): the
+    # first run of a project has no baseline, and perf.json says so.
+    if "$DUO_PY" -c 'import json, sys; sys.exit(0 if json.load(open(sys.argv[1])).get("status") == "baseline" else 1)' "$RUN_DIR/perf.json" 2>/dev/null; then
+      if [ "$WRITE_BASELINE" -eq 1 ]; then
+        echo "perf: baseline written from this run, nothing gated yet -> $RUN_DIR/perf.json"
+      else
+        echo "perf: baseline recorded, nothing gated (no .duo/baselines/perf.json yet; rerun with --write-baseline once the numbers look sane) -> $RUN_DIR/perf.json"
+      fi
+    else
+      echo "perf: pass ($MODE mode) -> $RUN_DIR/perf.json"
+    fi ;;
   4) echo "perf: NO METRICS -> $RUN_DIR/perf.json (its reason field says whether the target is missing or the parser found nothing)" ;;
   *) echo "perf: FAIL ($MODE mode) -> $RUN_DIR/perf.json" ;;
 esac

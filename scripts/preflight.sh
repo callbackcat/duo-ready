@@ -159,19 +159,30 @@ fi
 # simulator (SpringBoard when nothing is in front) must return a JSON list.
 ELEMENTS_OK="untested"
 if [ "$NO_BOOT" -eq 0 ] && [ "$AXE_OK" -eq 1 ]; then
-  ELEMENTS_OUT="$(DUOCTL_UDID="$SIM_UDID" duoctl elements 2>&1 || true)"
-  if printf '%s' "$ELEMENTS_OUT" | "$DUO_PY" -c '
+  # SpringBoard's accessibility tree is reachable only some seconds after
+  # `simctl bootstatus -b` returns, so a cold preflight reported "failed" and
+  # "trees will be unavailable" for a simulator that answered 30 s later (field
+  # test 3, note 1). Retry for up to 30 s before believing a failure.
+  ELEMENTS_OUT=""; deadline=$(( $(date +%s) + 30 ))
+  while :; do
+    ELEMENTS_OUT="$(DUOCTL_UDID="$SIM_UDID" duoctl elements 2>&1 || true)"
+    if printf '%s' "$ELEMENTS_OUT" | "$DUO_PY" -c '
 import json, sys
 try:
     d = json.load(sys.stdin)
 except Exception:
     sys.exit(1)
 sys.exit(0 if isinstance(d, list) and d else 1)'; then
-    ELEMENTS_OK="ok"
+      ELEMENTS_OK="ok"; break
+    fi
+    [ "$(date +%s)" -lt "$deadline" ] || break
+    sleep 2
+  done
+  if [ "$ELEMENTS_OK" = "ok" ]; then
     duo_log "element trees verified (duoctl elements returned a list)"
   else
     ELEMENTS_OK="failed"
-    warn "duoctl elements did not return an element list ($(printf '%s' "$ELEMENTS_OUT" | sed -n 1p | cut -c1-120)); trees will be unavailable and layout assertions skipped"
+    warn "duoctl elements did not return an element list within 30 s ($(printf '%s' "$ELEMENTS_OUT" | sed -n 1p | cut -c1-120)); trees will be unavailable and layout assertions skipped"
   fi
 fi
 

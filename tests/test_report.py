@@ -227,3 +227,42 @@ def test_report_names_captures_without_assertions(tmp_path, capsys):
     report.main(["--run", "9", "--root", root, "--json"])
     summary = json.loads(capsys.readouterr().out)
     assert any("assert.py did not run" in s and "--run 9" in s for s in summary["skipped"])
+
+
+def test_loop_counter_is_per_rerun_chain_and_next_free_run(tmp_path, capsys):
+    """Field test 3, note 14: the counter was project state ("3/3" inherited
+    from the previous day) and the suggested run number already existed."""
+    root = str(tmp_path)
+    seed(root, run=11)
+    assert loop.main(["--run", "11", "--root", root, "--json"]) == 1
+    assert json.loads(capsys.readouterr().out)["iteration"] == 1
+    # an --only-failed rerun of 11 continues the chain
+    seed(root, run=12)
+    duolib.write_json(os.path.join(root, ".duo", "runs", "12", "rerun-of.json"), {"from": 11})
+    assert loop.main(["--run", "12", "--root", root, "--json"]) == 1
+    assert json.loads(capsys.readouterr().out)["iteration"] == 2
+    # a fresh run (not a rerun of 12) starts a new chain at 1
+    seed(root, run=13)
+    os.makedirs(os.path.join(root, ".duo", "runs", "14"))  # taken by hand
+    assert loop.main(["--run", "13", "--root", root, "--json"]) == 1
+    data = json.loads(capsys.readouterr().out)
+    assert data["iteration"] == 1
+    assert data["rerun_command"].endswith("--run 15 --only-failed .duo/runs/13/failures.json")
+    assert loop.next_run(root, 13) == 15 and loop.next_run(root, 20) == 21
+
+
+def test_report_lists_ungated_perf_and_skip_rows(tmp_path):
+    """Field test 3, notes 10 and 13: perf "passed" with nothing compared and
+    the report did not say so."""
+    root = str(tmp_path)
+    rdir = seed(root, ui_fail=False)
+    duolib.write_json(os.path.join(rdir, "perf.json"), {"schema": 1, "run": 1, "mode": "regression", "status": "baseline", "gated": 0, "metrics": [
+        {"flow": "*", "cell": "closed-portrait", "metric": "launch_ms", "value": 2265.0, "baseline": None, "status": "baseline"},
+        {"flow": "*", "cell": "open>book", "metric": "fold_relayout_ms", "value": None, "baseline": None, "status": "skip",
+         "reason": "DuoPerfTests skipped testFoldRelayout: TEST_RUNNER_DUO_POSE_URL is not set"},
+    ]})
+    out, summary = report.build_report(root, 1)
+    assert any("nothing was gated" in s for s in summary["skipped"])
+    assert any("open>book" in s and "DUO_POSE_URL" in s for s in summary["skipped"])
+    assert 'perf <span class="badge baseline">baseline</span>' in out
+    assert "DUO_POSE_URL" in out and "None" not in out.split("Performance")[1].split("Scan findings")[0]

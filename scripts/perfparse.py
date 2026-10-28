@@ -158,7 +158,9 @@ def build(run: int, perf_dir: str, baseline_path: str | None, mode: str, cfg: di
             base = baseline.get(("*", cell, metric))
             thr = cfg.get(metric) if isinstance(cfg.get(metric), dict) else {}
             status = "pass"
-            if metric not in GATED:
+            if metric not in GATED or (metric == "memory_delta_mb" and "launch" in (tid or "").lower()):
+                # memory_delta_mb from testLaunch is the launch-to-terminate delta,
+                # about zero at 735% RSD on field test 3: reported, never gated.
                 status = "info"
             elif mode == "absolute":
                 if "fail" in thr and value > float(thr["fail"]):
@@ -177,7 +179,8 @@ def build(run: int, perf_dir: str, baseline_path: str | None, mode: str, cfg: di
                             "identifier": ident, "test": tid, "iterations": n})
     doc = {"schema": 1, "run": int(run), "mode": mode,
            "generated": _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "metrics": metrics}
-    if not metrics:
+    measured = list(metrics)
+    if not measured:
         doc["status"] = "skip"
         if _measured_in_logs(log_dir):
             doc["reason"] = ("the xcodebuild log shows measurements but no <cell>.metrics.json carried any: "
@@ -186,7 +189,32 @@ def build(run: int, perf_dir: str, baseline_path: str | None, mode: str, cfg: di
         else:
             doc["reason"] = "no metrics collected (DuoPerfTests target missing, every cell skipped, or no measurements in the result bundles)"
         return doc, 4
-    return doc, (2 if any(m["status"] == "fail" for m in metrics) else 0)
+    # A cell that ran and measured nothing is a skip row with its reason, not
+    # an absence: field test 3 lost the three transition cells silently because
+    # testFoldRelayout needs a hinge bridge the skill does not ship.
+    seen_cells = {cell_from_filename(fn) for fn in files}
+    for cell in sorted(seen_cells - {m["cell"] for m in measured}):
+        if ">" in cell:
+            reason = ("DuoPerfTests skipped testFoldRelayout: TEST_RUNNER_DUO_POSE_URL is not set (the skill ships no "
+                      "hinge bridge), so fold_relayout_ms and memory_delta_mb were not measured")
+            metric = "fold_relayout_ms"
+        else:
+            reason = "no measurements in the result bundle (DuoPerfTests skipped or failed in this cell; see its .log)"
+            metric = "launch_ms"
+        metrics.append({"flow": "*", "cell": cell, "metric": metric, "value": None, "baseline": None,
+                        "status": "skip", "unit": "ms", "reason": reason})
+    gated = [m for m in measured if m["metric"] in GATED and m["status"] != "info"]
+    if any(m["status"] == "fail" for m in measured):
+        doc["status"] = "fail"
+        return doc, 2
+    if mode == "regression" and gated and all(m["status"] == "baseline" for m in gated):
+        # Nothing was compared: say so instead of "pass" (field test 3, note 10).
+        doc["status"] = "baseline"
+        doc["reason"] = "no .duo/baselines/perf.json: every gated metric is a candidate baseline, nothing was gated"
+    else:
+        doc["status"] = "pass"
+    doc["gated"] = sum(1 for m in gated if m["status"] in ("pass", "warn", "fail"))
+    return doc, 0
 
 
 def main(argv=None) -> int:

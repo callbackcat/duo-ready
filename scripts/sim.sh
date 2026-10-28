@@ -16,7 +16,8 @@ Usage: scripts/sim.sh <command> [args]
   udid                           print the UDID in use
   pose <closed|open|book>        set the hinge (0 / 180 / 127 degrees) and wait for readback
   rotate <portrait|landscape>    rotate the active display (exit 6 when the app refuses)
-  orientation                    print portrait|landscape of the lit display (hinge readback)
+  orientation                    print portrait|landscape of the lit display (window size from
+                                 duoctl state, capture size as fallback; never the hinge label)
   wait-posture <closed|open|book> [--timeout <s>]   poll until the hinge reports the pose
   install <App.app>              simctl install
   launch [--no-check] <bundle.id> [args...]   simctl terminate + launch, then verify the
@@ -155,9 +156,10 @@ case "$cmd" in
     #   or SpringBoard, which is portrait-only there. That is a cell result
     #   (exit 6), not a protocol change. It is also intermittently reported
     #   right after a fold, so it is retried before being believed.
-    # The current orientation comes from the hinge readback: `duoctl state` can
-    # be stale after a fold (field test 2: it reported inner/landscape while the
-    # outer display showed a 466 x 678 portrait app).
+    # The current orientation is the window's (`sim.sh orientation`), not the
+    # hinge's label: on the inner display that label is the device's and reads
+    # "portrait" for a 951 x 669 landscape window, so 0.3.0 returned early here
+    # and never rotated an inner cell (field test 3, note 8).
     cur="$("$0" orientation 2>/dev/null || true)"
     if [ "$cur" = "$1" ]; then exit 0; fi
     err=""; ok=0; i=0
@@ -175,28 +177,69 @@ case "$cmd" in
         *) duo_die "$DUO_EXIT_POSE" "duoctl could not rotate to $1: ${err:-no output} (private protocol changed?)" ;;
       esac
     fi
-    sleep 1
+    # duoctl checks the rotation itself, but the readback lags by a few seconds
+    # and a cell photographed in the wrong orientation passes under the wrong
+    # name, so wait until the window agrees before returning (exit 1 otherwise:
+    # an error cell in the matrix, never a pass).
+    i=0; cur=""
+    while [ "$i" -lt 12 ]; do
+      cur="$("$0" orientation 2>/dev/null || true)"
+      [ "$cur" = "$1" ] && break
+      i=$(( i + 1 )); sleep 0.5
+    done
+    [ "$cur" = "$1" ] || duo_die "$DUO_EXIT_UI" "rotation to $1 did not take effect: the lit display still reports ${cur:-no orientation} after 6 s"
     ;;
   orientation)
+    # Which display is lit comes from the hinge (`activeDisplay`); the window's
+    # orientation comes from the size `duoctl state` reports for it. The hinge's
+    # own `orientation` is the device's: on the inner display it reads
+    # "portrait" for the 951 x 669 landscape window and lags a rotation by 2 to
+    # 4 s (field test 3, note 8: 0.3.0 believed it, returned early from
+    # `rotate portrait`, and photographed every inner portrait cell in
+    # landscape). `duoctl state` is stale for a few seconds after a fold (field
+    # test 2, note 11), so it is believed only once its activeScreen agrees with
+    # the hinge; the capture size is the fallback.
     udid="$(duo_sim_udid)" || duo_die "$DUO_EXIT_PREFLIGHT" "no iPhone Duo simulator booted"
     export DUOCTL_UDID="$udid" HINGE_DEVICE="$udid"
     posture="$(hinge posture --json 2>/dev/null || true)"
-    orient="$(printf '%s' "$posture" | "$DUO_PY" -c 'import json,sys
+    lit="$(printf '%s' "$posture" | "$DUO_PY" -c 'import json, sys
 try:
-    print(json.load(sys.stdin).get("orientation", ""))
+    d = json.load(sys.stdin)
 except Exception:
-    print("")' 2>/dev/null || true)"
-    if [ -z "$orient" ]; then
+    sys.exit(0)
+a = str(d.get("activeDisplay", ""))
+print("inner" if a.endswith("-1") else ("outer" if a else ""))' 2>/dev/null || true)"
+    orient=""; i=0
+    while [ "$i" -lt 8 ]; do
       state="$(duoctl state 2>/dev/null || true)"
-      orient="$(printf '%s' "$state" | "$DUO_PY" -c 'import json,sys
+      orient="$(printf '%s' "$state" | "$DUO_PY" -c 'import json, sys
 try:
-    print(json.load(sys.stdin).get("orientation", ""))
+    d = json.load(sys.stdin)
 except Exception:
-    print("")' 2>/dev/null || true)"
+    sys.exit(0)
+screen = {"cover": "outer", "inner": "inner"}.get(str(d.get("activeScreen", "")).lower(), "")
+if sys.argv[1] and screen and screen != sys.argv[1]:
+    sys.exit(0)  # stale: still the display that was lit before the fold
+s = d.get("sizePoints") or []
+if len(s) == 2 and s[0] and s[1]:
+    print("landscape" if float(s[0]) > float(s[1]) else "portrait")' "$lit" 2>/dev/null || true)"
+      [ -n "$orient" ] && break
+      i=$(( i + 1 )); sleep 0.5
+    done
+    if [ -z "$orient" ]; then
+      tmpd="$(mktemp -d)"
+      cap="$("$DUO_SCRIPTS/capture.sh" "$tmpd/orientation.png" --display "${lit:-outer}" --retries 1 --json 2>/dev/null || true)"
+      rm -rf "$tmpd"
+      orient="$(printf '%s' "$cap" | "$DUO_PY" -c 'import json, sys
+try:
+    d = json.load(sys.stdin)
+    print("landscape" if int(d["width"]) > int(d["height"]) else "portrait")
+except Exception:
+    pass' 2>/dev/null || true)"
     fi
     case "$orient" in
-      *landscape*) echo landscape ;;
-      *portrait*) echo portrait ;;
+      landscape) echo landscape ;;
+      portrait) echo portrait ;;
       *) exit 1 ;;
     esac
     ;;

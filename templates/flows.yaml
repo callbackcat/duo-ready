@@ -6,7 +6,9 @@
 #
 # Step grammar (one step per item, Maestro-compatible verbs):
 #   launch                        launch the app fresh
-#   reset                         clear app state first (reinstall; Maestro clearState)
+#   reset                         clear app state first (uninstall + reinstall; Maestro clearState).
+#                                 Never in a flow that runs on a signed-in simulator (--udid):
+#                                 it signs the developer out and the next wait times out
 #   tap "<label>" | tap id:<id>   tap by accessibility label, or by testID / accessibilityIdentifier
 #   wait "<label>" | wait id:<id> wait up to 10 s for the element (a bare string is matched as text;
 #                                 use id: for testIDs, which Maestro does not match as text)
@@ -44,6 +46,10 @@ flows:
   - name: fold-mid-edit
     steps: [launch, tap "Compose", pose book, wait "Compose"]   # explicit mid-flow fold
 
-  - name: home-signed-in
+  - name: home-fresh
     steps: [reset, deeplink myapp://home, wait id:home-root]    # ids survive copy changes; reset first so
                                                                 # a previous cell's state does not leak
+
+  - name: home-signed-in
+    steps: [deeplink myapp://home, wait id:home-root]           # for --udid on a signed-in simulator:
+                                                                # deep link and wait only, no reset
