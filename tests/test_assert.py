@@ -283,3 +283,40 @@ def test_cli_writes_files_and_exit_code(tmp_path, capsys):
     write_capture(root, 3, "feed", "open-landscape", [el("Ok", 0, 0, 100, 100)])
     write_build(root, 3)
     assert asrt.main(["--run", "3", "--root", root]) == 0
+
+
+def test_unavailable_tree_skips_instead_of_passing(tmp_path):
+    """run-matrix writes source=unavailable when `duoctl elements` fails (no AXe).
+    An empty tree used to pass every assertion (field test, 25 vacuous greens)."""
+    root = str(tmp_path)
+    write_build(root, 1)
+    cap = os.path.join(root, ".duo", "runs", "1", "captures")
+    os.makedirs(cap, exist_ok=True)
+    duolib.write_json(os.path.join(cap, "feed-closed-portrait.tree.json"), {"source": "unavailable", "elements": []})
+    pngio.write(os.path.join(cap, "feed-closed-portrait.png"), 40, 60, 3, pngio.solid(40, 60, (255, 255, 255)))
+    ui, failures = asrt.evaluate_run(root, 1)
+    r = results_for(ui, "feed", "closed-portrait")
+    for name in ("offscreen_elements", "clipped_text", "tap_target_min", "bars_vertical_expected", "content_under_outer_camera"):
+        assert r[name]["status"] == "skip", name
+        assert "AXe" in r[name]["reason"]
+    assert ui["verified"] is False
+    assert ui["summary"]["unverified_cells"] == 1
+    assert ui["summary"]["fail"] == 0 and failures == []
+    assert ui["cells"][0]["tree_available"] is False
+
+
+def test_skip_json_cell_is_listed_as_skipped(tmp_path):
+    root = str(tmp_path)
+    write_build(root, 1)
+    cap = os.path.join(root, ".duo", "runs", "1", "captures")
+    os.makedirs(cap, exist_ok=True)
+    duolib.write_json(os.path.join(cap, "feed-closed-landscape.skip.json"),
+                      {"flow": "feed", "cell": "closed-landscape", "reason": "the app in front refused to rotate to landscape"})
+    write_capture(root, 1, "feed", "closed-portrait", [el("Root", 0, 0, 466, 678)])
+    ui, failures = asrt.evaluate_run(root, 1)
+    skipped = [c for c in ui["cells"] if c.get("skipped")]
+    assert len(skipped) == 1 and skipped[0]["cell"] == "closed-landscape"
+    assert skipped[0]["results"][0]["status"] == "skip" and "refused" in skipped[0]["results"][0]["reason"]
+    assert ui["summary"]["skipped_cells"] == 1 and ui["summary"]["cells"] == 2
+    assert ui["verified"] is True
+    assert failures == []

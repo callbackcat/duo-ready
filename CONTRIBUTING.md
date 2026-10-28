@@ -1,22 +1,23 @@
 # Contributing
 
-## First task for anyone with a Mac: run the verification checklist
+## Mac verification: what is done and what the second iteration needs
 
-The repository was authored without Xcode. These items are the gap between "tested on Windows" and "verified on hardware the skill targets". Open an issue titled "Mac verification <date>" and tick what passed, attaching `preflight.json` and the report.
+The first field test (27 Oct 2026, Xcode 27.1 build 27A9275, Expo SDK 54 app) verified preflight, simulator boot, pose readback at 0, 127 and 180 degrees, rotation, per-display capture at the App Store pixel sizes, the SDK stamp and the UIScene launch kill. It could not verify the measuring half: AXe was not installed (every element tree empty) and the app had no `DuoPerfTests` target. Open an issue titled "Mac verification <date>" and tick what passed, attaching `preflight.json` and the report.
 
-Environment: macOS Tahoe 26.6+, Xcode 27.1 (or 27.2 RC), iOS 27.1 runtime, `brew install skarol/tap/duoctl artemnovichkov/tap/hinge`, fastlane 2.241.1+.
+Environment: macOS Tahoe 26.6+ or macOS 27, Xcode 27.1 (or 27.2 RC) with its Command Line Tools, iOS 27.1 runtime, `brew install skarol/tap/duoctl artemnovichkov/tap/hinge`, `brew tap cameroncooke/axe && brew install axe`, Maestro, fastlane 2.241.1+. Keep the project outside iCloud Drive.
 
-- [ ] `bash scripts/preflight.sh --json` exits 0; note the Xcode build, duoctl and hinge versions it printed.
-- [ ] `bash scripts/sim.sh ensure` boots an iPhone Duo simulator closed.
-- [ ] `bash scripts/sim.sh pose open && bash scripts/sim.sh wait-posture open` reads back 180 degrees within 5 s; same for `book` (127) and `closed` (0).
-- [ ] `bash scripts/capture.sh out.png --cell open-landscape` produces a non-black 2853x2007 or 2007x2853 PNG (note which orientation the inner capture comes out in).
-- [ ] `bash scripts/sdk-stamp.sh <App.app>` reports 27.1 for an app built with Xcode 27.1 and 27.0 when built with `SDKROOT` pointed at the 27.0 SDK.
-- [ ] `templates/DuoUITests.swift` and `templates/DuoPerfTests.swift` compile in a fresh UI test target.
-- [ ] Full run on a real app: `build.sh`, `run-matrix.sh --run 1`, `perf.sh --run 1`, `report.py --run 1`; attach the report.
-- [ ] `assets.sh --run 1` then `fastlane deliver --skip_binary_upload --skip_metadata` uploads the outer set; try the inner set and record whether App Store Connect accepts it through the API.
+Second iteration (still open):
+
+- [ ] `bash scripts/preflight.sh --json` reports `"axe":true` and `"maestro":true`.
+- [ ] The app has a `SceneDelegate` (Expo: a config plugin, see `references/rules-react-native.md#expo-no-scene-lifecycle`) and `bash scripts/sim.sh launch <bundle id>` keeps it alive past 3 s.
+- [ ] `templates/DuoUITests.swift` and `templates/DuoPerfTests.swift` compile in UI test targets named `DuoUITests` and `DuoPerfTests`.
+- [ ] `run-matrix.sh --run <n>` with real flows (deep links plus accessibility ids), then `ui.json` has `"verified": true` and at least one non-empty tree per cell; attach the trees of one closed and one open cell so the assertion heuristics can be tuned.
+- [ ] `perf.sh --run <n>` exits 0 or 2 with metrics in `perf.json` (not 4); attach one `.xcresult` JSON so the metric parser can be verified against a real bundle.
+- [ ] `report.py --run <n>` exits 0 on a verified green run.
+- [ ] `assets.sh --run <n>` then `fastlane deliver --skip_binary_upload --skip_metadata` uploads the outer set; try the inner set and record whether App Store Connect accepts it through the API.
 - [ ] `templates/github-actions-duo.yml` on a macOS runner that carries Xcode 27.1.
 
-Anything that failed: paste the exact error and the Xcode build number. A protocol change in `duoctl`/`hinge` shows as preflight exit 5.
+Anything that failed: paste the exact error and the Xcode build number. A protocol change in `duoctl`/`hinge` shows as preflight exit 5; a cell the app refuses (portrait lock) shows as `<flow>-<cell>.skip.json`, not as a failure.
 
 ## Adding a rule
 

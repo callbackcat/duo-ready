@@ -78,7 +78,8 @@ def test_report_perf_fail_exit_2_and_skipped_stages(tmp_path):
     seed(root, run=2, ui_fail=False, perf_fail=True)
     assert report.main(["--run", "2", "--root", root]) == 2
     seed(root, run=3, with_ui=False, with_perf=False)
-    assert report.main(["--run", "3", "--root", root]) == 0
+    # nothing measured is not a pass: exit 1 so a CI gate cannot read it as green
+    assert report.main(["--run", "3", "--root", root]) == 1
     text = open(os.path.join(root, ".duo", "runs", "3", "duo-report.html"), encoding="utf-8").read()
     assert "no ui.json" in text and "no perf.json" in text
 
@@ -122,3 +123,45 @@ def test_loop_agent_command(tmp_path):
     cmd = f'"{sys.executable}" -c "import sys;open(r\'{sink}\',\'w\').write(sys.stdin.read())"'
     assert loop.main(["--run", "1", "--root", root, "--agent", cmd]) == 1
     assert "interactive_in_fold" in open(sink, encoding="utf-8").read()
+
+
+def test_report_and_loop_refuse_unverified_run(tmp_path, capsys):
+    """Field test, run 9: 25 green cells with empty element trees. A ui.json
+    whose cells had no tree is 'unverified', exit 1, and loop does not say done."""
+    root = str(tmp_path)
+    rdir = seed(root, run=4, ui_fail=False)
+    ui_path = os.path.join(rdir, "ui.json")
+    ui = duolib.load_json(ui_path)
+    ui["verified"] = False
+    for c in ui["cells"]:
+        c["tree_available"] = False
+    duolib.write_json(ui_path, ui)
+    assert report.main(["--run", "4", "--root", root, "--json"]) == 1
+    summary = json.loads(capsys.readouterr().out)
+    assert summary["overall"] == "unverified"
+    text = open(os.path.join(rdir, "duo-report.html"), encoding="utf-8").read()
+    assert "skipped, not passed" in text and "AXe" in text
+    assert loop.main(["--run", "4", "--root", root, "--json"]) == 1
+    out = json.loads(capsys.readouterr().out)
+    assert out["action"] == "unverified" and out["failures"] == 0
+
+
+def test_loop_without_failures_json_is_not_done(tmp_path, capsys):
+    root = str(tmp_path)
+    rdir = seed(root, run=5, ui_fail=False)
+    os.remove(os.path.join(rdir, "failures.json"))
+    assert loop.main(["--run", "5", "--root", root, "--json"]) == 1
+    out = json.loads(capsys.readouterr().out)
+    assert out["action"] == "no_assertions" and out["failures"] is None
+
+
+def test_report_perf_without_metrics_is_skip(tmp_path, capsys):
+    root = str(tmp_path)
+    rdir = seed(root, run=6, ui_fail=False)
+    duolib.write_json(os.path.join(rdir, "perf.json"), {"schema": 1, "run": 6, "mode": "regression", "metrics": [],
+                                                        "status": "skip", "reason": "no metrics collected"})
+    assert report.main(["--run", "6", "--root", root, "--json"]) == 0  # UI verified, perf merely absent
+    summary = json.loads(capsys.readouterr().out)
+    assert summary["overall"] == "pass"
+    text = open(os.path.join(rdir, "duo-report.html"), encoding="utf-8").read()
+    assert "DuoPerfTests target missing" in text

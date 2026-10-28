@@ -52,16 +52,19 @@ BINARY="$APP/$EXEC_NAME"
 
 # otool -l prints one LC_BUILD_VERSION block per architecture; the sdk line
 # inside it looks like "      sdk 27.1". Take the first.
-SDK="$(otool -l "$BINARY" 2>/dev/null | awk '
+# The otool output is captured first: `otool | awk '... exit'` under pipefail
+# dies with SIGPIPE (exit 141) whenever awk quits before otool finishes writing.
+OTOOL_OUT="$(otool -l "$BINARY" 2>/dev/null || true)"
+SDK="$(printf '%s\n' "$OTOOL_OUT" | awk '
   /LC_BUILD_VERSION/ { inblock = 1 }
-  inblock && $1 == "sdk" { print $2; exit }
+  inblock && !done && $1 == "sdk" { print $2; done = 1 }
   /^Load command/ { inblock = 0 }
 ')"
 if [ -z "$SDK" ]; then
   # Older toolchains emit LC_VERSION_MIN_IPHONEOS instead.
-  SDK="$(otool -l "$BINARY" 2>/dev/null | awk '
+  SDK="$(printf '%s\n' "$OTOOL_OUT" | awk '
     /LC_VERSION_MIN_IPHONEOS/ { inblock = 1 }
-    inblock && $1 == "sdk" { print $2; exit }
+    inblock && !done && $1 == "sdk" { print $2; done = 1 }
     /^Load command/ { inblock = 0 }
   ')"
 fi

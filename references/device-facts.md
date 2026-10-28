@@ -21,6 +21,12 @@ Sources: App Store Connect screenshot specifications; Apple design resources bez
 
 Check the stamp with `scripts/sdk-stamp.sh` (reads the `sdk` value of the `LC_BUILD_VERSION` load command via `otool -l`). A 27.0 stamp invalidates every later measurement.
 
+Two consequences of building with the 27.x SDK, verified on the simulator 27 Oct 2026:
+- UIKit kills an app that has no UIScene life cycle about 2 s after launch ("UIScene life cycle is required for apps built with this SDK", TN3187). Expo SDK 54 and React Native 0.81 templates ship without one; SwiftUI `App` apps are fine. The scan rules `no-scene-delegate` and `expo-no-scene-lifecycle` are launch blockers.
+- Xcode 27.1 refuses deployment targets below iOS 15, which old CocoaPods resource bundles still declare (`IPHONEOS_DEPLOYMENT_TARGET=15.0` or a Podfile `post_install` fixes it).
+
+The outer window is 678 pt tall, shorter than any current iPhone (the 6.1" class is 852 pt). Screens that size a hero or block from a fixed height or a large fraction of the window height run out of room there before they run out of width.
+
 ## Size classes (iOS 27.1 SDK)
 
 | Cell | Horizontal | Vertical | Bars |
@@ -83,6 +89,7 @@ Regions are empty for the first few layout passes. Read them on every layout, ne
 - Initial Simulator launch can take several minutes (187708500).
 - Modifier keys may stop working after switching displays; click the visible screen (189465196).
 - Quitting Device Hub shuts down the simulators it booted; boot with `simctl` for automation.
+- SpringBoard on the outer display is portrait only, and a portrait-locked app refuses `duoctl rotate` there (verified 27 Oct 2026); landscape cells of such an app are skipped, not failed.
 
 ## App Store
 

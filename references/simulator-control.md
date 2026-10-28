@@ -47,7 +47,7 @@ The device boots closed, on the outer display. Boot with `simctl`, not through D
 | Install | `brew install skarol/tap/duoctl`; agent skill `npx skills add skarol/duoctl` | `brew install artemnovichkov/tap/hinge`; `npx skills add artemnovichkov/hinge`; Claude plugin `/plugin marketplace add artemnovichkov/hinge` |
 | License | MIT | MIT |
 | Mechanism | helper spawned with `xcrun simctl spawn` sends vendor HID events (usage page 0xFF61, usage 0x5B); touches cloned onto the active display's touchscreen | same HID event through the simulator `IOHIDEventSystem`; angle read back from private `CMAngleManager` |
-| Readback | `duoctl state` (JSON: angle, active screen, orientation, size) | `hinge get`, `hinge posture [--json]` |
+| Readback | `duoctl state` (JSON, verified 27 Oct 2026 with duoctl 0.2.0: `udid`, `hingeAngle` (null on the simulator), `activeScreen` `cover` or `inner`, `displayId` 1 or 3, `displayUUID`, `rotation` `rot0` or `rot90`, `orientation`, `sizePoints [w, h]`) | `hinge get` (bare angle), `hinge posture --json` (`angle`, `orientation`, `activeDisplay` `LCD` or `LCD-1`, `displays[]` with `name`, `id`, `primary`, `active`, `backlight`, `rotation`, `size` in px, `scale`); samples in `tests/fixtures/` |
 | Select device | `-d <udid|name>` or `DUOCTL_UDID`; never guesses with several Duos | `-d`/`--device`, `HINGE_DEVICE`, else the only booted Duo |
 | Verified on | Xcode 27.1 + iOS 27.1 | Xcode 27.1 and 27.2 + iOS 27.1 |
 
@@ -99,6 +99,10 @@ Prefer an app-level signal: wait for a label or accessibility id that only exist
 
 Only the HID orientation event works. `xcrun devicectl device orientation set` and `XCUIDevice.shared.orientation` report success without rotating the Duo simulator. `duoctl rotate` tries orientations until the active screen reports the requested rotation; `hinge orient` names device orientations, so `landscape-left` versus `landscape-right` matters. The default unfolded orientation of the inner display is landscape, and the inner panel is mounted a quarter turn from the outer one, so captures in landscape poses come out rotated.
 
+Two things verified on 27 Oct 2026 that shape `scripts/sim.sh rotate`:
+- SpringBoard on the outer display is portrait only. Rotating with nothing in front does nothing, so the scripts launch the app first and rotate afterwards.
+- A portrait-locked app refuses the rotation: `duoctl rotate landscape` exits 1 with "the active screen did not rotate ... (the app may not support it)". `sim.sh rotate` retries three times, then exits 6; `run-matrix.sh` writes `<flow>-<cell>.skip.json` and continues with the next cell. The inner display ignores `UISupportedInterfaceOrientations`, so only outer-display cells are affected.
+
 ## 7. Screenshots per display
 
 Both displays exist at once; only one is lit, the other captures solid black.
@@ -109,7 +113,7 @@ xcrun simctl io "$UDID" screenshot --display="$OUTER_UUID" closed.png
 xcrun simctl io "$UDID" screenshot --display="$INNER_UUID" open.png
 ```
 
-Pick the display by width: 1398 is the outer, 2007 the inner. UUIDs change every boot, and index names (`--display=1`/`3`, `primary`/`primary-1`) differ between Xcode builds, so never hardcode them. Output is already at App Store pixel size (outer 1398 × 2034, inner 2007 × 2853). Captures include the status column on the outer display. `duoctl screenshot` and `hinge screenshot` capture the lit display without enumerating.
+Pick the display by width: 1398 is the outer, 2007 the inner. UUIDs change every boot, and index names (`--display=1`/`3`, `primary`/`primary-1`) differ between Xcode builds, so never hardcode them. On Xcode 27.1 the output has a `Connected Screens:` section with one block per display: `(1) LCD:` and `(3) LCD-1:`, each with `Unique ID:`, `Device Name: primary` or `primary-1`, and `Pixel Size: {1398, 2034}` or `{2007, 2853}`; `--display=` accepts the Unique ID (verified 27 Oct 2026, raw output in `tests/fixtures/simctl-io-enumerate-xcode27.1.txt`). `scripts/simdisplay.py` parses that format and the older per-port layout. The dark display returns a black file in about 2 s rather than failing. Output is already at App Store pixel size (outer 1398 × 2034, inner 2007 × 2853). Captures include the status column on the outer display. `duoctl screenshot` and `hinge screenshot` capture the lit display without enumerating.
 
 Validate every PNG: a black or empty frame is still a valid file. `scripts/capture.sh` rejects images with under 0.5% non-black pixels and retries after a short wait, because the simulator returns black for minutes after boot.
 
@@ -117,7 +121,9 @@ Do not use `xcrun simctl io screenConfig` to switch or power displays: it can tu
 
 ## 8. Touch and element trees on the inner display
 
-Each display has its own touchscreen. AXe, XcodeBuildMCP, RocketSim and Maestro inject touches into the outer (cover) touchscreen only, so taps aimed at the open inner display land on the cover. Use `duoctl tap` (coordinates in interface points of the lit display, converted for the current rotation) or XCUITest running inside the app.
+Each display has its own touchscreen. AXe, XcodeBuildMCP, RocketSim and Maestro inject touches into the outer (cover) touchscreen only, so taps aimed at the open inner display land on the cover. Use `duoctl tap` (coordinates in interface points of the lit display, converted for the current rotation) or XCUITest running inside the app. The reverse also holds: `duoctl tap` (0.2.0) cannot touch the outer display, so closed-pose steps for React Native apps go through Maestro, and a flow that must reach a screen on either display should expose a deep link. Deep links can show an "Open in <App>?" prompt the first time; `run-matrix.sh` waits 1.5 s after `deeplink` and notes the prompt in the log.
+
+`duoctl elements` needs AXe (`brew tap cameroncooke/axe && brew install axe`). Without it the command fails, `run-matrix.sh` writes a tree with `source: unavailable`, and `assert.py` skips the layout assertions instead of passing them.
 
 Element frames for `scripts/assert.py` come from:
 - XCUITest: `app.descendants(matching: .any)` with `frame`, `identifier`, `label`, `elementType`, `isHittable`; the template dumps them to `<flow>-<cell>.tree.json`.
@@ -174,6 +180,15 @@ From the Xcode 27.1 and 27.2 RC release notes unless marked community:
 - Modifier keys may stop working after switching displays; click the visible screen (189465196).
 - Fixed in 27.2: `CameraCaptureAccessory` could use both displays without an active capture session (190155353).
 - Community: hinge sometimes stops responding, reboot the simulator; display switch lag 1 to 2.5 s; pose tools do not update Device Hub's slider; a `UIView` built against 27.1 reports zero default layout margins on the Duo runtime; black frames after boot.
+
+Verified on the first field test (27 Oct 2026, macOS 27.0.1, Xcode 27.1 build 27A9275):
+
+- An app built with the 27.1 SDK and no UIScene life cycle is killed by UIKit 2.2 s after launch (SIGTRAP, "UIScene life cycle is required for apps built with this SDK"). Expo SDK 54 and React Native 0.81 templates are in this state. `sim.sh launch` reads the message from `log show` and exits 3.
+- Xcode 27.1 refuses deployment targets below iOS 15; CocoaPods resource bundles often still declare 11 or 12. `build.sh` prints the fix.
+- `brew install` of duoctl and hinge on macOS 27 needs the Command Line Tools for Xcode 27 (13 minute download); preflight's hint says so.
+- DerivedData inside an iCloud-synced folder makes codesign fail on Finder attributes ("resource fork, Finder information, or similar detritus") and multiplied the build time by ten. `build.sh` defaults DerivedData to `~/Library/Developer/Xcode/DerivedData/duo-ready-<scheme>`.
+- `xcrun xcresulttool get --format json` requires `--legacy` on Xcode 27.1; `get test-results summary` is the non-deprecated form. `perf.sh` tries `--legacy` first.
+- `cmd | awk '... exit'` and `cmd | head -n 1` under `set -o pipefail` die with SIGPIPE (exit 141) about one run in eight; the scripts capture output first and parse afterwards, and a test guards against the pattern.
 
 ## 14. Sources
 

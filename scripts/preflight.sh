@@ -42,6 +42,14 @@ done
 # shellcheck source=common.sh
 . "$(dirname "$0")/common.sh"
 
+# With --json the exit-4 path must produce JSON too (the field test got an
+# empty stdout and had to read stderr).
+duo_die_host() {
+  printf 'cannot run on this host: %s\n' "$*" >&2
+  [ "$JSON" -eq 1 ] && printf '{"ok":false,"exit":4,"reason":"%s"}\n' "$(duo_json_escape "$*" 2>/dev/null || true)"
+  exit "$DUO_EXIT_PREFLIGHT"
+}
+
 MIN_XCODE="27.1"
 MIN_FASTLANE="2.241.1"
 RUNTIME_ID="com.apple.CoreSimulator.SimRuntime.iOS-27-1"
@@ -58,7 +66,10 @@ duo_require_tool xcrun
 duo_require_tool "$DUO_PY" "python3 comes with Xcode's command line tools: xcode-select --install"
 
 # --- Xcode version ---------------------------------------------------------
-XCODE_VERSION="$(xcodebuild -version 2>/dev/null | awk '/^Xcode/ {print $2; exit}')"
+# Capture first, then parse: `xcodebuild -version | awk '... exit'` under
+# pipefail dies with SIGPIPE (exit 141) about one run in eight (field test).
+XCODEBUILD_OUT="$(xcodebuild -version 2>/dev/null || true)"
+XCODE_VERSION="$(printf '%s\n' "$XCODEBUILD_OUT" | awk '/^Xcode/ && !done {print $2; done=1}')"
 if [ -z "$XCODE_VERSION" ]; then
   duo_die_host "xcodebuild -version returned nothing (run: sudo xcode-select -s /Applications/Xcode.app)"
 fi
@@ -89,16 +100,17 @@ fi
 duo_log "iOS 27.1 runtime and iPhone Duo device type present"
 
 # --- pose control tools ----------------------------------------------------
-BREW_HINT="brew install skarol/tap/duoctl artemnovichkov/tap/hinge"
+BREW_HINT="brew install skarol/tap/duoctl artemnovichkov/tap/hinge  (on macOS 27 Homebrew first needs the Command Line Tools for Xcode 27: Software Update, or xcode-select --install)"
 duo_require_tool duoctl "$BREW_HINT"
 duo_require_tool hinge "$BREW_HINT"
-DUOCTL_VER="$(duoctl --version 2>/dev/null | head -n 1 || echo unknown)"
-HINGE_VER="$(hinge --version 2>/dev/null | head -n 1 || echo unknown)"
+DUOCTL_VER="$(duoctl --version 2>/dev/null | sed -n 1p || echo unknown)"
+HINGE_VER="$(hinge --version 2>/dev/null | sed -n 1p || echo unknown)"
 duo_log "duoctl ($DUOCTL_VER) and hinge ($HINGE_VER) installed"
 
 # --- fastlane (warn only; needed for the assets stage) ---------------------
 if command -v fastlane >/dev/null 2>&1; then
-  FASTLANE_VER="$(fastlane --version 2>/dev/null | awk '/^fastlane [0-9]/ {print $2; exit}')"
+  FASTLANE_OUT="$(fastlane --version 2>/dev/null || true)"
+  FASTLANE_VER="$(printf '%s\n' "$FASTLANE_OUT" | awk '/^fastlane [0-9]/ && !done {print $2; done=1}')"
   if [ -n "$FASTLANE_VER" ] && duo_version_ge "$FASTLANE_VER" "$MIN_FASTLANE"; then
     FASTLANE_OK=1
   else
@@ -106,6 +118,23 @@ if command -v fastlane >/dev/null 2>&1; then
   fi
 else
   warn "fastlane not installed; the assets stage will print the asc CLI alternative instead"
+fi
+
+# --- flow driver and element trees (warn only) -----------------------------
+# Maestro drives the closed-pose flows of React Native/Expo apps; AXe gives
+# `duoctl elements` the element trees that every layout assertion reads.
+# Without AXe the trees are empty and assert.py reports those assertions as
+# skipped, not passed. Neither was installed on the first field-test Mac.
+MAESTRO_OK=0; AXE_OK=0
+if command -v maestro >/dev/null 2>&1; then
+  MAESTRO_OK=1
+else
+  warn "maestro not installed; React Native/Expo closed-pose flows fall back to the duoctl interpreter (launch, deeplink, sleep only): curl -fsSL https://get.maestro.mobile.dev | bash"
+fi
+if command -v axe >/dev/null 2>&1; then
+  AXE_OK=1
+else
+  warn "AXe not installed; element trees will be empty and layout assertions skipped: brew tap cameroncooke/axe && brew install axe"
 fi
 
 # --- simulator -------------------------------------------------------------
@@ -144,12 +173,13 @@ print(int(round(float(a))) if a is not None else "")' || true)"
 fi
 
 if [ "$JSON" -eq 1 ]; then
-  printf '{"ok":true,"exit":0,"xcode":"%s","runtime_ios_27_1":%s,"device_type_duo":%s,"duoctl":"%s","hinge":"%s","fastlane":"%s","fastlane_ok":%s,"sim_udid":"%s","pose_control":"%s","warnings":"%s"}\n' \
+  printf '{"ok":true,"exit":0,"xcode":"%s","runtime_ios_27_1":%s,"device_type_duo":%s,"duoctl":"%s","hinge":"%s","maestro":%s,"axe":%s,"fastlane":"%s","fastlane_ok":%s,"sim_udid":"%s","pose_control":"%s","warnings":"%s"}\n' \
     "$XCODE_VERSION" "$([ $RUNTIME_OK -eq 1 ] && echo true || echo false)" "$([ $DEVTYPE_OK -eq 1 ] && echo true || echo false)" \
-    "$(duo_json_escape "$DUOCTL_VER")" "$(duo_json_escape "$HINGE_VER")" "$FASTLANE_VER" \
+    "$(duo_json_escape "$DUOCTL_VER")" "$(duo_json_escape "$HINGE_VER")" \
+    "$([ $MAESTRO_OK -eq 1 ] && echo true || echo false)" "$([ $AXE_OK -eq 1 ] && echo true || echo false)" "$FASTLANE_VER" \
     "$([ $FASTLANE_OK -eq 1 ] && echo true || echo false)" "$SIM_UDID" "$POSE_OK" "$(duo_json_escape "$WARNINGS")"
 else
-  echo "preflight ok: Xcode $XCODE_VERSION, iOS 27.1 runtime, duoctl, hinge, pose control $POSE_OK"
+  echo "preflight ok: Xcode $XCODE_VERSION, iOS 27.1 runtime, duoctl, hinge, pose control $POSE_OK, maestro $([ $MAESTRO_OK -eq 1 ] && echo yes || echo no), axe $([ $AXE_OK -eq 1 ] && echo yes || echo no)"
   [ -n "$WARNINGS" ] && echo "warnings: $WARNINGS"
 fi
 exit 0

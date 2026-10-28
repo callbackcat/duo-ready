@@ -219,7 +219,7 @@ Set `visibilityPriority` on the items that must stay visible longest. Ref: https
 ## no-scene-delegate
 **error · manual** (project-level: an `Info.plist` without `UIApplicationSceneManifest` and no `UIWindowSceneDelegate` in its sources)
 
-Apps built with the iOS 27 SDK or later must use the UIScene life cycle (TN3187). Without scenes the window is not attached to a display and cannot move between the outer and inner display or participate in Split View and multiple windows. SwiftUI `App` lifecycle already satisfies this.
+Launch blocker, not a layout warning: an app built with the iOS 27 SDK and no UIScene life cycle is killed by UIKit about 2 s after launch ("UIScene life cycle is required for apps built with this SDK", verified on the simulator 27 Oct 2026). Even where it ran, a window not attached to a scene could not move between the outer and inner display or take part in Split View (TN3187). SwiftUI `App` lifecycle already satisfies this.
 
 Steps: add `UIApplicationSceneManifest` to Info.plist with a `UIWindowSceneSessionRoleApplication` configuration naming your `SceneDelegate`; move window creation into `scene(_:willConnectTo:options:)`; implement `application(_:configurationForConnecting:options:)`. Ref: https://developer.apple.com/documentation/technotes/tn3187-migrating-to-the-uikit-scene-based-life-cycle
 

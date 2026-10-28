@@ -30,7 +30,7 @@ h1{font-size:24px;margin:0 0 4px}h2{font-size:18px;margin:32px 0 12px;border-bot
 .muted{color:var(--mut)}.note{background:var(--card);border-left:4px solid var(--warn);padding:10px 14px;border-radius:6px;margin:12px 0}
 table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
 .matrix td{text-align:center;padding:4px}.matrix img{max-width:120px;max-height:120px;display:block;margin:4px auto;border:1px solid var(--line);border-radius:4px}
-.badge{display:inline-block;padding:1px 8px;border-radius:10px;color:#fff;font-size:12px}.pass{background:var(--pass)}.warn{background:var(--warn)}.fail{background:var(--fail)}.skip{background:var(--skip)}
+.badge{display:inline-block;padding:1px 8px;border-radius:10px;color:#fff;font-size:12px}.pass{background:var(--pass)}.warn{background:var(--warn)}.fail{background:var(--fail)}.skip{background:var(--skip)}.unverified{background:var(--warn)}
 .failure{background:var(--card);border-radius:8px;padding:12px;margin:12px 0;display:grid;grid-template-columns:minmax(200px,360px) 1fr;gap:16px}
 .failure svg{width:100%;height:auto;border:1px solid var(--line);border-radius:4px}
 .failure code{font-size:12px}.skipbox{background:var(--card);border:1px dashed var(--line);padding:12px;border-radius:8px}
@@ -123,6 +123,8 @@ def build_report(root: str, run: int) -> tuple[str, dict]:
 
     ui_fail = bool(ui and any(r["status"] == "fail" for c in ui.get("cells", []) for r in c.get("results", [])))
     perf_fail = bool(perf and any(m.get("status") == "fail" for m in perf.get("metrics", [])))
+    perf_skip = bool(perf) and not perf.get("metrics")
+    ui_unverified = bool(ui) and ui.get("verified") is False
 
     skipped = []
     if build is None:
@@ -131,6 +133,11 @@ def build_report(root: str, run: int) -> tuple[str, dict]:
         skipped.append("UI matrix: no ui.json, no pose matrix was executed")
     if perf is None:
         skipped.append("performance: no perf.json, no metrics were collected")
+    elif perf_skip:
+        skipped.append("performance: perf.json has no metrics (DuoPerfTests target missing or nothing measured; perf.sh exit 4)")
+    if ui_unverified:
+        skipped.append("UI matrix: no cell had an element tree (AXe not installed, or no DuoUITests attachment); "
+                       "offscreen, clipped, tap-target, camera and fold assertions were skipped, not passed")
     if scan is None:
         skipped.append("scan: no .duo/scan.json")
     for note in (build or {}).get("skipped", []) or []:
@@ -148,8 +155,17 @@ def build_report(root: str, run: int) -> tuple[str, dict]:
                  "App Store: iPhone Duo screenshots are optional today and become <strong>required from April 2027 for apps built with the iOS 27.1 SDK or later</strong>. "
                  "Apple has not said apps will be removed; submitting Duo screenshots now earns the “optimized for iPhone Duo” badge.</div>")
 
-    overall = "fail" if (ui_fail or perf_fail) else ("warn" if ui and any(r["status"] == "warn" for c in ui["cells"] for r in c["results"]) else ("pass" if ui else "skip"))
-    parts.append(f"<p>Overall: {badge(overall)} &nbsp; UI {badge('fail' if ui_fail else ('pass' if ui else 'skip'))} &nbsp; perf {badge('fail' if perf_fail else ('pass' if perf else 'skip'))}</p>")
+    if ui_fail or perf_fail:
+        overall = "fail"
+    elif ui_unverified:
+        overall = "unverified"
+    elif ui and any(r["status"] == "warn" for c in ui["cells"] for r in c["results"]):
+        overall = "warn"
+    else:
+        overall = "pass" if ui else "skip"
+    ui_badge = "fail" if ui_fail else ("unverified" if ui_unverified else ("pass" if ui else "skip"))
+    perf_badge = "fail" if perf_fail else ("skip" if (perf is None or perf_skip) else "pass")
+    parts.append(f"<p>Overall: {badge(overall)} &nbsp; UI {badge(ui_badge)} &nbsp; perf {badge(perf_badge)}</p>")
 
     # skipped stages
     parts.append('<h2>Unverified or skipped stages</h2><div class="skipbox">')
@@ -270,6 +286,11 @@ def main(argv=None) -> int:
         return duolib.exit_codes.UI_FAIL
     if summary["perf_fail"]:
         return duolib.exit_codes.PERF_FAIL
+    if summary["overall"] in ("skip", "unverified"):
+        # A run that measured nothing is not green (field test: run 1 was
+        # "overall=skip, exit 0" after the app died at launch).
+        print(f"report: nothing was verified (overall={summary['overall']}); exit 1 so a gate cannot read this as a pass", file=sys.stderr)
+        return duolib.exit_codes.UI_FAIL
     return duolib.exit_codes.PASS
 
 

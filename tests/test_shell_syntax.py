@@ -8,6 +8,7 @@ a result. assets.sh is host-independent and gets a functional test.
 import json
 import os
 import platform
+import re
 import shutil
 import struct
 import subprocess
@@ -133,6 +134,65 @@ def test_duocfg_reads_template():
     assert r.returncode == 1
     r = subprocess.run([py, duocfg, "missing.key", "--file", cfg, "--default", "x"], capture_output=True, text=True)
     assert r.returncode == 0 and r.stdout.strip() == "x"
+
+
+@pytest.mark.parametrize("script", SCRIPT_NAMES + ["common.sh"])
+def test_no_sigpipe_pipelines(script):
+    """`cmd | head -n 1` and `cmd | awk '... exit'` under `set -o pipefail` die
+    with SIGPIPE (exit 141) about one run in eight (field test). Capture the
+    output first, then parse it; `sed -n 1p` reads to the end."""
+    text = open(os.path.join(SCRIPTS, script), encoding="utf-8").read()
+    code = [ln for ln in text.splitlines() if not ln.lstrip().startswith("#")]
+    bad = [ln for ln in code if "| head -n 1" in ln or re.search(r"\|\s*awk\s+'[^']*\bexit\b", ln)]
+    assert bad == [], bad
+
+
+@pytest.mark.parametrize("script", SCRIPT_NAMES + ["common.sh"])
+def test_local_does_not_read_a_variable_it_assigns(script):
+    """`local a="$x" b="$a"` expands $a before the assignment (unbound under set -u)."""
+    text = open(os.path.join(SCRIPTS, script), encoding="utf-8").read()
+    bad = []
+    for ln in text.splitlines():
+        m = re.match(r"\s*local\s+(.*)", ln)
+        if not m:
+            continue
+        names = re.findall(r"(\w+)=", m.group(1))
+        for name in names[:-1] if names else []:
+            rest = m.group(1).split(name + "=", 1)[1]
+            if re.search(r"\$\{?" + re.escape(name) + r"\b", rest):
+                bad.append(ln)
+    assert bad == [], bad
+
+
+def test_scripts_are_executable_in_git():
+    """The field test cloned the repo and got `permission denied` on every script."""
+    if not shutil.which("git"):
+        pytest.skip("git not available")
+    r = subprocess.run(["git", "ls-files", "-s", "scripts/"], cwd=ROOT, capture_output=True, text=True)
+    modes = {ln.split()[3]: ln.split()[0] for ln in r.stdout.splitlines() if ln.strip()}
+    sh = {p: m for p, m in modes.items() if p.endswith(".sh")}
+    assert sh, "no scripts tracked"
+    assert all(m == "100755" for m in sh.values()), {p: m for p, m in sh.items() if m != "100755"}
+
+
+def test_simdisplay_parses_xcode_27_1_enumerate():
+    """Verified format (27 Oct 2026): `Connected Screens:` blocks with Unique ID
+    and Pixel Size; the outer display is 1398 px wide, the inner 2007."""
+    py = sys.executable
+    fixture = os.path.join(ROOT, "tests", "fixtures", "simctl-io-enumerate-xcode27.1.txt")
+    text = open(fixture, encoding="utf-8").read()
+    simdisplay = os.path.join(SCRIPTS, "simdisplay.py")
+    outer = subprocess.run([py, simdisplay, "--width", "1398"], input=text, capture_output=True, text=True, encoding="utf-8")
+    inner = subprocess.run([py, simdisplay, "--width", "2007"], input=text, capture_output=True, text=True, encoding="utf-8")
+    assert outer.returncode == 0 and inner.returncode == 0
+    assert re.fullmatch(r"[0-9A-F-]{36}", outer.stdout.strip()), outer.stdout
+    assert re.fullmatch(r"[0-9A-F-]{36}", inner.stdout.strip()), inner.stdout
+    assert outer.stdout.strip() != inner.stdout.strip()
+    listing = subprocess.run([py, simdisplay, "--json"], input=text, capture_output=True, text=True, encoding="utf-8")
+    screens = json.loads(listing.stdout)
+    assert {1398, 2007} <= {s["width"] for s in screens}  # the fixture also lists CarPlay/external displays
+    missing = subprocess.run([py, simdisplay, "--width", "9999"], input=text, capture_output=True, text=True, encoding="utf-8")
+    assert missing.returncode == 1
 
 
 def test_templates_exist():

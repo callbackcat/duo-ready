@@ -191,7 +191,9 @@ def scaffold_duo_yaml(stack: str, scheme: str | None, bundle: str | None, proj: 
         "cells": list(DEFAULT_CELLS),
         "transitions": list(DEFAULT_TRANSITIONS),
         "flows": [
-            {"name": "launch", "steps": ["launch", "sleep 2"]},
+            # placeholder: a launch-only flow shows whatever screen the app restores,
+            # so SKILL.md asks for real flows while this flag is present
+            {"name": "launch", "steps": ["launch", "sleep 2"], "placeholder": True},
         ],
         "assert": {
             "offscreen_elements": "fail",

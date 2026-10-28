@@ -5,6 +5,7 @@
     "orientation": "default",
     "ios": {
       "bundleIdentifier": "com.example.duofixedrn"
-    }
+    },
+    "plugins": ["./plugins/withSceneLifecycle.js"]
   }
 }

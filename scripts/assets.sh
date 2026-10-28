@@ -59,7 +59,7 @@ duo_require_config
 RUN_DIR="$(duo_run_dir "$RUN")"
 [ -f "$RUN_DIR/ui.json" ] || duo_die "$DUO_EXIT_BUILD" "$RUN_DIR/ui.json missing; run scripts/run-matrix.sh --run $RUN"
 
-[ -n "$LOCALE" ] || LOCALE="$(duo_cfg_list assets.locales | head -n 1)"
+[ -n "$LOCALE" ] || LOCALE="$(duo_cfg_list assets.locales | sed -n 1p)"
 [ -n "$LOCALE" ] || LOCALE="en-US"
 [ -n "$OUTPUT" ] || OUTPUT="$(duo_cfg assets.output fastlane/screenshots)"
 DEST="$DUO_ROOT/$OUTPUT/$LOCALE"

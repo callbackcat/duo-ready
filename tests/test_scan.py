@@ -21,6 +21,7 @@ TAG_RE = re.compile(r"duo:\s*([a-z0-9-]+)")
 JSON_EXPECTED = {
     RN: [
         ("app.json", "rn-orientation-lock", '"orientation"'),
+        ("app.json", "expo-no-scene-lifecycle", '"expo"'),
         ("package.json", "rn-sdk-floor", '"expo"'),
         ("package.json", "rn-sdk-floor", '"react-native-screens"'),
     ],
@@ -70,10 +71,8 @@ def rn_findings(rules):
 def test_catalogs_load(rules):
     ids = [r["id"] for r in rules]
     assert len(ids) == len(set(ids)), "duplicate rule ids"
-    native = [r for r in rules if not r["id"].startswith("rn-")]
-    rn = [r for r in rules if r["id"].startswith("rn-")]
-    assert len(native) == 19
-    assert len(rn) == 13
+    assert len(scan.load_rules(stack="native")) == 19
+    assert len(scan.load_rules(stack="rn")) == 17
     for r in rules:
         assert r["severity"] in ("error", "warn", "info"), r["id"]
         assert r.get("fix_hint") and r.get("apple_ref") and r.get("doc"), r["id"]
@@ -196,3 +195,43 @@ def test_cli_table_and_stack_filter(capsys):
     rc = scan.main([RN, "--stack", "rn", "--no-write"])
     out = capsys.readouterr().out
     assert "rn-dimensions-module-scope" in out and "findings" in out
+
+
+def _write(root, rel, text):
+    full = os.path.join(root, rel)
+    os.makedirs(os.path.dirname(full), exist_ok=True)
+    with open(full, "w", encoding="utf-8") as f:
+        f.write(text)
+
+
+def test_expo_generated_ios_is_skipped_only_when_gitignored(tmp_path, rules):
+    """expo prebuild regenerates ios/; findings there cannot be committed, so a
+    managed project's ignored ios/ is not scanned (field test: 4 of 26 findings)."""
+    root = str(tmp_path)
+    _write(root, "app.json", '{"expo": {"name": "x", "orientation": "default", "plugins": ["./plugins/withScene.js"]}}')
+    _write(root, "plugins/withScene.js", "// UIApplicationSceneManifest\n")
+    _write(root, "ios/App/AppDelegate.swift", "let w = UIWindow(frame: UIScreen.main.bounds)\n")
+    _write(root, ".gitignore", "node_modules/\nios/\nandroid/\n")
+    assert scan.scan(root, rules) == []
+    os.remove(os.path.join(root, ".gitignore"))
+    found = {f["rule"] for f in scan.scan(root, rules)}
+    assert "screen-main-bounds" in found
+
+
+def test_expo_scene_lifecycle_needs_a_registered_plugin(tmp_path, rules):
+    root = str(tmp_path)
+    _write(root, "app.json", '{"expo": {"name": "x", "orientation": "default"}}')
+    _write(root, "plugins/withScene.js", "// UIApplicationSceneManifest, but not registered in app.json\n")
+    found = [f for f in scan.scan(root, rules) if f["rule"] == "expo-no-scene-lifecycle"]
+    assert len(found) == 1 and found[0]["severity"] == "error" and found[0]["file"] == "app.json"
+    _write(root, "app.json", '{"expo": {"name": "x", "orientation": "default", "plugins": [["./plugins/withScene", {}]]}}')
+    assert [f for f in scan.scan(root, rules) if f["rule"] == "expo-no-scene-lifecycle"] == []
+
+
+def test_test_files_are_not_scanned(tmp_path, rules):
+    root = str(tmp_path)
+    _write(root, "src/__tests__/a.test.tsx", "const { width } = Dimensions.get('window');\n")
+    _write(root, "src/b.spec.ts", "const { width } = Dimensions.get('window');\n")
+    _write(root, "src/c.ts", "const { width } = Dimensions.get('window');\n")
+    files = [f["file"] for f in scan.scan(root, rules) if f["rule"] == "rn-dimensions-module-scope"]
+    assert files == ["src/c.ts"]

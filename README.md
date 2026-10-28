@@ -30,7 +30,7 @@ Runs on a Mac with Xcode 27.1. No iPhone Duo hardware needed.
                v
   1 detect  ---> duo.yaml (stack, scheme, flows)
                |
-  2 scan    ---> .duo/scan.json  (32 rules, grouped by rule id)
+  2 scan    ---> .duo/scan.json  (36 rules, grouped by rule id)
                |
   3 fix     ---> one commit per rule on branch duo-ready
                |
@@ -43,7 +43,7 @@ Runs on a Mac with Xcode 27.1. No iPhone Duo hardware needed.
   6 assert  ---> ui.json   (offscreen, clipped, tap targets, bars, camera, fold, visual diff)
   7 perf    ---> perf.json (launch, fold re-layout, memory, CPU; regression vs baseline)
                |
-  8 report  ---> duo-report.html        exit 0 pass / 1 UI / 2 perf / 3 build
+  8 report  ---> duo-report.html        exit 0 pass / 1 UI or unverified / 2 perf / 3 build
                |
          fail? |  9 loop: failures.json -> agent patches -> rerun failed cells (max 3)
                v
@@ -70,12 +70,17 @@ Mac tooling the simulator stages need (one-time):
 ```bash
 # Xcode 27.1 or later from https://developer.apple.com/download/ (macOS Tahoe 26.6+)
 sudo xcode-select -s /Applications/Xcode.app
+xcode-select --install                            # Command Line Tools for Xcode 27: Homebrew needs them on macOS 27
 xcodebuild -downloadPlatform iOS                  # iOS 27.1 runtime with the iPhone Duo device type
 brew install skarol/tap/duoctl artemnovichkov/tap/hinge
+brew tap cameroncooke/axe && brew install axe     # element trees for the layout assertions (duoctl elements)
+curl -fsSL https://get.maestro.mobile.dev | bash  # React Native / Expo closed-pose flows
 gem install fastlane -v '>= 2.241.1'              # optional, only for screenshot upload
 ```
 
 `duoctl` and `hinge` are MIT tools that send the same private HID event Xcode's Device Hub sends to fold the simulator. Apple has no public API for this. `scripts/preflight.sh` proves the angle reads back before any pose stage runs and exits with code 5 when an Xcode update breaks the protocol; nothing is ever faked.
+
+AXe is not optional in practice: without it every element tree is empty, and the report marks the run `unverified` (exit 1) instead of passing it. Keep the project outside iCloud Drive, or set `DUO_DERIVED_DATA`; DerivedData under a synced folder breaks codesign and multiplied the first build time by ten on the field test.
 
 ## Quick start on a Mac (10 minutes)
 
@@ -104,7 +109,7 @@ python3 "$DUO/scripts/scan.py" --fix --apply
 bash "$DUO/scripts/build.sh"                # .app + SDK stamp -> .duo/runs/1/build.json
 bash "$DUO/scripts/run-matrix.sh" --run 1   # every flow x pose, captures, element trees, assertions
 bash "$DUO/scripts/perf.sh" --run 1
-python3 "$DUO/scripts/report.py" --run 1    # .duo/runs/1/duo-report.html, exit 0/1/2
+python3 "$DUO/scripts/report.py" --run 1    # .duo/runs/1/duo-report.html, exit 0/1/2 (1 also when nothing was verified)
 python3 "$DUO/scripts/loop.py" --run 1      # agent payloads for each failure
 bash "$DUO/scripts/assets.sh" --run 1       # fastlane/screenshots/<locale>/ + FEATURING.md
 ```
@@ -113,7 +118,7 @@ With Claude Code, say "get my app ready for iPhone Duo" and the skill runs these
 
 ## What it checks
 
-Static rules (`references/rules-native.md`, `references/rules-react-native.md`): Apple's published breakage list (`UIScreen.main`, orientation-driven layout, idiom checks, hardcoded device sizes, fill media, layout computed once) plus what the iOS 27.1 SDK added: custom `UIToolbar`/`UINavigationBar`/`UITabBar` that never get vertical bars, title-only toolbar items, custom overflow menus, missing scene lifecycle, symmetric safe-area math, odd-column grids across the fold. React Native and Expo: module-scope `Dimensions.get`, orientation locks (ignored on the inner display), symmetric insets, JS-drawn tab bars, `AppState` pausing in Split View, `useHinge` driving layout, SDK floors.
+Static rules (`references/rules-native.md`, `references/rules-react-native.md`): Apple's published breakage list (`UIScreen.main`, orientation-driven layout, idiom checks, hardcoded device sizes, fill media, layout computed once) plus what the iOS 27.1 SDK added: custom `UIToolbar`/`UINavigationBar`/`UITabBar` that never get vertical bars, title-only toolbar items, custom overflow menus, missing scene lifecycle, symmetric safe-area math, odd-column grids across the fold. React Native and Expo: module-scope `Dimensions.get`, orientation locks (ignored on the inner display), symmetric insets, JS-drawn tab bars, `AppState` pausing in Split View, `useHinge` driving layout, SDK floors, and since the first field test the height rules for the 678 pt outer display (fixed heights, window-height fractions, `adjustsFontSizeToFit` with a fixed `lineHeight`) plus the Expo scene life cycle launch blocker.
 
 Runtime assertions per cell (`references/assertions.md`): offscreen elements, clipped text, 44 pt tap targets, vertical bars where the pose expects them, content under the outer camera, interactive elements in the fold region, visual diff against baselines, stability across mid-flow fold transitions.
 
@@ -133,14 +138,17 @@ Full numbers, SDK tiers and simulator quirks: `references/device-facts.md`.
 
 ## Verification status
 
-This repository was authored on a Windows machine without Xcode. What has been verified and where:
+The repository is authored on Windows; one field test has run on a Mac (27 Oct 2026: Mac16,7, macOS 27.0.1, Xcode 27.1 build 27A9275, iOS 27.1 runtime, duoctl 0.2.0, hinge 0.3.0, an Expo SDK 54 app). What has been verified and where:
 
 | Part | Status |
 |---|---|
-| Rule engine (19 native + 13 React Native rules), fixtures, autofix dry-run | Tested with pytest on Windows (87 tests in total across the suite) |
-| YAML subset loader, detect, assertions, visual diff, report, loop, assets gate | Tested with pytest on Windows using synthetic trees and PNGs |
-| Shell scripts | `bash -n` syntax checked; `--help` and the non-macOS refusal path tested |
-| Preflight on Xcode 27.1, pose readback through `duoctl`/`hinge`, non-black capture, XCUITest templates compiling, full run on a real app, fastlane upload | **Not yet run on a Mac.** Tracked as the first contributor task; checklist in `CONTRIBUTING.md` |
+| Rule engine (19 native + 17 React Native rules), fixtures, autofix dry-run | Tested with pytest on Windows (115 tests across the suite); precision on the field-test app was 8 real findings of 26 before the rule changes in this version |
+| YAML subset loader, detect, assertions, visual diff, report, loop, assets gate | Tested with pytest on Windows using synthetic trees and PNGs, plus the saved `simctl io enumerate`, `duoctl state` and `hinge posture` output from the field test (`tests/fixtures/`) |
+| Shell scripts | `bash -n`, `--help`, the non-macOS refusal path, and guards against the SIGPIPE and `local` pitfalls the field test hit |
+| Preflight, simulator boot, pose readback through `duoctl`/`hinge` (0, 127, 180 degrees), rotation, per-display capture at 1398x2034 and 2007x2853, SDK stamp 27.1, the UIScene launch kill | **Verified on the field-test Mac** |
+| Layout assertions on real element trees, perf metrics, XCUITest templates compiling, fastlane upload | **Not yet verified.** The field test had neither AXe nor the DuoPerfTests target, so every tree was empty; this version reports that as `unverified` instead of passing. Second iteration planned; checklist in `CONTRIBUTING.md` |
+
+Expected time on a prepared Mac: 15 to 25 minutes for the whole pipeline; a first build 10 to 15 minutes more. The field test took 3 hours because of tool installs, an iCloud-synced DerivedData folder and the launch kill, not the stages.
 
 If you run it on a Mac, open an issue with the output of `bash scripts/preflight.sh --json` and `.duo/runs/1/duo-report.html`.
 

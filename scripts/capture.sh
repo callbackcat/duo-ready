@@ -57,24 +57,14 @@ case "$DISPLAY_SEL" in
   *) duo_die "$DUO_EXIT_PREFLIGHT" "--display must be outer or inner" ;;
 esac
 
-# Parse `simctl io enumerate`; lines look like
-#   Display: UUID: 7E3C...  Class: ...  width: 1398 height: 2034 ...
-# The format is not documented and has changed between Xcode builds, so the
-# parser only relies on a UUID-looking token and a "width" number on the same
-# or following lines.
-DISPLAY_UUID="$(xcrun simctl io "$UDID" enumerate 2>/dev/null | "$DUO_PY" -c '
-import re, sys
-want = int(sys.argv[1])
-text = sys.stdin.read()
-blocks = re.split(r"(?im)^\s*(?:display|port)\b", text)
-for b in blocks:
-    m_uuid = re.search(r"([0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12})", b)
-    m_w = re.search(r"width\D{0,5}(\d{3,5})", b, re.I)
-    if m_uuid and m_w and abs(int(m_w.group(1)) - want) <= 2:
-        print(m_uuid.group(1)); sys.exit(0)
-sys.exit(1)' "$WANT_WIDTH" || true)"
+# Parse `simctl io enumerate` with scripts/simdisplay.py. Xcode 27.1 lists the
+# screens under "Connected Screens:" ((1) LCD / (3) LCD-1, each with a Unique
+# ID and a Pixel Size; verified 27 Oct 2026) and `screenshot --display=`
+# accepts that Unique ID. Older layouts fall back to a UUID + width heuristic.
+ENUM_OUT="$(xcrun simctl io "$UDID" enumerate 2>/dev/null || true)"
+DISPLAY_UUID="$(printf '%s\n' "$ENUM_OUT" | "$DUO_PY" "$DUO_SCRIPTS/simdisplay.py" --width "$WANT_WIDTH" || true)"
 
-[ -n "$DISPLAY_UUID" ] || duo_die "$DUO_EXIT_PREFLIGHT" "could not find a $DISPLAY_SEL display (width $WANT_WIDTH) in 'simctl io $UDID enumerate'; the output format may have changed, see references/simulator-control.md"
+[ -n "$DISPLAY_UUID" ] || duo_die "$DUO_EXIT_PREFLIGHT" "could not find a $DISPLAY_SEL display (pixel width $WANT_WIDTH) in 'simctl io $UDID enumerate'; run it by hand and compare with scripts/simdisplay.py (references/simulator-control.md)"
 
 mkdir -p "$(dirname "$OUT")"
 

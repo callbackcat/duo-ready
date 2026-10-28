@@ -10,8 +10,8 @@ Machine-readable formats shared by every script. Scripts read and write only the
 ├── scan.json           # scan output
 ├── baselines/          # <flow>-<cell>.png, committed after the first green run
 └── runs/<n>/
-    ├── build.json      # app path, sdk stamp, scheme
-    ├── captures/       # <flow>-<cell>.png and <flow>-<cell>.tree.json
+    ├── build.json      # app path, sdk stamp, scheme, configuration, derived_data, scene_manifest
+    ├── captures/       # <flow>-<cell>.png and <flow>-<cell>.tree.json; <flow>-<cell>.skip.json for cells the app refused
     ├── ui.json         # assertion results
     ├── perf.json
     ├── failures.json   # agent payloads (ui + perf failures merged)
@@ -35,11 +35,15 @@ stack: uikit                  # uikit | swiftui | mixed | react-native | expo | 
 scheme: MyApp
 bundle_id: com.example.myapp
 workspace: MyApp.xcworkspace  # or project: MyApp.xcodeproj
+derived_data: ~/Library/Developer/Xcode/DerivedData/duo-ready-MyApp   # optional; default outside the project (iCloud breaks codesign)
+xcodebuild_args: [IPHONEOS_DEPLOYMENT_TARGET=15.0]                  # optional; Xcode 27.1 refuses targets below iOS 15
 cells: [closed-portrait, closed-landscape, open-landscape, open-portrait, book-landscape, book-portrait]
 transitions: ["closed>open", "open>book", "open>closed"]
 flows:
   - name: feed
     steps: [launch, wait "Feed", scroll 5]
+  # detect.py scaffolds `- name: launch, steps: [launch, sleep 2], placeholder: true`;
+  # SKILL.md asks for real flows while that flag is present
 assert:
   offscreen_elements: fail    # fail | warn | off
   clipped_text: fail
@@ -125,23 +129,46 @@ Patterns are Python regexes applied per line unless `multiline: true`. Comments 
   "schema": 1,
   "run": 3,
   "sdk_stamp": "27.1",
+  "verified": true,
   "cells": [
     {
       "flow": "feed", "cell": "book-landscape",
       "screenshot": ".duo/runs/3/captures/feed-book-landscape.png",
       "tree": ".duo/runs/3/captures/feed-book-landscape.tree.json",
+      "tree_available": true,
       "results": [
         { "assertion": "offscreen_elements", "status": "pass" },
         { "assertion": "interactive_in_fold", "status": "fail",
           "elements": [{ "id": "PlayButton", "frame": [440, 300, 60, 44] }] },
         { "assertion": "visual_diff", "status": "warn", "diff": 0.031, "threshold": 0.02 }
       ]
+    },
+    {
+      "flow": "feed", "cell": "closed-landscape", "screenshot": null, "tree": null,
+      "skipped": true, "tree_available": false,
+      "results": [{ "assertion": "cell", "status": "skip", "reason": "the app in front refused to rotate to landscape" }]
     }
-  ]
+  ],
+  "summary": { "pass": 7, "warn": 1, "fail": 1, "skip": 2, "cells": 2, "unverified_cells": 0, "skipped_cells": 1 }
 }
 ```
 
 Element tree format (`*.tree.json`): `{"elements":[{"id":"PlayButton","type":"button","label":"Play","frame":[x,y,w,h],"interactive":true,"text":"...","truncated":false}]}` in points, origin top-left of the app window.
+
+When `duoctl elements` fails (AXe missing) or the DuoUITests attachment is absent, `run-matrix.sh` writes `{"source": "unavailable", "elements": []}` instead. `assert.py` then reports every tree-based assertion as `skip` with the reason, sets `tree_available: false` on the cell, and `verified` is true only when at least one cell had a tree. An empty tree is never a pass (first field test: 25 vacuous greens).
+
+`<flow>-<cell>.skip.json` (`{"flow","cell","reason"}`) is written when the app refuses the cell, typically a portrait-locked app on the outer display (`sim.sh rotate` exit 6). The cell appears in `ui.json` with `skipped: true` and one `skip` result.
+
+## build.json
+
+```json
+{ "schema": 1, "run": 3, "stack": "expo", "scheme": "Momo", "configuration": "Release",
+  "app": "/Users/me/Library/Developer/Xcode/DerivedData/duo-ready-Momo/Build/Products/Release-iphonesimulator/Momo.app",
+  "bundle_id": "com.example.momo", "sdk_stamp": "27.1", "log": ".duo/runs/3/build.log",
+  "derived_data": "/Users/me/Library/Developer/Xcode/DerivedData/duo-ready-Momo", "scene_manifest": true }
+```
+
+`scene_manifest: false` on a UIKit or React Native app built with SDK 27 means the app will be killed about 2 s after launch; `sim.sh launch` exits 3 when it sees "UIScene life cycle is required" in the system log.
 
 ## perf.json
 
@@ -152,6 +179,8 @@ Element tree format (`*.tree.json`): `{"elements":[{"id":"PlayButton","type":"bu
     { "flow": "feed", "cell": "closed>open", "metric": "fold_relayout_ms", "value": 310, "baseline": null, "status": "fail" }
   ] }
 ```
+
+With no `DuoPerfTests` target there is nothing to measure: `perf.sh` exits 4, writes `"metrics": [], "status": "skip", "reason": "..."`, and never writes a baseline. The report shows perf as skipped.
 
 ## failures.json (agent payload)
 
@@ -172,6 +201,6 @@ Element tree format (`*.tree.json`): `{"elements":[{"id":"PlayButton","type":"bu
 
 ## Exit codes
 
-`0` pass · `1` UI assertion failure · `2` perf failure · `3` build failure · `4` preflight failure (missing tool, wrong Xcode) · `5` pose control unavailable (private protocol changed).
+`0` pass · `1` UI assertion failure, or nothing verified (`report.py` with no `ui.json`, or `verified: false`; `loop.py` without `failures.json` or on an unverified run) · `2` perf failure · `3` build failure, or the app dies at launch · `4` preflight failure (missing tool, wrong Xcode, no `DuoPerfTests` target, no metrics) · `5` pose control unavailable (private protocol changed) · `6` the app refused the cell (`sim.sh rotate` on a portrait-locked app; `run-matrix.sh` and `perf.sh` turn this into a skipped cell and continue).
 
-Every script supports `--help` and `--json`, and prints a one-line `cannot run on this host: <reason>` with exit 4 when a required tool is missing. Scripts never fake a pass for a stage that didn't run.
+Every script supports `--help` and `--json` (including on the exit-4 path), and prints a one-line `cannot run on this host: <reason>` with exit 4 when a required tool is missing. Scripts never fake a pass for a stage that didn't run, and a run that measured nothing is reported as `unverified` or `skip`, never as `pass`.

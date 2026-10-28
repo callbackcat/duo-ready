@@ -341,6 +341,22 @@ def load_tree(path):
     return data if isinstance(data, list) else []
 
 
+def tree_available(path) -> bool:
+    """False when the tree file is missing or was written with source=unavailable.
+
+    run-matrix writes that stub when `duoctl elements` fails (AXe not installed)
+    or the DuoUITests attachment is missing. An empty tree used to make every
+    tree-based assertion pass; the first field test reported 25 green cells
+    that way. Those assertions are skipped instead.
+    """
+    if not path or not os.path.exists(path):
+        return False
+    data = duolib.load_json(path)
+    if isinstance(data, dict):
+        return data.get("source") != "unavailable"
+    return isinstance(data, list)
+
+
 def severity_for(name: str, cfg: dict) -> str:
     key, default = SEVERITY_KEYS[name]
     val = cfg.get(key, default)
@@ -402,7 +418,19 @@ def evaluate_run(root: str, run: int, include_warn: bool = False) -> tuple[dict,
 
     cells_out = []
     failures = []
+    no_tree = {"reason": "no element tree: install AXe (duoctl elements) or add the DuoUITests target; nothing was checked"}
     for name in sorted(os.listdir(cap)):
+        if name.endswith(".skip.json"):
+            # run-matrix wrote this when the app refused the cell (portrait-only on that display)
+            parsed = parse_capture_name(name[: -len(".skip.json")])
+            if parsed:
+                info = duolib.load_json(os.path.join(cap, name)) or {}
+                cells_out.append({
+                    "flow": parsed[0], "cell": parsed[1], "screenshot": None, "tree": None,
+                    "window": list(window_for(parsed[1], tier)), "skipped": True, "tree_available": False,
+                    "results": [{"assertion": "cell", "status": "skip", "reason": info.get("reason") or "cell skipped by run-matrix"}],
+                })
+            continue
         if not name.endswith(".tree.json") or name.endswith(".before.tree.json"):
             continue
         stem = name[: -len(".tree.json")]
@@ -413,8 +441,13 @@ def evaluate_run(root: str, run: int, include_warn: bool = False) -> tuple[dict,
         tree_path = os.path.join(cap, name)
         shot = os.path.join(cap, stem + ".png")
         elements = load_tree(tree_path) or []
+        available = tree_available(tree_path)
         W, H = window_for(cell, tier)
         results = []
+
+        def checked(fn):
+            """Tree-based assertions are skipped, not passed, when there is no tree to read."""
+            return fn() if available else ("skip", dict(no_tree))
 
         def add(aname, status, extra):
             sev = severity_for(aname, acfg)
@@ -445,15 +478,15 @@ def evaluate_run(root: str, run: int, include_warn: bool = False) -> tuple[dict,
                         before = load_tree(alt)
                         break
             may_remove = (flows_cfg.get(flow) or {}).get("may_remove") or []
-            add("transition_stable", *a_transition(before, elements, may_remove))
-            add("offscreen_elements", *a_offscreen(elements, W, H))
+            add("transition_stable", *checked(lambda: a_transition(before, elements, may_remove)))
+            add("offscreen_elements", *checked(lambda: a_offscreen(elements, W, H)))
         else:
-            add("offscreen_elements", *a_offscreen(elements, W, H))
-            add("clipped_text", *a_clipped_text(elements, W, H))
-            add("tap_target_min", *a_tap_target(elements, tap_min))
-            add("bars_vertical_expected", *a_bars_vertical(elements, cell, W, H, tier))
-            add("content_under_outer_camera", *a_outer_camera(elements, cell, W, H))
-            add("interactive_in_fold", *a_fold(elements, cell, W, H))
+            add("offscreen_elements", *checked(lambda: a_offscreen(elements, W, H)))
+            add("clipped_text", *checked(lambda: a_clipped_text(elements, W, H)))
+            add("tap_target_min", *checked(lambda: a_tap_target(elements, tap_min)))
+            add("bars_vertical_expected", *checked(lambda: a_bars_vertical(elements, cell, W, H, tier)))
+            add("content_under_outer_camera", *checked(lambda: a_outer_camera(elements, cell, W, H)))
+            add("interactive_in_fold", *checked(lambda: a_fold(elements, cell, W, H)))
             baseline = os.path.join(duolib.duo_dir(root), "baselines", stem + ".png")
             diff_out = os.path.join(cap, stem + ".diff.png")
             add("visual_diff", *a_visual_diff(shot, baseline, cell, threshold, diff_out))
@@ -462,6 +495,7 @@ def evaluate_run(root: str, run: int, include_warn: bool = False) -> tuple[dict,
             "flow": flow, "cell": cell,
             "screenshot": _rel(root, shot) if os.path.exists(shot) else None,
             "tree": _rel(root, tree_path),
+            "tree_available": available,
             "window": [W, H],
             "results": results,
         })
@@ -473,6 +507,8 @@ def evaluate_run(root: str, run: int, include_warn: bool = False) -> tuple[dict,
         "sdk_stamp": stamp,
         "sdk_tier": tier,
         "cells": cells_out,
+        # False when no cell had an element tree: the run proved nothing about layout.
+        "verified": any(c.get("tree_available") for c in cells_out),
         "summary": _summary(cells_out),
     }
     return ui, failures
@@ -491,6 +527,8 @@ def _summary(cells) -> dict:
         for r in c["results"]:
             counts[r["status"]] = counts.get(r["status"], 0) + 1
     counts["cells"] = len(cells)
+    counts["unverified_cells"] = sum(1 for c in cells if not c.get("skipped") and c.get("tree_available") is False)
+    counts["skipped_cells"] = sum(1 for c in cells if c.get("skipped"))
     return counts
 
 
@@ -514,9 +552,17 @@ def main(argv=None) -> int:
         print(f"run {args.run}  sdk {ui['sdk_tier']}  cells {ui['summary']['cells']}  "
               f"pass {ui['summary']['pass']}  warn {ui['summary']['warn']}  fail {ui['summary']['fail']}  skip {ui['summary']['skip']}")
         for c in ui["cells"]:
+            if c.get("skipped"):
+                print(f"  {c['flow']} / {c['cell']}: skipped ({c['results'][0].get('reason', '')})")
+                continue
             bad = [r for r in c["results"] if r["status"] in ("fail", "warn")]
             if bad:
                 print(f"  {c['flow']} / {c['cell']}: " + ", ".join(f"{r['assertion']}={r['status']}" for r in bad))
+    unverified = ui["summary"].get("unverified_cells", 0)
+    if unverified:
+        print(f"WARNING: {unverified} of {ui['summary']['cells']} cells have no element tree; offscreen, clipped, tap-target, "
+              "camera and fold assertions were skipped, not passed (install AXe: brew tap cameroncooke/axe && brew install axe)",
+              file=sys.stderr)
     return duolib.exit_codes.UI_FAIL if ui["summary"]["fail"] else duolib.exit_codes.PASS
 
 

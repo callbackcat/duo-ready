@@ -157,7 +157,7 @@
   kind: project
   check: no_scene_delegate
   autofix: false
-  fix_hint: Apps built with the iOS 27 SDK or later must use the UIScene life cycle (TN3187); without UIApplicationSceneManifest and a UIWindowSceneDelegate the app cannot follow the scene between displays.
+  fix_hint: 'Launch blocker, not a layout warning: an app built with the iOS 27 SDK and no UIScene life cycle is killed by UIKit about 2 s after launch ("UIScene life cycle is required for apps built with this SDK", verified 27 Oct 2026). Add UIApplicationSceneManifest and a UIWindowSceneDelegate that creates UIWindow(windowScene:) (TN3187); only a scene-owned window follows the app between the two displays.'
   apple_ref: https://developer.apple.com/documentation/technotes/tn3187-migrating-to-the-uikit-scene-based-life-cycle
   doc: references/rules-native.md#no-scene-delegate
 

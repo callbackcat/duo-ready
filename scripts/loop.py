@@ -152,12 +152,32 @@ def main(argv=None) -> int:
 
     cap = max_iterations(root, args.max_iterations)
     state["max_iterations"] = cap
-    fpath = os.path.join(duolib.run_dir(root, args.run), "failures.json")
-    failures = duolib.load_json(fpath) if os.path.exists(fpath) else []
+    rdir = duolib.run_dir(root, args.run)
+    fpath = os.path.join(rdir, "failures.json")
+    if not os.path.exists(fpath):
+        # run-matrix stopped before assert.py, or assert.py was never run; "no
+        # failures; loop complete" would be a lie here (field test, run 1).
+        reason = f"no failures.json for run {args.run}: the matrix did not reach assert.py; nothing to loop on"
+        if args.json:
+            print(json.dumps({"run": args.run, "failures": None, "action": "no_assertions", "reason": reason}))
+        else:
+            print(reason, file=sys.stderr)
+        return duolib.exit_codes.UI_FAIL
+    failures = duolib.load_json(fpath) or []
+    ui_path = os.path.join(rdir, "ui.json")
+    ui = duolib.load_json(ui_path) if os.path.exists(ui_path) else None
 
     if not failures:
         state["iterations"] = 0
         save_state(root, state)
+        if ui is not None and ui.get("verified") is False:
+            reason = ("no failures, but no cell had an element tree: the layout assertions were skipped, not passed "
+                      "(install AXe or add the DuoUITests target, then rerun the matrix)")
+            if args.json:
+                print(json.dumps({"run": args.run, "failures": 0, "action": "unverified", "reason": reason}))
+            else:
+                print(reason, file=sys.stderr)
+            return duolib.exit_codes.UI_FAIL
         out = {"run": args.run, "failures": 0, "action": "done"}
         print(json.dumps(out) if args.json else "no failures; loop complete")
         return 0

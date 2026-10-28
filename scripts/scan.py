@@ -38,6 +38,9 @@ EXT_LANG = {
     ".json": "json", ".plist": "plist",
 }
 SEVERITY_ORDER = {"error": 0, "warn": 1, "info": 2}
+# Test files never run on a device: Dimensions.get in a Jest test is not a
+# layout bug (field test false positive).
+TEST_FILE_RE = re.compile(r"(?:^|/)(?:__tests__|__mocks__|__snapshots__)/|\.(?:test|spec)\.[jt]sx?$")
 SCHEMA = 1
 
 # ---------------------------------------------------------------------------
@@ -145,7 +148,8 @@ def finding(rule: dict, path: str, line: int, col: int, match: str) -> dict:
     return {
         "rule": rule["id"],
         "severity": rule["severity"],
-        "autofix": bool(rule.get("autofix")),
+        # a site that fix_exclude protects is reported but counted as manual
+        "autofix": bool(rule.get("autofix")) and not (rule.get("_fix_exclude") is not None and rule["_fix_exclude"].search(match)),
         "file": path.replace(os.sep, "/"),
         "line": line,
         "column": col,
@@ -249,7 +253,71 @@ def check_rn_safe_area_missing(rule: dict, path: str, raw: str, stripped: str) -
         return []  # not a component file
     if re.search(r"SafeAreaView|useSafeAreaInsets|useSafeAreaFrame|SafeAreaProvider|edges=|contentInsetAdjustmentBehavior", stripped):
         return []
+    # Route wrappers, redirects and navigator roots draw nothing of their own,
+    # and a screen rendered inside a scaffold/layout component inherits its
+    # insets (field test: all 7 findings on a real Expo app were one of these).
+    if re.search(r"<\s*(?:Redirect|Slot)\b|<\s*(?:Stack|Tabs|Drawer)\s*(?:>|screenOptions|initialRouteName)", stripped):
+        return []
+    if not re.search(r"\bstyle\s*=|StyleSheet\.create\(", stripped):
+        return []
+    if re.search(r"<\s*\w*(?:Scaffold|Layout|Shell|Chrome|Frame)\b", stripped):
+        return []
     return [finding(rule, path, 1, 1, os.path.basename(path))]
+
+
+_LINEHEIGHT_RE = re.compile(r"\blineHeight\s*:")
+
+
+def check_rn_adjusts_font_fixed_lineheight(rule: dict, path: str, raw: str, stripped: str) -> list[dict]:
+    """adjustsFontSizeToFit together with a fixed lineHeight on the same Text.
+
+    On the new architecture (React Native 0.81) the fit search ignores
+    minimumFontScale and stops only when the text fits its frame; a fixed
+    lineHeight keeps the line box from shrinking, so on the 678 pt outer
+    display the search ends at the 4 pt floor and the text vanishes (field
+    test bugs F3 and F5).
+    """
+    if "adjustsFontSizeToFit" not in stripped or not _LINEHEIGHT_RE.search(stripped):
+        return []
+    out = []
+    raw_lines = raw.splitlines()
+    for i, ln in enumerate(stripped.splitlines(), 1):
+        if "adjustsFontSizeToFit" not in ln:
+            continue
+        m = re.search(r"style=\{\s*styles\.(\w+)", ln)
+        if m:
+            block = re.search(r"\b" + re.escape(m.group(1)) + r"\s*:\s*\{([^}]*)\}", stripped)
+            if block and not _LINEHEIGHT_RE.search(block.group(1)):
+                continue  # that style has no fixed lineHeight
+        out.append(finding(rule, path, i, ln.find("adjustsFontSizeToFit") + 1, raw_lines[i - 1]))
+    return out
+
+
+_APPSTATE_RE = re.compile(r"(?<![.\w])(?:state|nextAppState|appState|status|next)\s*!==?\s*['\"]active['\"]"
+                          r"|(?<![.\w])(?:state|nextAppState|appState|status|next)\s*===?\s*['\"]inactive['\"]")
+_RESUME_RE = re.compile(r"!==?\s*['\"]active['\"]\s*\)\s*\{?\s*return\b")
+
+
+def check_rn_appstate_inactive_pause(rule: dict, path: str, raw: str, stripped: str) -> list[dict]:
+    """Pausing on anything but background. Only in files that read AppState,
+    never on a property (`action.status`), and not on resume handlers of the
+    form `if (state !== 'active') return;` (field test: 4 of 5 findings)."""
+    if "AppState" not in stripped:
+        return []
+    out = []
+    stripped_lines = stripped.splitlines()
+    for i, ln in enumerate(raw.splitlines(), 1):
+        m = _APPSTATE_RE.search(ln)
+        if not m or _RESUME_RE.search(ln):
+            continue
+        # strip_code keeps offsets: the identifier must survive in the code view
+        # (a comment that quotes the pattern is not a finding)
+        code_ln = stripped_lines[i - 1] if i <= len(stripped_lines) else ""
+        ident = re.match(r"\w+", m.group(0)).group(0)
+        if not code_ln[m.start():].startswith(ident):
+            continue
+        out.append(finding(rule, path, i, m.start() + 1, ln))
+    return out
 
 
 def check_rn_expo_hinge_for_layout(rule: dict, path: str, raw: str, stripped: str) -> list[dict]:
@@ -302,6 +370,8 @@ def check_rn_sdk_floor(rule: dict, path: str, raw: str, stripped: str) -> list[d
 
 
 FILE_CHECKS = {
+    "rn_adjusts_font_fixed_lineheight": check_rn_adjusts_font_fixed_lineheight,
+    "rn_appstate_inactive_pause": check_rn_appstate_inactive_pause,
     "layout_once": check_layout_once,
     "fixed_orientation_plist": check_fixed_orientation_plist,
     "rn_dimensions_no_listener": check_rn_dimensions_no_listener,
@@ -348,7 +418,85 @@ def check_no_scene_delegate(rule: dict, root: str, files: list[tuple[str, str]])
     return out
 
 
-PROJECT_CHECKS = {"no_scene_delegate": check_no_scene_delegate}
+_EXPO_SCENE_RE = re.compile(r"UIApplicationSceneManifest|UIWindowSceneDelegate|withSceneLifecycle")
+
+
+def is_expo_project(root: str) -> bool:
+    app_json = os.path.join(root, "app.json")
+    if os.path.exists(app_json):
+        try:
+            if "expo" in (json.loads(_read(app_json)) or {}):
+                return True
+        except ValueError:
+            pass
+    return any(os.path.exists(os.path.join(root, n)) for n in ("app.config.js", "app.config.ts", "app.config.mjs"))
+
+
+def expo_generated_dirs(root: str) -> set[str]:
+    """ios/ and android/ of an Expo managed project when git ignores them.
+
+    `expo prebuild` regenerates them, so a finding there cannot be committed
+    and the fix belongs in app.json or a config plugin (field test: 4 of 26
+    findings pointed at generated files).
+    """
+    if not is_expo_project(root):
+        return set()
+    gi = os.path.join(root, ".gitignore")
+    if not os.path.exists(gi):
+        return set()
+    lines = {ln.strip().strip("/") for ln in _read(gi).splitlines()}
+    return {d for d in ("ios", "android") if d in lines}
+
+
+def _expo_config_plugins(root: str) -> list[str] | None:
+    """Names/paths of the config plugins app.json registers, None when the
+    config is code (app.config.*) and cannot be parsed here."""
+    app_json = os.path.join(root, "app.json")
+    if not os.path.exists(app_json):
+        return None
+    try:
+        expo = (json.loads(_read(app_json)) or {}).get("expo") or {}
+    except ValueError:
+        return None
+    out = []
+    for entry in expo.get("plugins") or []:
+        name = entry[0] if isinstance(entry, list) and entry else entry
+        if isinstance(name, str):
+            out.append(name)
+    return out
+
+
+def check_expo_no_scene_lifecycle(rule: dict, root: str, files: list[tuple[str, str]]) -> list[dict]:
+    """Expo managed project where no registered config plugin adds the UIScene
+    life cycle. Reported against app.json because ios/ is generated; a committed
+    ios/ (bare workflow) is covered by the native no-scene-delegate rule.
+    """
+    if not is_expo_project(root):
+        return []
+    if "ios" not in expo_generated_dirs(root) and os.path.isdir(os.path.join(root, "ios")):
+        return []
+    plugins = _expo_config_plugins(root)
+    if plugins is None:
+        # app.config.ts/js: settle for a textual search of the config and plugins
+        for p, lang in files:
+            if lang in ("js", "ts") and not p.startswith("Fixed/") and _EXPO_SCENE_RE.search(_read(os.path.join(root, p))):
+                return []
+    else:
+        for name in plugins:
+            if re.search(r"scene", name, re.I):
+                return []
+            if name.startswith("."):
+                for cand in (name, name + ".js", name + ".ts", name + ".mjs", os.path.join(name, "index.js")):
+                    full = os.path.join(root, cand)
+                    if os.path.isfile(full) and _EXPO_SCENE_RE.search(_read(full)):
+                        return []
+    cfg = next((n for n in ("app.json", "app.config.ts", "app.config.js", "app.config.mjs") if os.path.exists(os.path.join(root, n))), "app.json")
+    raw = _read(os.path.join(root, cfg))
+    line = _line_of(raw, '"expo"') if '"expo"' in raw else 1
+    return [finding(rule, cfg, line, 1, "no config plugin adds UIApplicationSceneManifest and a SceneDelegate (launch blocker on the iOS 27 SDK)")]
+
+
+PROJECT_CHECKS = {"no_scene_delegate": check_no_scene_delegate, "expo_no_scene_lifecycle": check_expo_no_scene_lifecycle}
 
 # ---------------------------------------------------------------------------
 # Walking and matching
@@ -365,8 +513,11 @@ def _read(path: str) -> str:
 
 def walk(root: str) -> list[tuple[str, str]]:
     out = []
+    generated = expo_generated_dirs(root)
+    root_abs = os.path.abspath(root)
     for dirpath, dirnames, filenames in os.walk(root):
-        dirnames[:] = sorted(d for d in dirnames if d not in SKIP_DIRS and not d.endswith((".xcodeproj", ".xcworkspace", ".xcassets")))
+        skip = SKIP_DIRS | (generated if os.path.abspath(dirpath) == root_abs else set())
+        dirnames[:] = sorted(d for d in dirnames if d not in skip and not d.endswith((".xcodeproj", ".xcworkspace", ".xcassets")))
         for fn in sorted(filenames):
             ext = os.path.splitext(fn)[1].lower()
             lang = EXT_LANG.get(ext)
@@ -375,6 +526,8 @@ def walk(root: str) -> list[tuple[str, str]]:
             if lang == "json" and fn not in ("app.json", "app.config.json", "package.json"):
                 continue
             rel = os.path.relpath(os.path.join(dirpath, fn), root).replace(os.sep, "/")
+            if lang in ("js", "ts") and TEST_FILE_RE.search(rel):
+                continue
             out.append((rel, lang))
     return out
 

@@ -53,10 +53,10 @@
 - id: rn-stylesheet-fixed-width
   lang: [js, ts]
   severity: warn
-  pattern: '^\s*(?:width|minWidth|maxWidth)\s*:\s*(?:[3-9]\d\d|1\d{3})\b'
+  pattern: '^\s*(?:width|minWidth)\s*:\s*(?:[3-9]\d\d|1\d{3})\b'
   exclude: '%'
   autofix: false
-  fix_hint: A fixed width of 300 pt or more overflows the 466 pt outer display and wastes the 951 pt inner one; use flex, percentages, or the window width from useWindowDimensions().
+  fix_hint: A fixed width of 300 pt or more overflows the 466 pt outer display and wastes the 951 pt inner one; use flex, percentages, or the window width from useWindowDimensions(). A maxWidth cap is the recommended pattern and is not reported.
   apple_ref: https://developer.apple.com/design/human-interface-guidelines/designing-for-iphone-duo
   doc: references/rules-react-native.md#rn-stylesheet-fixed-width
 
@@ -81,7 +81,7 @@
 
 - id: rn-image-cover
   lang: [js, ts]
-  severity: warn
+  severity: info
   raw: true
   pattern: 'resizeMode\s*[:=]\s*\{?\s*[''"]cover[''"]|contentFit\s*[:=]\s*\{?\s*[''"]cover[''"]|objectFit\s*:\s*[''"]cover[''"]'
   autofix: false
@@ -101,8 +101,8 @@
 - id: rn-appstate-inactive-pause
   lang: [js, ts]
   severity: warn
-  raw: true
-  pattern: '(?:state|nextAppState|appState|status|next)\s*!==?\s*[''"]active[''"]|(?:state|nextAppState|appState|status|next)\s*===?\s*[''"]inactive[''"]'
+  kind: file
+  check: rn_appstate_inactive_pause
   autofix: false
   fix_hint: In Split View on the inner display a visible app can be inactive, so pausing playback or work on anything other than background interrupts the user; pause only when AppState becomes background.
   apple_ref: https://developer.apple.com/videos/play/tech-talks/111464/
@@ -127,3 +127,46 @@
   fix_hint: Expo SDK 58 is the first with expo-hinge and Duo-aware native tabs, and react-native-screens shipped iPhone Duo fixes on 13 Oct 2026; older versions mis-size screens on the inner display. Upgrade before testing.
   apple_ref: https://docs.expo.dev/versions/v58.0.0/sdk/hinge/
   doc: references/rules-react-native.md#rn-sdk-floor
+
+# --- added after the first field test (Momo, Expo 54, 27 Oct 2026) ----------
+# The outer display is 678 pt tall, shorter than any current iPhone; every real
+# outer-display bug on that app was a height problem no rule above looked at.
+
+- id: rn-adjusts-font-fixed-lineheight
+  lang: [js, ts]
+  severity: warn
+  kind: file
+  check: rn_adjusts_font_fixed_lineheight
+  autofix: false
+  fix_hint: On the new architecture (React Native 0.81) adjustsFontSizeToFit ignores minimumFontScale and shrinks until the text fits its frame; a fixed lineHeight keeps the line box from shrinking, so on the 678 pt outer display the search ends at the 4 pt floor and the text vanishes. Drop the lineHeight, or let the text wrap instead of auto-fitting.
+  apple_ref: https://developer.apple.com/design/human-interface-guidelines/designing-for-iphone-duo
+  doc: references/rules-react-native.md#rn-adjusts-font-fixed-lineheight
+
+- id: rn-fixed-height
+  lang: [js, ts]
+  severity: warn
+  pattern: '^\s*(?:height|minHeight)\s*:\s*(?:[3-9]\d\d|1\d{3})\b|\b(?:size|height)=\{\s*(?:2[5-9]\d|[3-9]\d\d|1\d{3})\s*\}'
+  exclude: '%'
+  autofix: false
+  fix_hint: The outer display is 678 pt tall, shorter than any current iPhone, and the inner one is 669 pt in landscape; a hero or block of 250 pt or more on a screen that does not scroll pushes the footer into the content there. Let the art shrink first (flexShrink, a maxHeight derived from the window) or make the screen scroll.
+  apple_ref: https://developer.apple.com/design/human-interface-guidelines/designing-for-iphone-duo
+  doc: references/rules-react-native.md#rn-fixed-height
+
+- id: rn-window-height-fraction
+  lang: [js, ts]
+  severity: info
+  pattern: '\bheight\s*\*\s*0\.[5-9]\d*\b|\b0\.[5-9]\d*\s*\*\s*(?:window\.)?height\b'
+  autofix: false
+  fix_hint: A block sized as a large fraction of the window height leaves too little for the rest on the 678 pt outer display (60 percent of 678 pt is 407 pt and 271 pt remain); use a smaller fraction below about 700 pt, or size the block from its content.
+  apple_ref: https://developer.apple.com/design/human-interface-guidelines/designing-for-iphone-duo
+  doc: references/rules-react-native.md#rn-window-height-fraction
+
+- id: expo-no-scene-lifecycle
+  lang: [json]
+  severity: error
+  kind: project
+  check: expo_no_scene_lifecycle
+  autofix: false
+  fix_hint: 'Launch blocker, not a layout warning: an app built with the iOS 27 SDK and no UIScene life cycle is killed by UIKit 2 s after launch ("UIScene life cycle is required for apps built with this SDK"). Expo SDK 54 and React Native 0.81 generate an AppDelegate-only app and expo prebuild regenerates ios/, so add a config plugin that writes UIApplicationSceneManifest into Info.plist and a SceneDelegate that creates UIWindow(windowScene:) and starts React Native (see references/rules-react-native.md#expo-no-scene-lifecycle for a working one).'
+  apple_ref: https://developer.apple.com/documentation/technotes/tn3187-migrating-to-the-uikit-scene-based-life-cycle
+  doc: references/rules-react-native.md#expo-no-scene-lifecycle

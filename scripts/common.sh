@@ -10,6 +10,7 @@ DUO_EXIT_PERF=2
 DUO_EXIT_BUILD=3
 DUO_EXIT_PREFLIGHT=4
 DUO_EXIT_POSE=5
+DUO_EXIT_UNSUPPORTED=6   # the app refused the cell (e.g. portrait-only on the outer display)
 
 # Directory that holds the scripts, regardless of the caller's cwd.
 DUO_SCRIPTS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -129,7 +130,36 @@ duo_cell_orientation() {
   esac
 }
 
-# UDID of the duo-ready simulator (set by sim.sh ensure) or any booted Duo.
+# DerivedData lives outside the project by default. Inside it, a project that
+# sits in iCloud Drive (Desktop & Documents sync) gets FinderInfo attributes on
+# every new folder, codesign refuses them ("resource fork, Finder information,
+# or similar detritus not allowed") and iCloud uploads gigabytes of build
+# output: one such build took 37 minutes, the same build outside iCloud 3.5
+# (field test, 27 Oct 2026). Override with DUO_DERIVED_DATA or derived_data in duo.yaml.
+duo_derived_data() {
+  if [ -n "${DUO_DERIVED_DATA:-}" ]; then echo "$DUO_DERIVED_DATA"; return 0; fi
+  local cfg scheme
+  cfg="$(duo_cfg derived_data "" 2>/dev/null || true)"
+  if [ -n "$cfg" ]; then echo "$cfg"; return 0; fi
+  scheme="$(duo_cfg scheme app 2>/dev/null || echo app)"
+  echo "$HOME/Library/Developer/Xcode/DerivedData/duo-ready-$(printf '%s' "$scheme" | tr -c 'A-Za-z0-9._-' '_')"
+}
+
+# Extra xcodebuild arguments, one per line: duo.yaml `xcodebuild_args` list plus
+# the space-separated DUO_XCODEBUILD_SETTINGS environment variable. Xcode 27.1
+# refuses targets below iOS 15 (CocoaPods resource bundles often are), and
+# IPHONEOS_DEPLOYMENT_TARGET=15.0 here is the quickest way past that.
+duo_xcodebuild_args() {
+  duo_cfg_list xcodebuild_args
+  if [ -n "${DUO_XCODEBUILD_SETTINGS:-}" ]; then
+    printf '%s\n' $DUO_XCODEBUILD_SETTINGS
+  fi
+}
+
+# UDID of the duo-ready simulator (set by sim.sh ensure). There is deliberately
+# no fallback to "any booted iPhone Duo": a developer's own simulator may hold a
+# signed-in production account, and the matrix would install over it and drive
+# it. Set DUOCTL_UDID to use a specific simulator on purpose.
 duo_sim_udid() {
   if [ -n "${DUOCTL_UDID:-}" ]; then
     echo "$DUOCTL_UDID"; return 0
@@ -137,13 +167,5 @@ duo_sim_udid() {
   if [ -f "$DUO_DIR/sim.udid" ]; then
     cat "$DUO_DIR/sim.udid"; return 0
   fi
-  xcrun simctl list devices booted -j 2>/dev/null | "$DUO_PY" -c '
-import json, sys
-data = json.load(sys.stdin)
-for runtime, devices in data.get("devices", {}).items():
-    for d in devices:
-        if "Duo" in d.get("name", "") or "iPhone-Duo" in d.get("deviceTypeIdentifier", ""):
-            print(d["udid"]); sys.exit(0)
-sys.exit(1)
-'
+  return 1
 }

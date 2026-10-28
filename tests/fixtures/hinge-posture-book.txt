@@ -1,0 +1,28 @@
+$ hinge posture --json
+# 20:55:18
+{
+  "device": {"udid": "AA3523F2-CC4F-48F7-9CAF-0A146EF79086", "name": "duo-ready"},
+  "angle": 127.0,
+  "orientation": "portrait",
+  "activeDisplay": "LCD-1",
+  "displays": [
+    {"name": "LCD", "id": 1, "primary": true, "active": false, "backlight": "off", "rotation": "rot0", "size": [1398, 2034], "scale": 3},
+    {"name": "LCD-1", "id": 3, "primary": false, "active": true, "backlight": "activeOn", "rotation": "rot90", "size": [2007, 2853], "scale": 3}
+  ]
+}
+[exit 0]
+
+$ hinge --json posture
+# 20:55:20
+{
+  "device": {"udid": "AA3523F2-CC4F-48F7-9CAF-0A146EF79086", "name": "duo-ready"},
+  "angle": 127.0,
+  "orientation": "portrait",
+  "activeDisplay": "LCD-1",
+  "displays": [
+    {"name": "LCD", "id": 1, "primary": true, "active": false, "backlight": "off", "rotation": "rot0", "size": [1398, 2034], "scale": 3},
+    {"name": "LCD-1", "id": 3, "primary": false, "active": true, "backlight": "activeOn", "rotation": "rot90", "size": [2007, 2853], "scale": 3}
+  ]
+}
+[exit 0]
+

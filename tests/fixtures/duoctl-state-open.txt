@@ -1,0 +1,17 @@
+$ duoctl state
+# 20:55:29
+{
+  "udid": "AA3523F2-CC4F-48F7-9CAF-0A146EF79086",
+  "hingeAngle": null,
+  "activeScreen": "inner",
+  "displayId": 3,
+  "displayUUID": "EA823FDE-DF45-4770-AF2D-DFA517D75EAE",
+  "rotation": "rot90",
+  "orientation": "landscape",
+  "sizePoints": [
+    951.0,
+    669.0
+  ]
+}
+[exit 0]
+
