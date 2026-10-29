@@ -1,23 +1,19 @@
 # Contributing
 
-## Mac verification: what is done and what the fourth iteration needs
+## Mac verification: what is done and what the fifth iteration needs
 
-Three field tests have run (27 and 28 Oct 2026, Xcode 27.1 build 27A9275, Expo SDK 54 app). The third ran 0.3.0 unpatched end to end: preflight with the `elements` probe, `add-duo-test-targets.rb` producing targets identical to hand-made ones, the matrix on a clean simulator and on a signed-in one with `--udid`, perf through `xcresulttool get test-results metrics`, report and loop; both real layout issues the second test had missed were caught. It also found that `sim.sh rotate` trusted the hinge's orientation label (inverted on the inner display, so no inner portrait cell was portrait) and that a failed flow step in a duoctl cell was ignored (bash errexit off inside `||`). 0.3.1 fixes both and has not run on a Mac itself. Open an issue titled "Mac verification <date>" and tick what passed, attaching `preflight.json` and the report.
+Four field tests have run (27 and 28 Oct 2026, Xcode 27.1 build 27A9275, Expo SDK 54 app). The fourth ran 0.3.1 unpatched and proved the two 0.3.1 fixes on the device: `sim.sh rotate portrait` really rotates the inner display (2007 x 2853 capture, `orientation` reads `portrait`), the inner portrait cells have a 669 x 951 window with `window_source: cell` and their own trees, and a failed `wait` in an open cell is an error cell with no capture. Also verified: cold preflight `elements: ok` (24 s), one `driver duoctl:` line on a signed-in simulator, perf `status: baseline` with transition skip rows and then `gated: 5` after a baseline, a 1.3 MB report with JPEG thumbnails, the den's scroll indicator gone from the assertions, the wardrobe grid caught in `open>book`, and a new real finding only a true portrait cell could reach (a hero button across the horizontal fold in `book-portrait`). It left three things, fixed in 0.3.2 and not yet run on a Mac: a `.duo/loop.json` written by 0.3.0 has no `last_run`, so a fresh run printed "cap 3 reached" instead of `1/3`; the Maestro reason carried Maestro's generic "Element selector may be incorrect" bullet instead of the `Assertion is false:` line; `--write-baseline` measured every cell a second time (19 minutes for the perf step), so `perf.sh --promote` now copies the run's file. Open an issue titled "Mac verification <date>" and tick what passed, attaching `preflight.json` and the report.
 
 Environment: macOS Tahoe 26.6+ or macOS 27, Xcode 27.1 (or 27.2 RC) with its Command Line Tools, iOS 27.1 runtime, Homebrew 7 with `brew trust` run for each third-party tap, `duoctl`, `hinge`, AXe, Maestro from the `mobile-dev-inc/tap` tap, fastlane 2.241.1+. Keep the project outside iCloud Drive.
 
-Fourth iteration (still open):
+Fifth iteration (still open):
 
-- [ ] `/plugin marketplace update callbackcat` then `/plugin update duo-ready@callbackcat` lands 0.3.1; `${CLAUDE_SKILL_DIR}` ends in `0.3.1`.
-- [ ] `bash scripts/preflight.sh --json` on a cold (shut down) simulator reports `"elements":"ok"` (the probe now retries for 30 s).
-- [ ] `bash scripts/sim.sh orientation` on the open pose prints the window's orientation (`landscape` for a 2853 x 2007 capture), and `sim.sh rotate portrait` really rotates: the next capture is 2007 x 2853.
-- [ ] `run-matrix.sh --run <n>`: `open-portrait` and `book-portrait` cells have a 669 x 951 window with `"window_source": "cell"`; `window_source: screenshot` appears on transition cells only (when the capture size differs from the nominal one).
-- [ ] A flow with a deliberately wrong `wait` produces `.error.json` in an open or book cell too, not only in the Maestro closed cell; the Maestro reason names the failing selector.
-- [ ] `run-matrix.sh --udid <sim> --driver duoctl` prints one `driver duoctl` line and no "maestro not installed" warning.
-- [ ] `perf.sh --run <n>` on a project without a baseline prints `baseline recorded, nothing gated`, `perf.json` has `"status": "baseline"` and three `skip` rows for the transitions with a reason; `--write-baseline` then a second run gates `launch_ms`.
-- [ ] `report.py --run <n>` is under 2 MB (JPEG thumbnails), lists perf under skipped stages when nothing was gated, and shows the transition skip rows.
-- [ ] `loop.py --run <n>` on a fresh run starts at `1/3` and suggests an unused run number.
-- [ ] The den's scroll indicator (`Slider`) no longer fails `tap_target_min` or `interactive_in_fold`; `bars_vertical_expected` skips on the den instead of warning.
+- [ ] `/plugin marketplace update callbackcat` then `/plugin update duo-ready@callbackcat` lands 0.3.2; `${CLAUDE_SKILL_DIR}` ends in `0.3.2`.
+- [ ] `loop.py --run <n>` on a fresh run, with the project's existing `.duo/loop.json` (written by 0.3.0 or 0.3.1, counter at 3), prints the payloads and `iteration 1/3`, and `.duo/loop.json` gains `last_run`.
+- [ ] The broken Maestro flow's reason reads `maestro flow <f> failed: Assertion is false: id: <selector> is visible`, not the "Element selector may be incorrect" bullet.
+- [ ] `perf.sh --promote --run <n>` right after a `baseline recorded, nothing gated` run writes `.duo/baselines/perf.json` in about a second; the next `perf.sh --run <n>` prints `perf: pass` with `gated` > 0. Two perf runs in all, not three.
+- [ ] The refused `closed-landscape` cell is a `skip` row in `perf.json` (reason "refused the landscape orientation") and in the report's perf table.
+- [ ] `DUO-TODO.md` (reach the cap on purpose with `--max-iterations 1` twice): a rule-level lead reads "lead only", never "at `None`", and the `tap_target_min` fix text is the 44 pt hint, not the rule's hero-height hint.
 - [ ] `assets.sh --run <n>` then `fastlane deliver --skip_binary_upload --skip_metadata` uploads the outer set; try the inner set and record whether App Store Connect accepts it through the API.
 - [ ] `templates/github-actions-duo.yml` on a macOS runner that carries Xcode 27.1.
 

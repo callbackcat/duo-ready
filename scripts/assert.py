@@ -644,7 +644,10 @@ def evaluate_run(root: str, run: int, include_warn: bool = False) -> tuple[dict,
                     # of that rule blamed an onboarding video for den buttons (field test 3).
                     "source_hint": f"{hit['file']}:{hit.get('line')}" if hit and hit.get("confidence") == "file" else None,
                     "source_confidence": hit.get("confidence") if hit else None,
-                    "fix_hint": (hit.get("fix_hint") if hit and hit.get("fix_hint") else FIX_HINTS[aname]),
+                    # The rule's hint applies only when its file is the screen's;
+                    # a rule-level lead gave "heroes of 250 pt" for 42 pt buttons.
+                    "fix_hint": (hit.get("fix_hint") if hit and hit.get("confidence") == "file" and hit.get("fix_hint")
+                                 else FIX_HINTS[aname]),
                 })
 
         if kind == "transition":

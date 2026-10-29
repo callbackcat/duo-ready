@@ -253,3 +253,17 @@ def test_field_test_3_contracts():
     assert "rerun-of.json" in rm
     assert "deadline" in pre and "sleep 2" in pre, "preflight retries the elements probe after a cold boot"
     assert "nothing gated" in perf
+
+
+def test_field_test_4_contracts():
+    """Things the fourth field test proved the scripts must do."""
+    rm = open(os.path.join(SCRIPTS, "run-matrix.sh"), encoding="utf-8").read()
+    perf = open(os.path.join(SCRIPTS, "perf.sh"), encoding="utf-8").read()
+    lp = open(os.path.join(SCRIPTS, "loop.py"), encoding="utf-8").read()
+    maestro = rm[rm.index("run_steps_maestro()"):rm.index("run_steps()")]
+    assert "grep -m 1 -E 'Assertion is false:" in maestro, "the Maestro reason must name the failing step, not the generic hint"
+    assert "tail -n 1" not in maestro.split("grep -m 1")[1].split("||")[0]
+    assert "--promote" in perf and "promoted from run" in perf, "a baseline run is promoted, not measured twice"
+    assert ".refused.txt" in perf, "a refused perf cell must reach perf.json"
+    assert "last is None or" in lp, "a loop.json without last_run (0.3.0) is not this chain"
+    assert "comes up portrait after an unfold (2007" not in rm, "stale field-test-2 comment"

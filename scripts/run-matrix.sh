@@ -311,11 +311,18 @@ for s in steps:
 open(out, "w").write("\n".join(lines) + "\n")
 PY
   if ! maestro --udid "$UDID" test "$yaml" >"$RUN_DIR/maestro-$1.log" 2>&1; then
-    # The failing step is in the log; carry its line in the reason so the
-    # payload says what did not appear, not only where to look (field test 3).
-    local why
-    why="$(grep -E -i 'selector|timed out|timeout|not found|assertion|failed|error' "$RUN_DIR/maestro-$1.log" | tail -n 1 | sed 's/^[[:space:]]*//' | cut -c1-160 || true)"
-    duo_die "$DUO_EXIT_UI" "maestro flow $1 failed${why:+: $why} (log: $RUN_DIR/maestro-$1.log)"
+    # The failing step is in the log; carry the line that names it. Maestro
+    # 2.12 prints "Assertion is false: id: x is visible" (or "... FAILED" on
+    # the step line) and then generic "Possible causes" bullets, so the last
+    # matching line was the generic hint (field test 4). grep -m 1 stops at
+    # the first match itself, no SIGPIPE pipeline.
+    local log why
+    log="$RUN_DIR/maestro-$1.log"
+    why="$(grep -m 1 -E 'Assertion is false:|Element not found|Timed out|timed out' "$log" || true)"
+    [ -n "$why" ] || why="$(grep -m 1 -E '\.\.\. FAILED[[:space:]]*$' "$log" || true)"
+    [ -n "$why" ] || why="$(grep -E -i 'selector|timeout|not found|assertion|failed|error' "$log" | tail -n 1 || true)"
+    why="$(printf '%s' "$why" | sed 's/^[[:space:]]*//' | cut -c1-160)"
+    duo_die "$DUO_EXIT_UI" "maestro flow $1 failed${why:+: $why} (log: $log)"
   fi
 }
 
@@ -440,9 +447,10 @@ run_transition() {  # run_transition <flow> <steps> <from>to<to>
   esac
   "$DUO_SCRIPTS/sim.sh" pose "$to" >/dev/null
   sleep 1
-  # The inner display comes up portrait after an unfold (2007 x 2853 captures on
-  # field test 2), not in the landscape the cell name suggests; record what the
-  # hinge reports and let assert.py size the window from the capture.
+  # The inner display keeps its last rotation across a fold (an unfold after a
+  # portrait cell comes up portrait, field tests 2 and 4), so the orientation
+  # after a transition is read back, not assumed from the cell name; assert.py
+  # sizes the window from the capture when it differs from the nominal one.
   local actual
   actual="$("$DUO_SCRIPTS/sim.sh" orientation 2>/dev/null || true)"
   [ -n "$actual" ] && [ "$to" != "closed" ] && to_cell="$to-$actual"

@@ -115,7 +115,12 @@ def write_todo(root: str, run: int, failures, state: dict) -> str:
         lines.append(f"## {key}")
         lines.append("")
         for f in fs:
-            lines.append(f"- [ ] `{f.get('assertion')}`" + (f" (scan rule `{f['matched_rule']}` at `{f.get('source_hint')}`)" if f.get("matched_rule") else ""))
+            lead = ""
+            if f.get("matched_rule") and f.get("source_hint"):
+                lead = f" (scan rule `{f['matched_rule']}` at `{f['source_hint']}`)"
+            elif f.get("matched_rule"):
+                lead = f" (scan rule `{f['matched_rule']}` is a lead only: no file matched this screen)"
+            lines.append(f"- [ ] `{f.get('assertion')}`{lead}")
             for e in f.get("elements") or []:
                 lines.append(f"  - element `{e.get('id')}` frame {e.get('frame')}")
             if f.get("fix_hint"):
@@ -196,7 +201,10 @@ def main(argv=None) -> int:
     last = state.get("last_run")
     origin_path = os.path.join(rdir, "rerun-of.json")
     origin = (duolib.load_json(origin_path) or {}).get("from") if os.path.exists(origin_path) else None
-    if last is not None and args.run != last and origin != last:
+    # A loop.json without last_run was written before 0.3.1: whatever it
+    # counted is not this chain (field test 4 got "cap 3 reached" on a fresh
+    # run from a 0.3.0 state and never saw a payload).
+    if last is None or (args.run != last and origin != last):
         state["iterations"] = 0
     state["last_run"] = args.run
     ui_path = os.path.join(rdir, "ui.json")

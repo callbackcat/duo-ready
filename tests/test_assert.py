@@ -373,13 +373,17 @@ def test_rule_level_match_names_the_rule_but_no_file(tmp_path):
     root = str(tmp_path)
     write_build(root, 1)
     duolib.write_json(os.path.join(root, ".duo", "scan.json"), {"findings": [
-        {"rule": "rn-fixed-height", "severity": "warn", "file": "src/features/onboarding/WelcomeVideo.tsx", "line": 45},
+        {"rule": "rn-fixed-height", "severity": "warn", "file": "src/features/onboarding/WelcomeVideo.tsx", "line": 45,
+         "fix_hint": "Hero blocks of 250 pt or more do not fit the 678 pt outer display"},
     ]})
     write_capture(root, 1, "feed", "closed-portrait", [el("mic", 342, 500, 42, 42, interactive=True, type_="Button")])
     _, failures = asrt.evaluate_run(root, 1)
     f = [x for x in failures if x["assertion"] == "tap_target_min"][0]
     assert f["matched_rule"] == "rn-fixed-height" and f["source_confidence"] == "rule"
     assert f["source_hint"] is None
+    # field test 4, note 11: the rule's hint (heroes of 250 pt) was offered as the
+    # fix for 42 pt buttons; a rule-level lead keeps the assertion's own hint
+    assert f["fix_hint"] == asrt.FIX_HINTS["tap_target_min"]
 
 
 def test_transition_into_book_checks_the_fold(tmp_path):

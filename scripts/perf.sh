@@ -12,12 +12,15 @@ set -euo pipefail
 usage() {
   cat <<'EOF'
 Usage: scripts/perf.sh [--run <n>] [--cells c1,c2] [--udid <udid>] [--absolute] [--write-baseline] [--json]
+       scripts/perf.sh --promote [--run <n>]
 
   --run <n>          run number (default: latest)
   --cells            comma-separated cells (default: duo.yaml cells + transitions)
   --udid <udid>      measure on this booted simulator instead of the "duo-ready" one
   --absolute         gate on duo.yaml thresholds instead of the baseline
-  --write-baseline   copy this run's perf.json to .duo/baselines/perf.json
+  --write-baseline   measure, then copy this run's perf.json to .duo/baselines/perf.json
+  --promote          copy the run's existing perf.json to the baseline without measuring
+                     again (the usual follow-up to "baseline recorded, nothing gated")
   --json             print perf.json on stdout
 
 Requires a UI test target named DuoPerfTests built from templates/DuoPerfTests.swift;
@@ -27,7 +30,7 @@ or target or no metrics at all.
 EOF
 }
 
-RUN=""; CELLS=""; ABSOLUTE=0; WRITE_BASELINE=0; JSON=0; UDID_OPT=""
+RUN=""; CELLS=""; ABSOLUTE=0; WRITE_BASELINE=0; PROMOTE=0; JSON=0; UDID_OPT=""
 while [ $# -gt 0 ]; do
   case "$1" in
     -h|--help) usage; exit 0 ;;
@@ -36,6 +39,7 @@ while [ $# -gt 0 ]; do
     --udid) UDID_OPT="$2"; shift ;;
     --absolute) ABSOLUTE=1 ;;
     --write-baseline) WRITE_BASELINE=1 ;;
+    --promote) PROMOTE=1 ;;
     --json) JSON=1 ;;
     *) echo "unknown argument: $1" >&2; usage >&2; exit 4 ;;
   esac
@@ -46,6 +50,22 @@ done
 . "$(dirname "$0")/common.sh"
 
 duo_require_macos
+if [ "$PROMOTE" -eq 1 ]; then
+  # Field test 4: --write-baseline measured every cell again (6 min) when the
+  # run just finished had the numbers already; promote that file instead.
+  duo_require_config
+  [ -n "$RUN" ] || RUN="$(duo_latest_run)"
+  [ "$RUN" -gt 0 ] || duo_die "$DUO_EXIT_BUILD" "no run found; run scripts/perf.sh first"
+  RUN_DIR="$(duo_run_dir "$RUN")"
+  [ -f "$RUN_DIR/perf.json" ] || duo_die "$DUO_EXIT_UNSUPPORTED" "$RUN_DIR/perf.json missing: run scripts/perf.sh --run $RUN first, then promote it"
+  if ! "$DUO_PY" -c 'import json, sys; d = json.load(open(sys.argv[1])); sys.exit(0 if d.get("status") in ("baseline", "pass") and any(m.get("value") is not None for m in d.get("metrics", [])) else 1)' "$RUN_DIR/perf.json" 2>/dev/null; then
+    duo_die "$DUO_EXIT_UNSUPPORTED" "$RUN_DIR/perf.json is not a baseline candidate (status must be baseline or pass with measured values)"
+  fi
+  mkdir -p "$DUO_DIR/baselines"
+  cp "$RUN_DIR/perf.json" "$DUO_DIR/baselines/perf.json"
+  echo "perf: baseline promoted from run $RUN -> .duo/baselines/perf.json (commit it; the next perf.sh run gates against it)"
+  exit 0
+fi
 duo_require_tool xcodebuild "install Xcode 27.1+"
 duo_require_tool xcrun
 duo_require_tool "$DUO_PY"
@@ -93,12 +113,19 @@ printf '%s\n' "$CELL_LIST" | while IFS= read -r cell; do
   # Put the app in front before rotating (SpringBoard is portrait-only on the
   # outer display); a cell the app refuses is skipped, not fatal.
   [ -z "$BUNDLE_ID" ] || "$DUO_SCRIPTS/sim.sh" launch "$BUNDLE_ID" >/dev/null
-  st=0; "$DUO_SCRIPTS/sim.sh" rotate "$orient" >/dev/null || st=$?
-  if [ "$st" -eq "$DUO_EXIT_UNSUPPORTED" ]; then duo_warn "perf: $cell skipped (the app refused the $orient orientation)"; continue; fi
-  [ "$st" -eq 0 ] || exit "$st"
   # Transition names carry ">" which is not a valid file name everywhere; files
   # use "-to-" and perfparse.py maps them back to the contract name.
   cell_file="$(printf '%s' "$cell" | sed 's/>/-to-/g')"
+  rm -f "$PERF_DIR/$cell_file.refused.txt"
+  st=0; "$DUO_SCRIPTS/sim.sh" rotate "$orient" >/dev/null || st=$?
+  if [ "$st" -eq "$DUO_EXIT_UNSUPPORTED" ]; then
+    # Recorded, so perf.json carries a skip row for the cell (field test 4:
+    # the refused cell was a stderr line only and the report never listed it).
+    rm -f "$PERF_DIR/$cell_file.metrics.json" "$PERF_DIR/$cell_file.json"
+    printf 'the app in front refused the %s orientation in pose %s; nothing was measured\n' "$orient" "$pose" >"$PERF_DIR/$cell_file.refused.txt"
+    duo_warn "perf: $cell skipped (the app refused the $orient orientation)"; continue
+  fi
+  [ "$st" -eq 0 ] || exit "$st"
   result="$PERF_DIR/$cell_file.xcresult"
   rm -rf "$result"
   duo_log "perf: $cell"
@@ -144,7 +171,7 @@ case "$STATUS" in
       if [ "$WRITE_BASELINE" -eq 1 ]; then
         echo "perf: baseline written from this run, nothing gated yet -> $RUN_DIR/perf.json"
       else
-        echo "perf: baseline recorded, nothing gated (no .duo/baselines/perf.json yet; rerun with --write-baseline once the numbers look sane) -> $RUN_DIR/perf.json"
+        echo "perf: baseline recorded, nothing gated (no .duo/baselines/perf.json yet; once the numbers look sane run perf.sh --promote --run $RUN, which copies this file without measuring again) -> $RUN_DIR/perf.json"
       fi
     else
       echo "perf: pass ($MODE mode) -> $RUN_DIR/perf.json"

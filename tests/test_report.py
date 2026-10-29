@@ -266,3 +266,29 @@ def test_report_lists_ungated_perf_and_skip_rows(tmp_path):
     assert any("open>book" in s and "DUO_POSE_URL" in s for s in summary["skipped"])
     assert 'perf <span class="badge baseline">baseline</span>' in out
     assert "DUO_POSE_URL" in out and "None" not in out.split("Performance")[1].split("Scan findings")[0]
+
+
+def test_loop_state_from_0_3_0_does_not_inherit_its_counter(tmp_path, capsys):
+    """Field test 4, note 11: a loop.json written by 0.3.0 has no last_run; on a
+    fresh run loop.py printed "iteration cap 3 reached" and never a payload."""
+    root = str(tmp_path)
+    seed(root, run=15)
+    duolib.write_json(os.path.join(root, ".duo", "loop.json"), {"iterations": 3, "max_iterations": 3, "history": []})
+    assert loop.main(["--run", "15", "--root", root, "--json"]) == 1
+    data = json.loads(capsys.readouterr().out)
+    assert data["iteration"] == 1 and data["action"] == "patch"
+    assert duolib.load_json(os.path.join(root, ".duo", "loop.json"))["last_run"] == 15
+    assert not os.path.exists(os.path.join(root, "DUO-TODO.md"))
+
+
+def test_todo_names_a_rule_level_lead_without_a_file(tmp_path):
+    """Field test 4, note 11: DUO-TODO.md read "(scan rule rn-fixed-height at None)"."""
+    root = str(tmp_path)
+    failures = [{"flow": "feed", "cell": "closed-portrait", "assertion": "tap_target_min", "status": "fail",
+                 "elements": [{"id": "mic", "frame": [342, 692, 42, 42]}], "matched_rule": "rn-fixed-height",
+                 "source_hint": None, "source_confidence": "rule",
+                 "fix_hint": "Keep interactive elements at least 44 x 44 pt in every pose"}]
+    path = loop.write_todo(root, 15, failures, {"iterations": 0, "max_iterations": 3, "history": []})
+    text = open(path, encoding="utf-8").read()
+    assert "at `None`" not in text and "lead only" in text and "rn-fixed-height" in text
+    assert "44 x 44 pt" in text

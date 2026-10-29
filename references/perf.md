@@ -20,7 +20,7 @@ Every row carries `flow`, `cell`, `metric`, `value`, `unit`, `baseline`, `status
 
 ## Regression versus absolute mode
 
-`perf.mode: regression` (default): each value is compared with the project's own baseline for the same flow, cell and metric. Status is `fail` when the value exceeds the baseline by the metric's regression margin (20% for `launch_ms` and `fold_relayout_ms`, the `warn` absolute for memory), `warn` at half the margin, and `pass` otherwise. A missing baseline yields `status: baseline` with `baseline: null` on every gated metric and `status: baseline` on the document; `perf.sh` then prints `baseline recorded, nothing gated` instead of `pass`, and the report lists perf under skipped stages until `--write-baseline` records one.
+`perf.mode: regression` (default): each value is compared with the project's own baseline for the same flow, cell and metric. Status is `fail` when the value exceeds the baseline by the metric's regression margin (20% for `launch_ms` and `fold_relayout_ms`, the `warn` absolute for memory), `warn` at half the margin, and `pass` otherwise. A missing baseline yields `status: baseline` with `baseline: null` on every gated metric and `status: baseline` on the document; `perf.sh` then prints `baseline recorded, nothing gated` instead of `pass`, and the report lists perf under skipped stages until `--promote` (or `--write-baseline`) records one. A cell the app refused to rotate (portrait lock) is a `skip` row whose `reason` is the refusal; it never counts as measured.
 
 `perf.mode: absolute` (or `--absolute`): values are compared with the `warn`/`fail` numbers in `duo.yaml`. Intended for physical devices.
 
@@ -28,14 +28,14 @@ The simulator shares the Mac's CPU, has no thermal envelope, renders through a d
 
 ## Baselines
 
-`.duo/baselines/perf.json` is a copy of a run's `perf.json` (`perf.sh --write-baseline`); `perfparse.py` reads its `metrics` list and matches rows on flow, cell and metric:
+`.duo/baselines/perf.json` is a copy of a run's `perf.json`: `perf.sh --promote --run <n>` copies the file the run already wrote (the usual follow-up to `baseline recorded, nothing gated`; a second of work), `perf.sh --write-baseline` measures every cell again and then copies. `perfparse.py` reads its `metrics` list and matches rows on flow, cell and metric:
 
 ```json
 { "schema": 1, "run": 3, "mode": "regression",
   "metrics": [ { "flow": "*", "cell": "closed-portrait", "metric": "launch_ms", "value": 2265.0, "unit": "ms", "baseline": null, "status": "baseline" } ] }
 ```
 
-`--write-baseline` overwrites after a run whose numbers look sane; the file is committed. A baseline recorded on a different host model or Xcode version is used but flagged in the report, because the comparison is weaker.
+`--promote` and `--write-baseline` overwrite after a run whose numbers look sane; the file is committed. The fourth field test showed why promote exists: `--write-baseline` right after a baseline run measured the same cells a second time, so the first gated run came 19 minutes after the first `perf.sh`. A baseline recorded on a different host model or Xcode version is used but flagged in the report, because the comparison is weaker.
 
 ## Test template
 

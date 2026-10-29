@@ -193,8 +193,21 @@ def build(run: int, perf_dir: str, baseline_path: str | None, mode: str, cfg: di
     # an absence: field test 3 lost the three transition cells silently because
     # testFoldRelayout needs a hinge bridge the skill does not ship.
     seen_cells = {cell_from_filename(fn) for fn in files}
-    for cell in sorted(seen_cells - {m["cell"] for m in measured}):
-        if ">" in cell:
+    # perf.sh writes <cell>.refused.txt when the app refused the orientation
+    # (portrait lock): a skip row with that reason (field test 4).
+    refused = {}
+    for fn in (sorted(os.listdir(perf_dir)) if os.path.isdir(perf_dir) else []):
+        if fn.endswith(".refused.txt"):
+            try:
+                with open(os.path.join(perf_dir, fn), "r", encoding="utf-8", errors="replace") as f:
+                    refused[cell_from_filename(fn[:-len(".refused.txt")] + ".json")] = f.read().strip()
+            except OSError:
+                pass
+    for cell in sorted((seen_cells | set(refused)) - {m["cell"] for m in measured}):
+        if cell in refused:
+            reason = refused[cell] or "the app refused the cell's orientation; nothing was measured"
+            metric = "fold_relayout_ms" if ">" in cell else "launch_ms"
+        elif ">" in cell:
             reason = ("DuoPerfTests skipped testFoldRelayout: TEST_RUNNER_DUO_POSE_URL is not set (the skill ships no "
                       "hinge bridge), so fold_relayout_ms and memory_delta_mb were not measured")
             metric = "fold_relayout_ms"

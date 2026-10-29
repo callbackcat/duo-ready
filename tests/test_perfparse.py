@@ -108,3 +108,18 @@ def test_cells_without_measurements_are_skip_rows_and_launch_memory_delta_is_inf
     doc, code = perfparse.build(14, perf_dir, str(base), "regression", {})
     assert code == 0 and doc["status"] == "pass" and doc["gated"] == 1
     assert rows[("closed-portrait", "launch_ms")]["value"] == 611.0
+
+
+def test_refused_cell_is_a_skip_row_with_its_reason(tmp_path):
+    """Field test 4, note 9: the refused closed-landscape cell was a stderr
+    warning only; perf.json and the report never listed it."""
+    perf_dir = _seed(tmp_path, "closed-portrait.metrics.json")
+    (tmp_path / "perf" / "closed-landscape.refused.txt").write_text(
+        "the app in front refused the landscape orientation in pose closed; nothing was measured\n", encoding="utf-8")
+    doc, code = perfparse.build(15, perf_dir, None, "regression", {})
+    assert code == 0 and doc["status"] == "baseline"
+    rows = {(m["cell"], m["metric"]): m for m in doc["metrics"]}
+    row = rows[("closed-landscape", "launch_ms")]
+    assert row["status"] == "skip" and row["value"] is None
+    assert "refused the landscape orientation" in row["reason"]
+    assert rows[("closed-portrait", "launch_ms")]["status"] == "baseline"
