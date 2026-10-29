@@ -25,7 +25,7 @@ Facts you need before touching code are in `references/device-facts.md`. Read it
 - **Never fake a stage.** Simulator and store stages need macOS, Xcode 27.1, the iOS 27.1 runtime, and the `duoctl`/`hinge` tools. If any is missing, run what you can (detect, scan, fix, plan) and list the skipped stages by name in your summary.
 - **Pose control is a private protocol.** `duoctl` and `hinge` send the same HID event Device Hub sends. `scripts/preflight.sh` proves the angle reads back before any pose stage; exit code 5 means the protocol changed and poses must be set by hand in Device Hub (`references/simulator-control.md`).
 - **One commit per rule** on branch `duo-ready`, message `duo: fix <rule-id> (<n> sites)`, so the PR is reviewable rule by rule.
-- **Confirm before destructive steps**: creating the branch, applying autofixes, overwriting baselines, writing into `fastlane/`.
+- **Confirm before destructive steps**: creating the branch, applying autofixes, overwriting baselines, writing into `fastlane/`. Never upload anything to App Store Connect; the skill stops at the files.
 
 ## Workflow
 
@@ -110,9 +110,9 @@ The report embeds JPEG thumbnails (made with `sips` on macOS) and links the full
 
 ### 8. Assets and submission
 
-When the matrix is green, run `bash "$DUO/scripts/assets.sh" --run <n>`. It picks the passing captures (outer portrait from `closed-portrait`, inner landscape from `open-landscape`, inner portrait from `open-portrait`), flattens them from the simulator's RGBA to RGB (App Store Connect refuses any alpha channel; a few seconds per inner capture in pure python), validates exact pixel sizes and no alpha with `scripts/assets_gate.py`, writes them under `fastlane/screenshots/<locale>/`, and drafts `FEATURING.md` with nomination text. fastlane deliver picks the device from the pixel size and puts inner and outer files into one `APP_IPHONE_DUO` set; the file names are for humans.
+When the matrix is green, run `bash "$DUO/scripts/assets.sh" --run <n>`. It picks the passing captures (outer portrait from `closed-portrait`, inner landscape from `open-landscape`, inner portrait from `open-portrait`), flattens them from the simulator's RGBA to RGB (App Store Connect refuses any alpha channel; a few seconds per inner capture in pure python), validates exact pixel sizes and no alpha with `scripts/assets_gate.py`, writes them under `fastlane/screenshots/<locale>/`, and drafts `FEATURING.md` from the run's results (`scripts/featuring.py`: one claim per assertion that passed everywhere, the poses captured, the SDK stamp; marked "not ready to submit" while any cell fails). The file names are for humans; App Store Connect and fastlane recognise the device from the pixel size.
 
-Tell the user plainly: fastlane deliver 2.241.1 or later uploads the outer set; the rorkai `asc` CLI also works for outer; nobody has publicly verified an inner-display upload through the API, so upload the inner set through App Store Connect's web uploader until that is confirmed. Specs, naming, and the badge are in `references/asc-duo-specs.md`.
+The skill does not upload. Tell the user where the files are and that they go into App Store Connect by hand (App Previews and Screenshots > iPhone Duo; one set holds all four sizes). If the project already has a fastlane deliver lane, 2.241.1 or later reads the folder, but nobody has publicly verified an inner-display upload through the API, so the web uploader is the path for the inner set. Specs, sizes and the badge are in `references/asc-duo-specs.md`.
 
 ## When the user asks a narrower question
 

@@ -7,11 +7,11 @@
 # 27.1 SDK or later must include it; submitting it earlier earns the
 # "optimized for iPhone Duo" badge. Apple has not said apps will be removed.
 #
-# Upload paths: fastlane deliver >= 2.241.1 (knows the Duo sizes) or the asc
-# CLI (`asc screenshots upload --device-type APP_IPHONE_DUO`). Outer-display
-# uploads have been confirmed by the community; inner-display uploads through
-# the API have not, so verify the first inner set in the App Store Connect web
-# UI (see references/asc-duo-specs.md).
+# The skill stops at the files: it never uploads. The user drags them into
+# App Store Connect (App Previews and Screenshots > iPhone Duo; one set holds
+# all four sizes) or points an existing fastlane deliver lane (2.241.1+) at the
+# folder. Inner-display uploads through the API are unverified by anyone
+# (references/asc-duo-specs.md).
 #
 # simctl screenshots are RGBA PNGs (opaque alpha); App Store Connect refuses
 # any alpha channel, so the export flattens them to RGB (pngio.flatten, pure
@@ -31,8 +31,8 @@ Usage: scripts/assets.sh [--run <n>] [--locale <l>] [--output <dir>] [--flows a,
 
 Writes <output>/<locale>/<nn>_iphone_duo_<display>_<flow>-<cell>.png (RGB; the
 RGBA simulator captures are flattened on the way), a manifest.json beside them,
-FEATURING.md at the project root, and prints the upload commands. Exit 1 when a
-capture fails the size gate, 3 when no run.
+FEATURING.md at the project root, and says where to upload by hand (the skill
+never uploads). Exit 1 when a capture fails the size gate, 3 when no run.
 EOF
 }
 
@@ -126,32 +126,20 @@ else
   duo_warn "scripts/assets_gate.py missing; sizes not verified"
 fi
 
+# The nomination text is built from the run's results (scripts/featuring.py):
+# a fixed template claimed fold-safe controls while the run had twelve
+# failures (field test 6).
 APP_NAME="$(duo_cfg scheme "your app")"
-cat >"$DUO_ROOT/FEATURING.md" <<EOF
-# Featuring nomination: $APP_NAME on iPhone Duo
-
-Submit in App Store Connect under Featuring Nominations. Suggested "Helpful details":
-
-> $APP_NAME is optimized for iPhone Duo. It adapts to the outer display when closed and
-> to the inner display when open, including the partially folded (book) pose, both
-> orientations and Split View. Toolbars and tab bars follow the system's vertical
-> placement, interactive controls stay clear of the fold, and App Store screenshots
-> cover both displays. Built with the iOS 27.1 SDK.
-
-Edit this to describe what is genuinely Duo-specific in the app (arrangement views,
-reserved-region handling, hinge interactions). Apple reviews nominations by hand;
-claims it can see are the ones that help.
-EOF
+DISPLAYS="$("$DUO_PY" -c 'import json,sys; print(",".join(sorted({e["display"] for e in json.load(open(sys.argv[1]))["screenshots"]})))' "$MANIFEST")"
+"$DUO_PY" "$DUO_SCRIPTS/featuring.py" --run "$RUN" --root "$DUO_ROOT" --app "$APP_NAME" --displays "$DISPLAYS" --out "$DUO_ROOT/FEATURING.md"
 
 cat <<EOF
 
-Upload options (pick one):
-  fastlane deliver --screenshots_path "$OUTPUT" --skip_binary_upload --skip_metadata   # needs fastlane >= 2.241.1
-  asc screenshots upload --version-localization <LOCALIZATION_ID> --path "$DEST" --device-type APP_IPHONE_DUO
-  or drag the files into App Store Connect > App Previews and Screenshots > iPhone Duo.
-
-Inner-display uploads through the API are not yet confirmed by anyone; check the first
-inner set in the web UI. Nomination text written to FEATURING.md.
+Screenshots are in $DEST. The skill does not upload them: drag the files into
+App Store Connect > App Previews and Screenshots > iPhone Duo (one set holds all
+four sizes, up to 10 images). An existing fastlane deliver lane (2.241.1+) can read
+"$OUTPUT" as well; an inner-display upload through the API is unverified by anyone, so
+use the web uploader for the inner set. Nomination text is in FEATURING.md.
 EOF
 
 [ "$JSON" -eq 1 ] && cat "$MANIFEST"

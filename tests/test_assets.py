@@ -6,6 +6,7 @@ import sys
 SCRIPTS = os.path.join(os.path.dirname(__file__), "..", "scripts")
 sys.path.insert(0, SCRIPTS)
 import assets_gate as g  # noqa: E402
+import featuring  # noqa: E402
 import pngio  # noqa: E402
 
 
@@ -143,3 +144,47 @@ def test_reader_handles_every_filter_type(tmp_path):
                  + chunk(b"IDAT", zlib.compress(bytes(raw))) + chunk(b"IEND", b""))
     w, h, c, got = pngio.read(p)
     assert (w, h, c) == (W, H, ch) and [bytes(r) for r in got] == [bytes(r) for r in rows]
+
+
+def _ui(cells):
+    return {"schema": 1, "run": 17, "sdk_stamp": "27.1", "verified": True, "cells": cells}
+
+
+def test_featuring_marks_a_run_with_failures_not_ready_and_claims_nothing_unproven():
+    """Field test 6: the fixed template promised fold-safe controls while run 17
+    had twelve interactive_in_fold failures."""
+    ui = _ui([
+        {"flow": "feed", "cell": "book-landscape", "results": [{"assertion": "interactive_in_fold", "status": "fail"},
+                                                               {"assertion": "offscreen_elements", "status": "pass"}]},
+        {"flow": "feed", "cell": "closed-portrait", "results": [{"assertion": "bars_vertical_expected", "status": "skip"},
+                                                                {"assertion": "offscreen_elements", "status": "pass"}]},
+        {"flow": "feed", "cell": "open-portrait", "results": [{"assertion": "offscreen_elements", "status": "warn"}]},
+    ])
+    text = featuring.build("DemoApp", 17, ui)
+    assert text.startswith("# Featuring nomination: DemoApp on iPhone Duo")
+    assert "Not ready to submit" in text and "feed / book-landscape (interactive_in_fold)" in text
+    assert "clear of the fold" not in text  # the failed assertion earns no claim
+    assert "vertical placement" not in text  # skip everywhere is not a pass
+    assert "beyond the window edges" in text  # pass + warn, no fail
+    assert "outer display when closed" in text and "book) pose" in text and "both orientations" in text
+    assert "Split View" not in text and "iOS 27.1 SDK" in text
+    assert "inner and outer displays" in text
+
+
+def test_featuring_green_run_lists_the_proven_claims(tmp_path):
+    ui = _ui([
+        {"flow": "feed", "cell": "closed-portrait", "results": [{"assertion": "interactive_in_fold", "status": "pass"},
+                                                                {"assertion": "transition_stable", "status": "pass"}]},
+    ])
+    text = featuring.build("DemoApp", 3, ui, displays=("outer",))
+    assert "Not ready" not in text
+    assert "clear of the fold in the book poses" in text and "survive folding and unfolding" in text
+    assert "cover the outer display." in text and "both orientations" not in text
+    # CLI writes the file and reports the state
+    root = str(tmp_path)
+    os.makedirs(os.path.join(root, ".duo", "runs", "3"))
+    json.dump(ui, open(os.path.join(root, ".duo", "runs", "3", "ui.json"), "w"))
+    assert featuring.main(["--run", "3", "--root", root, "--app", "DemoApp", "--displays", "outer"]) == 0
+    assert "clear of the fold" in open(os.path.join(root, "FEATURING.md"), encoding="utf-8").read()
+    # no ui.json at all: unproven, not a claim
+    assert "unproven" in featuring.build("DemoApp", 4, None)

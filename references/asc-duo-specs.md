@@ -79,7 +79,7 @@ Don't:
 | App Store Connect API directly | The published OpenAPI spec and reference omit a Duo `ScreenshotDisplayType` (33 values on 29 Oct 2026, none for Duo, none that tells inner from outer); the live API accepts `APP_IPHONE_DUO` (and reportedly `IMESSAGE_APP_IPHONE_DUO`, `IPHONE_DUO` for previews). Undocumented; may change. `AppScreenshotSet` is marked deprecated since API 4.5 in favour of `AppAssetLibraryPlacement`; the Help page's single iPhone Duo row lists the outer and inner sizes together and does not say whether one set or two are expected. |
 | EAS metadata | Not covered by any source; unverified. |
 
-Rule for the skill: upload the outer set with fastlane or `asc`, then say plainly that the inner set should go through the web UI until an inner upload is confirmed. Upload failures reported by the community: ITMS-90870 "Missing launch screen" when `Info.plist` lacks a launch screen key.
+Rule for the skill: it exports the files and stops; it never uploads. The user drags the set into the web UI (App Previews and Screenshots > iPhone Duo) or runs their own fastlane deliver lane; say plainly that an inner upload through the API is unverified, so the web UI is the path for the inner set. Upload failures reported by the community: ITMS-90870 "Missing launch screen" when `Info.plist` lacks a launch screen key.
 
 ## 7. Framing and bezels
 
@@ -87,11 +87,11 @@ Apple ships a product bezel for iPhone Duo as Photoshop and PNG files: `https://
 
 ## 8. Featuring nomination
 
-In App Store Connect, submit a featuring nomination. Under Helpful Details, state that the app is optimized for iPhone Duo including all device poses. `assets.sh` writes `FEATURING.md` with a draft:
+In App Store Connect, submit a featuring nomination. Under Helpful Details, state that the app is optimized for iPhone Duo including all device poses. `assets.sh` writes `FEATURING.md` through `scripts/featuring.py`, which builds the draft from the run's `ui.json`: one sentence per assertion that passed everywhere it was evaluated (fold, bars, clipping, tap targets, outer camera, transitions), the poses and orientations that were captured, the displays the export covered and the SDK stamp. While any cell fails, the file opens with "Not ready to submit" and the failing cells; a fixed template claimed fold-safe controls next to twelve open fold failures on the sixth field test. A fully green run reads like:
 
-> Optimized for iPhone Duo. The app resizes between the outer and inner displays, adapts toolbars and tab bars to the vertical placement, keeps interactive controls clear of the fold when partially folded, and supports Split View. Tested in closed, open, partially folded and rotated poses on the iPhone Duo simulator with the iOS 27.1 SDK.
+> Optimized for iPhone Duo. It adapts to the outer display when closed, the inner display when open, the partially folded (book) pose and both orientations. Nothing is laid out beyond the window edges in any pose, toolbars and tab bars follow the system's vertical placement, interactive controls stay clear of the fold in the book poses, and state and controls survive folding and unfolding. App Store screenshots cover the inner and outer displays. Built with the iOS 27.1 SDK.
 
-Edit it to name the app's actual features and remove any claim the run did not prove. Apple guide: https://developer.apple.com/help/app-store-connect/manage-featuring-nominations/nominate-your-app-for-featuring/
+Add the app's actual Duo features; never add a claim the run did not prove. Apple guide: https://developer.apple.com/help/app-store-connect/manage-featuring-nominations/nominate-your-app-for-featuring/
 
 ## 9. Preview tool and new creative assets
 

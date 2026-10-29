@@ -124,10 +124,10 @@ if command -v fastlane >/dev/null 2>&1; then
       *Cellar*|*homebrew*|*linuxbrew*) FASTLANE_UPDATE="brew upgrade fastlane" ;;
       *) FASTLANE_UPDATE="gem update fastlane" ;;
     esac
-    warn "fastlane ${FASTLANE_VER:-?} is older than $MIN_FASTLANE; deliver will not know the iPhone Duo screenshot sizes ($FASTLANE_UPDATE)"
+    warn "fastlane ${FASTLANE_VER:-?} is older than $MIN_FASTLANE; only matters if your own deliver lane sends the Duo set, the skill does not upload ($FASTLANE_UPDATE)"
   fi
 else
-  warn "fastlane not installed; the assets stage will print the asc CLI alternative instead"
+  warn "fastlane not installed; fine, the skill does not upload (screenshots are exported to fastlane/screenshots for a by-hand upload)"
 fi
 
 # --- flow driver and element trees (warn only) -----------------------------

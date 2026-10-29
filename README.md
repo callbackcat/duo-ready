@@ -47,7 +47,7 @@ Runs on a Mac with Xcode 27.1. No iPhone Duo hardware needed.
                |
          fail? |  9 loop: failures.json -> agent patches -> rerun failed cells (max 3)
                v
-  10 assets ---> fastlane/screenshots/<locale>/  1398x2034  2007x2853  (+ FEATURING.md)
+  10 assets ---> fastlane/screenshots/<locale>/  1398x2034  2007x2853  (+ FEATURING.md; upload by hand)
 ```
 
 ## The rule, stated exactly
@@ -101,7 +101,7 @@ brew install skarol/tap/duoctl artemnovichkov/tap/hinge
 brew tap cameroncooke/axe && brew trust cameroncooke/axe && brew install axe   # element trees (duoctl elements)
 brew tap mobile-dev-inc/tap && brew trust mobile-dev-inc/tap && brew install mobile-dev-inc/tap/maestro
                                                   # React Native / Expo closed-pose flows (not the unrelated `maestro` cask)
-brew install fastlane                             # optional, only for screenshot upload (2.241.1+; `brew upgrade fastlane`)
+brew install fastlane                             # optional; the skill never uploads, 2.241.1+ only matters for your own deliver lane
 ```
 
 Homebrew 7 refuses formulae from third-party taps until `brew trust` has been run for the tap; every hint the scripts print includes it. The Maestro curl installer is refused by agent sandboxes, hence the tap.
@@ -166,29 +166,6 @@ Performance (`references/perf.md`): cold launch per pose, fold re-layout time, m
 | Fold region | n/a | 40 pt at x 455 to 495 (landscape), active only when partially folded |
 
 Full numbers, SDK tiers and simulator quirks: `references/device-facts.md`.
-
-## Verification status
-
-The repository is authored on Windows; five field tests have run on a Mac (27 to 29 Oct 2026: Mac16,7, macOS 27.0.1, Xcode 27.1 build 27A9275, iOS 27.1 runtime, Claude Code 2.1.212, Homebrew 7, duoctl 0.2.0, hinge 0.3.0, AXe 1.8.0, Maestro 2.12.0, an Expo SDK 54 app). What has been verified and where:
-
-| Part | Status |
-|---|---|
-| Rule engine (19 native + 17 React Native rules), fixtures, autofix dry-run | Tested with pytest on Windows (157 tests across the suite); on the field-test app the second run reported 7 findings, 5 of them real |
-| YAML subset loader, detect, assertions, visual diff, report, loop, assets gate, AXe tree normaliser, xcresult metrics parser | Tested with pytest on Windows using synthetic trees and PNGs, plus output saved on the field tests: `simctl io enumerate`, `duoctl state`, `hinge posture`, four anonymised `duoctl elements` trees (closed portrait, open landscape, book landscape, a closed-to-open transition) and one `xcresulttool get test-results metrics` document (`tests/fixtures/`) |
-| Shell scripts | `bash -n`, `--help`, the non-macOS refusal path, and guards against the SIGPIPE pipelines (`head`, `awk`, `grep -q`), the `local` pitfall, the `duoctl elements --json` flag and the `TEST_RUNNER_` prefix the field tests hit |
-| Plugin install and update, preflight with the `elements` probe on a cold and a booted simulator, pose readback through `duoctl`/`hinge` (0, 127, 180 degrees), rotation on both displays (`sim.sh rotate portrait` gives a 2007x2853 inner capture and `orientation` reads it back), per-display capture at 1398x2034, 2853x2007 and 2007x2853, SDK stamp 27.1, the UIScene launch kill, element trees through `duoctl elements`, `add-duo-test-targets.rb`, both XCUITest templates compiling and running, `DuoPerfTests` metrics through `xcresulttool get test-results metrics`, perf `baseline` status then a gated run, the matrix on a clean and on a signed-in simulator (`--udid`, one `driver duoctl` line), error cells on Maestro and duoctl drivers, JPEG thumbnails (1.3 MB report for 36 cells), report and loop | **Verified on the field-test Mac** with the 0.3.0 scripts unpatched (third test) and the 0.3.1 scripts unpatched (fourth test, 28 Oct 2026); the 42 pt buttons, the grid on the hinge, and a hero button across the horizontal fold in `book-portrait` that only a real portrait cell could reach were reported |
-| Loop counter on a fresh run, Maestro reason from the `Assertion is false:` line, `perf.sh --promote` (51 ms; the perf step went from 19 to 12 minutes), refused perf cells as skip rows, `DUO-TODO.md` wording, `assets.sh` selection and naming (6 captures, inner first) | **Verified on the field-test Mac** with the 0.3.2 scripts unpatched (fifth test, 29 Oct 2026); the same run showed that `assets.sh` rejected its own RGBA simulator captures, fixed in 0.3.3 |
-| The 0.3.3 export flattening (RGBA captures to RGB), fastlane upload of the outer set, the inner set through the API, Split View, a native UIKit/SwiftUI app end to end | **Not yet verified.** Sixth iteration planned; checklist in `CONTRIBUTING.md` |
-
-Expected time on a prepared Mac: 15 to 25 minutes for build plus matrix, 8 to 10 minutes more for perf, a first build 10 to 15 minutes on top. The fourth field test's scripted stages took about 42 minutes for 36 cells (builds 2, matrix 15, perf 19 over three runs, which `perf.sh --promote` now cuts to two), the third about 28 (builds 5, matrix 14, perf 6), the second about 40; the first took 3 hours because of tool installs, an iCloud-synced DerivedData folder and the launch kill, not the stages.
-
-If you run it on a Mac, open an issue with the output of `bash scripts/preflight.sh --json` and `.duo/runs/1/duo-report.html`.
-
-## Facts that are still unverified publicly
-
-- Uploading the **inner-display** screenshot set through the App Store Connect API (`APP_IPHONE_DUO`). Outer uploads are confirmed; use the web uploader for the inner set until someone confirms.
-- fastlane deliver's exact filename convention for Duo screenshots (support landed in 2.241.1).
-- Split View on the simulator from scripts.
 
 ## Layout
 

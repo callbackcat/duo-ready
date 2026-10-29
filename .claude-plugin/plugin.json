@@ -1,6 +1,6 @@
 {
   "name": "duo-ready",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Make an existing iOS app (UIKit, SwiftUI, React Native, Expo) ready for iPhone Duo: scan and fix resizing breakages, build with the iOS 27.1 SDK, test every pose on the Duo simulator, gate performance, and export the App Store screenshots required from April 2027.",
   "author": { "name": "Kirill", "url": "https://github.com/callbackcat" },
   "homepage": "https://github.com/callbackcat/duo-ready",

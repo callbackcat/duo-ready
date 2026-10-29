@@ -92,7 +92,7 @@ def _png(path, width, height):
 
 def test_assets_exports_passing_cells(tmp_path):
     """Given a run with ui.json and captures, assets.sh exports the App Store set,
-    writes manifest.json and FEATURING.md, and prints the upload commands."""
+    writes manifest.json and FEATURING.md, and says where to upload by hand."""
     proj = tmp_path / "proj"
     caps = proj / ".duo" / "runs" / "1" / "captures"
     caps.mkdir(parents=True)
@@ -116,8 +116,10 @@ def test_assets_exports_passing_cells(tmp_path):
     assert files == ["00_iphone_duo_inner_feed-open-landscape.png", "01_iphone_duo_outer_feed-closed-portrait.png"]
     manifest = json.loads((dest / "manifest.json").read_text())
     assert [e["cell"] for e in manifest["screenshots"]] == ["open-landscape", "closed-portrait"]
-    assert (proj / "FEATURING.md").exists()
-    assert "APP_IPHONE_DUO" in r.stdout
+    featuring = (proj / "FEATURING.md").read_text(encoding="utf-8")
+    assert "Not ready to submit" in featuring and "feed / book-landscape (interactive_in_fold)" in featuring
+    assert "App Store Connect" in r.stdout and "does not upload" in r.stdout
+    assert "fastlane deliver --" not in r.stdout and "asc screenshots upload" not in r.stdout, "the skill never uploads (owner's decision, 29 Oct 2026)"
 
 
 def test_duocfg_reads_template():
@@ -276,3 +278,11 @@ def test_field_test_5_contracts():
     assert "pngio.flatten(" in assets, "simctl captures are RGBA; the export must flatten them or the gate rejects every file"
     assert "TODO-VERIFY" not in assets, "deliver's size-based device detection was read in its 2.241.2 source"
     assert "--write-baseline records" not in report and "--promote" in report
+
+
+def test_field_test_6_contracts():
+    assets = open(os.path.join(SCRIPTS, "assets.sh"), encoding="utf-8").read()
+    report = open(os.path.join(SCRIPTS, "report.py"), encoding="utf-8").read()
+    assert "featuring.py" in assets and "interactive controls stay clear of the fold" not in assets, "no fixed nomination claims"
+    assert "perf.sh --promote --run <n>" not in report, "the report prints the run number, not <n>"
+    assert "was written before" in report and "to compare against it" in report

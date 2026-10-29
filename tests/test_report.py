@@ -292,3 +292,19 @@ def test_todo_names_a_rule_level_lead_without_a_file(tmp_path):
     text = open(path, encoding="utf-8").read()
     assert "at `None`" not in text and "lead only" in text and "rn-fixed-height" in text
     assert "44 x 44 pt" in text
+
+
+def test_report_baseline_wording_depends_on_the_baseline_file(tmp_path):
+    """Field test 6: the report said "no baseline in .duo/baselines/perf.json"
+    next to a baseline that had just been promoted, and printed `<n>`."""
+    root = str(tmp_path)
+    rdir = seed(root, ui_fail=False)
+    duolib.write_json(os.path.join(rdir, "perf.json"), {"schema": 1, "run": 1, "mode": "regression", "status": "baseline", "gated": 0, "metrics": [
+        {"flow": "*", "cell": "closed-portrait", "metric": "launch_ms", "value": 2265.0, "baseline": None, "status": "baseline"}]})
+    _, summary = report.build_report(root, 1)
+    line = [s for s in summary["skipped"] if "nothing was gated" in s][0]
+    assert "no baseline in .duo/baselines/perf.json" in line and "perf.sh --promote --run 1" in line and "<n>" not in line
+    duolib.write_json(os.path.join(root, ".duo", "baselines", "perf.json"), {"metrics": []})
+    _, summary = report.build_report(root, 1)
+    line = [s for s in summary["skipped"] if "nothing was gated" in s][0]
+    assert "no baseline in" not in line and "written before .duo/baselines/perf.json existed" in line and "perf.sh --run 1" in line
