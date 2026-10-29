@@ -32,7 +32,7 @@ Other required rows, for completeness:
 ## 3. Screenshot rules
 
 - 1 to 10 screenshots per device size. Up to three appear in search results depending on orientation.
-- `.png`, `.jpg`, `.jpeg`. No alpha channel or transparency. The spec page names no color space; export sRGB.
+- `.png`, `.jpg`, `.jpeg`. No alpha channel or transparency. The spec page names no color space; export sRGB. `xcrun simctl io screenshot` writes 8-bit RGBA PNGs (colour type 6, every alpha 255), so `assets.sh` flattens captures to RGB on export; the gate would otherwise reject every simulator capture (field test 5).
 - One iPhone Duo placement group holds all four sizes (outer and inner, both orientations) with the same limit of ten. Reported from the ASC asset catalog by a community CLI fork; the ASC web UI shows one Duo tab. Treat the four-sizes-in-one-set detail as community-reported.
 - Changing screenshots after approval needs a new version.
 - Screenshots must follow App Review Guidelines 2.3.3 and 2.3.4.
@@ -74,9 +74,9 @@ Don't:
 | Path | Status (27 Oct 2026) |
 |---|---|
 | App Store Connect web (App Previews and Screenshots tab, Media Manager, Asset Library) | Reliable. Safe default for the inner-display set. |
-| fastlane `deliver` ≥ 2.241.1 | PR #30444 added the Duo sizes (released 14 to 15 Oct 2026; one production pipeline uses 2.241.2). Earlier versions abort the whole upload on an unknown size. Enum name in the PR: `APP_IPHONE_DUO`. **TODO-VERIFY** the screenshot filename and device-folder convention in `deliver/lib/deliver/app_screenshot.rb` at that version before `assets.sh` names files; the PR text does not state it. |
+| fastlane `deliver` ≥ 2.241.1 | PR #30444 added the Duo sizes (released 14 to 15 Oct 2026; one production pipeline uses 2.241.2). Earlier versions abort the whole upload on an unknown size. Enum name: `APP_IPHONE_DUO`. Read in the installed 2.241.2 source (field test 5, 29 Oct 2026): `spaceship/.../app_screenshot_set.rb` defines `APP_IPHONE_DUO` and lists it in `ALL`; `deliver/.../app_screenshot.rb` has all four Duo sizes under one "iPhone Duo" entry and `calculate_display_type` picks the type from the pixel size (`FastImage.size`), never from the file name, so inner and outer files land in the same `APP_IPHONE_DUO` set (10 per set, `upload_screenshots.rb`); uploads go through the v1 `appScreenshotSets` endpoints; `app_screenshot_validator.rb` has no alpha check, so an RGBA file is refused by Apple, not locally. |
 | `asc screenshots upload --version-localization <ID> --path screenshots --device-type APP_IPHONE_DUO` (rorkai/App-Store-Connect-CLI ≥ 5.12.0) | Set creation with `APP_IPHONE_DUO` returns 201. Outer-display uploads verified live (COMPLETE, matching checksums, visible in the Duo gallery). **Inner-display uploads unverified** by anyone at this date. `asc screenshots sizes --display-type APP_IPHONE_DUO` lists the sizes. |
-| App Store Connect API directly | The published OpenAPI spec and reference omit a Duo `ScreenshotDisplayType`; the live API accepts `APP_IPHONE_DUO` (and reportedly `IMESSAGE_APP_IPHONE_DUO`, `IPHONE_DUO` for previews). Undocumented; may change. |
+| App Store Connect API directly | The published OpenAPI spec and reference omit a Duo `ScreenshotDisplayType` (33 values on 29 Oct 2026, none for Duo, none that tells inner from outer); the live API accepts `APP_IPHONE_DUO` (and reportedly `IMESSAGE_APP_IPHONE_DUO`, `IPHONE_DUO` for previews). Undocumented; may change. `AppScreenshotSet` is marked deprecated since API 4.5 in favour of `AppAssetLibraryPlacement`; the Help page's single iPhone Duo row lists the outer and inner sizes together and does not say whether one set or two are expected. |
 | EAS metadata | Not covered by any source; unverified. |
 
 Rule for the skill: upload the outer set with fastlane or `asc`, then say plainly that the inner set should go through the web UI until an inner upload is confirmed. Upload failures reported by the community: ITMS-90870 "Missing launch screen" when `Info.plist` lacks a launch screen key.

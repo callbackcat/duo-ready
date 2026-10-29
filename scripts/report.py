@@ -218,7 +218,7 @@ def build_report(root: str, run: int) -> tuple[str, dict]:
         skipped.append("performance: perf.json has no metrics (" + str(perf.get("reason") or "DuoPerfTests target missing or nothing measured; perf.sh exit 4") + ")")
     if perf and perf.get("status") == "baseline":
         skipped.append("performance: no baseline in .duo/baselines/perf.json, so nothing was gated; this run's numbers are "
-                       "the candidates (perf.sh --write-baseline records them)")
+                       "the candidates (perf.sh --promote --run <n> records them without measuring again)")
     for m in (perf or {}).get("metrics", []) or []:
         if m.get("status") == "skip" and m.get("reason"):
             skipped.append(f"performance: {m.get('cell')}: {m.get('reason')}")

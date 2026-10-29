@@ -12,6 +12,10 @@
 # uploads have been confirmed by the community; inner-display uploads through
 # the API have not, so verify the first inner set in the App Store Connect web
 # UI (see references/asc-duo-specs.md).
+#
+# simctl screenshots are RGBA PNGs (opaque alpha); App Store Connect refuses
+# any alpha channel, so the export flattens them to RGB (pngio.flatten, pure
+# python, a few seconds per inner capture).
 set -euo pipefail
 
 usage() {
@@ -25,9 +29,10 @@ Usage: scripts/assets.sh [--run <n>] [--locale <l>] [--output <dir>] [--flows a,
   --include-failed   also copy captures from cells with failing assertions
   --json             print the manifest on stdout
 
-Writes <output>/<locale>/<nn>_iphone_duo_<display>_<flow>-<cell>.png, a
-manifest.json beside them, FEATURING.md at the project root, and prints the
-upload commands. Exit 1 when a capture fails the size gate, 3 when no run.
+Writes <output>/<locale>/<nn>_iphone_duo_<display>_<flow>-<cell>.png (RGB; the
+RGBA simulator captures are flattened on the way), a manifest.json beside them,
+FEATURING.md at the project root, and prints the upload commands. Exit 1 when a
+capture fails the size gate, 3 when no run.
 EOF
 }
 
@@ -70,9 +75,11 @@ mkdir -p "$DEST"
 # window as open and would duplicate). Order: inner first, then outer, so the
 # product page leads with the big display.
 MANIFEST="$DEST/manifest.json"
-"$DUO_PY" - "$RUN_DIR/ui.json" "$RUN_DIR/captures" "$DEST" "$FLOWS" "$INCLUDE_FAILED" "$MANIFEST" <<'PY'
+"$DUO_PY" - "$RUN_DIR/ui.json" "$RUN_DIR/captures" "$DEST" "$FLOWS" "$INCLUDE_FAILED" "$MANIFEST" "$DUO_SCRIPTS" <<'PY'
 import json, os, shutil, sys
-ui_path, captures, dest, flows, include_failed, manifest = sys.argv[1:]
+ui_path, captures, dest, flows, include_failed, manifest, scripts = sys.argv[1:]
+sys.path.insert(0, scripts)
+import pngio
 only = [f for f in flows.split(",") if f]
 ui = json.load(open(ui_path))
 ORDER = [("open-landscape", "inner"), ("open-portrait", "inner"), ("closed-portrait", "outer"), ("closed-landscape", "outer")]
@@ -90,16 +97,26 @@ if not chosen:
     print("no passing captures to export (use --include-failed to export anyway)", file=sys.stderr); sys.exit(1)
 chosen = chosen[:10]  # App Store Connect limit per set
 entries = []
+flattened = 0
 for i, (flow, cell, display, src, failing) in enumerate(chosen):
-    # TODO-VERIFY: deliver's expected filename for the Duo size. fastlane >= 2.241.1
-    # (PR #30444) detects the device by pixel size, not by name, in
-    # deliver/lib/deliver/app_screenshot.rb; the "iphone_duo_<display>" token is
-    # ours and only there for humans. Confirm against that file before relying on it.
+    # fastlane deliver 2.241.2 (read on field test 5) picks the display type from
+    # the pixel size (calculate_display_type, FastImage.size), not from the file
+    # name, and puts inner and outer files into one APP_IPHONE_DUO set; the
+    # "iphone_duo_<display>" token is ours and only there for humans.
     name = f"{i:02d}_iphone_duo_{display}_{flow}-{cell}.png"
-    shutil.copyfile(src, os.path.join(dest, name))
-    entries.append({"file": name, "flow": flow, "cell": cell, "display": display, "source": src, "assertions_failing": failing})
+    out = os.path.join(dest, name)
+    try:
+        did = pngio.flatten(src, out)
+    except pngio.PNGError:
+        did = False
+    if did:
+        flattened += 1
+    else:
+        shutil.copyfile(src, out)
+    entries.append({"file": name, "flow": flow, "cell": cell, "display": display, "source": src,
+                    "assertions_failing": failing, "flattened": did})
 json.dump({"schema": 1, "locale": os.path.basename(dest), "screenshots": entries}, open(manifest, "w"), indent=2)
-print(f"exported {len(entries)} screenshots to {dest}")
+print(f"exported {len(entries)} screenshots to {dest}" + (f" ({flattened} flattened from RGBA to RGB)" if flattened else ""))
 PY
 
 # Size + alpha gate (another script owns the checks; it exits 1 on any bad file).

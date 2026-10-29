@@ -10,6 +10,7 @@ API:
     info(path) -> dict(width, height, bit_depth, color_type, channels, has_alpha, interlaced)
     read(path)  -> (width, height, channels, rows)   rows: list[bytearray], one per scanline
     write(path, width, height, channels, rows)       channels 1, 2, 3 or 4
+    flatten(src, dst) -> bool                        drop the alpha channel (RGBA -> RGB, GA -> G)
     solid(width, height, rgb)                        helper returning rows for tests
 """
 from __future__ import annotations
@@ -105,22 +106,36 @@ def read(path: str):
         ftype = raw[pos]
         line = bytearray(raw[pos + 1 : pos + 1 + stride])
         pos += 1 + stride
+        # Pure python, so a 2853 x 2007 capture takes seconds; the loops are
+        # written for speed (no helper call per byte, zip for the Up filter).
         if ftype == 1:
             for i in range(ch, stride):
                 line[i] = (line[i] + line[i - ch]) & 0xFF
         elif ftype == 2:
-            for i in range(stride):
-                line[i] = (line[i] + prev[i]) & 0xFF
+            line = bytearray([(x + p) & 0xFF for x, p in zip(line, prev)])
         elif ftype == 3:
-            for i in range(stride):
-                left = line[i - ch] if i >= ch else 0
-                line[i] = (line[i] + ((left + prev[i]) >> 1)) & 0xFF
+            for i in range(ch):
+                line[i] = (line[i] + (prev[i] >> 1)) & 0xFF
+            for i in range(ch, stride):
+                line[i] = (line[i] + ((line[i - ch] + prev[i]) >> 1)) & 0xFF
         elif ftype == 4:
-            for i in range(stride):
-                a = line[i - ch] if i >= ch else 0
+            for i in range(ch):
+                line[i] = (line[i] + prev[i]) & 0xFF  # a = c = 0: paeth gives b
+            for i in range(ch, stride):
+                a = line[i - ch]
                 b = prev[i]
-                c = prev[i - ch] if i >= ch else 0
-                line[i] = (line[i] + _paeth(a, b, c)) & 0xFF
+                c = prev[i - ch]
+                p = a + b - c
+                pa = p - a if p >= a else a - p
+                pb = p - b if p >= b else b - p
+                pc = p - c if p >= c else c - p
+                if pa <= pb and pa <= pc:
+                    pred = a
+                elif pb <= pc:
+                    pred = b
+                else:
+                    pred = c
+                line[i] = (line[i] + pred) & 0xFF
         elif ftype != 0:
             raise PNGError(f"bad filter type {ftype}")
         rows.append(line)
@@ -146,6 +161,26 @@ def write(path: str, width: int, height: int, channels: int, rows) -> None:
         f.write(_chunk(b"IHDR", ihdr))
         f.write(_chunk(b"IDAT", zlib.compress(bytes(raw), 6)))
         f.write(_chunk(b"IEND", b""))
+
+
+def flatten(src: str, dst: str) -> bool:
+    """Write `src` to `dst` without its alpha channel (RGBA -> RGB, gray+alpha
+    -> gray). Returns False (and writes nothing) when `src` has no alpha.
+    `xcrun simctl io screenshot` saves 8-bit RGBA PNGs with every alpha at 255;
+    App Store Connect refuses any PNG with an alpha channel, so field test 5
+    saw assets.sh reject all six of its own captures. The alpha values are
+    dropped, not composited: a transparent pixel in an app screenshot has no
+    defined background anyway."""
+    meta = info(src)
+    if not meta["has_alpha"]:
+        return False
+    w, h, ch, rows = read(src)
+    if ch in (2, 4):
+        for row in rows:
+            del row[ch - 1 :: ch]
+        ch -= 1
+    write(dst, w, h, ch, rows)
+    return True
 
 
 def solid(width: int, height: int, rgb=(255, 255, 255), channels: int = 3):

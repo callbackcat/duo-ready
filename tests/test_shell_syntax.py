@@ -267,3 +267,12 @@ def test_field_test_4_contracts():
     assert ".refused.txt" in perf, "a refused perf cell must reach perf.json"
     assert "last is None or" in lp, "a loop.json without last_run (0.3.0) is not this chain"
     assert "comes up portrait after an unfold (2007" not in rm, "stale field-test-2 comment"
+
+
+def test_field_test_5_contracts():
+    """Things the fifth field test proved the scripts must do."""
+    assets = open(os.path.join(SCRIPTS, "assets.sh"), encoding="utf-8").read()
+    report = open(os.path.join(SCRIPTS, "report.py"), encoding="utf-8").read()
+    assert "pngio.flatten(" in assets, "simctl captures are RGBA; the export must flatten them or the gate rejects every file"
+    assert "TODO-VERIFY" not in assets, "deliver's size-based device detection was read in its 2.241.2 source"
+    assert "--write-baseline records" not in report and "--promote" in report

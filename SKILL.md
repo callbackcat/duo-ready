@@ -110,7 +110,7 @@ The report embeds JPEG thumbnails (made with `sips` on macOS) and links the full
 
 ### 8. Assets and submission
 
-When the matrix is green, run `bash "$DUO/scripts/assets.sh" --run <n>`. It picks the passing captures (outer portrait from `closed-portrait`, inner landscape from `open-landscape`, inner portrait from `open-portrait`), validates exact pixel sizes and no alpha with `scripts/assets_gate.py`, writes them under `fastlane/screenshots/<locale>/`, and drafts `FEATURING.md` with nomination text.
+When the matrix is green, run `bash "$DUO/scripts/assets.sh" --run <n>`. It picks the passing captures (outer portrait from `closed-portrait`, inner landscape from `open-landscape`, inner portrait from `open-portrait`), flattens them from the simulator's RGBA to RGB (App Store Connect refuses any alpha channel; a few seconds per inner capture in pure python), validates exact pixel sizes and no alpha with `scripts/assets_gate.py`, writes them under `fastlane/screenshots/<locale>/`, and drafts `FEATURING.md` with nomination text. fastlane deliver picks the device from the pixel size and puts inner and outer files into one `APP_IPHONE_DUO` set; the file names are for humans.
 
 Tell the user plainly: fastlane deliver 2.241.1 or later uploads the outer set; the rorkai `asc` CLI also works for outer; nobody has publicly verified an inner-display upload through the API, so upload the inner set through App Store Connect's web uploader until that is confirmed. Specs, naming, and the badge are in `references/asc-duo-specs.md`.
 
