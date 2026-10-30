@@ -221,7 +221,7 @@ def build(run: int, perf_dir: str, baseline_path: str | None, mode: str, cfg: di
         doc["status"] = "fail"
         return doc, 2
     if mode == "regression" and gated and all(m["status"] == "baseline" for m in gated):
-        # Nothing was compared: say so instead of "pass" (field test 3, note 10).
+        # Nothing was compared: say so instead of "pass" (field test 3).
         doc["status"] = "baseline"
         doc["reason"] = "no .duo/baselines/perf.json: every gated metric is a candidate baseline, nothing was gated"
     else:

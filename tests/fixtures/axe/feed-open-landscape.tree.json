@@ -45,7 +45,7 @@
     {
       "id": "home-shop",
       "type": "Button",
-      "label": "Open Demo’s shop",
+      "label": "Text 01",
       "frame": [
         753,
         6,
@@ -53,13 +53,13 @@
         40
       ],
       "interactive": false,
-      "text": "Open Demo’s shop",
+      "text": "Text 01",
       "truncated": false
     },
     {
       "id": "home-profile",
       "type": "Button",
-      "label": "Open profile",
+      "label": "Text 02",
       "frame": [
         803,
         6,
@@ -67,7 +67,7 @@
         40
       ],
       "interactive": false,
-      "text": "Open profile",
+      "text": "Text 02",
       "truncated": false
     },
     {
@@ -127,9 +127,9 @@
       "truncated": false
     },
     {
-      "id": "START A SESSION",
+      "id": "Text 03",
       "type": "StaticText",
-      "label": "START A SESSION",
+      "label": "Text 03",
       "frame": [
         24,
         313,
@@ -137,13 +137,13 @@
         13.666656494140625
       ],
       "interactive": false,
-      "text": "START A SESSION",
+      "text": "Text 03",
       "truncated": false
     },
     {
-      "id": "START A SESSION",
+      "id": "Text 03",
       "type": "StaticText",
-      "label": "START A SESSION",
+      "label": "Text 03",
       "frame": [
         24,
         313,
@@ -151,13 +151,13 @@
         13.666656494140625
       ],
       "interactive": false,
-      "text": "START A SESSION",
+      "text": "Text 03",
       "truncated": false
     },
     {
-      "id": "Who is joining?",
+      "id": "Text 04",
       "type": "StaticText",
-      "label": "Who is joining?",
+      "label": "Text 04",
       "frame": [
         24,
         328.6666669845581,
@@ -165,13 +165,13 @@
         26
       ],
       "interactive": false,
-      "text": "Who is joining?",
+      "text": "Text 04",
       "truncated": false
     },
     {
-      "id": "Who is joining?",
+      "id": "Text 04",
       "type": "StaticText",
-      "label": "Who is joining?",
+      "label": "Text 04",
       "frame": [
         24,
         328.6666669845581,
@@ -179,13 +179,13 @@
         26
       ],
       "interactive": false,
-      "text": "Who is joining?",
+      "text": "Text 04",
       "truncated": false
     },
     {
-      "id": "Choose Demo",
+      "id": "Text 05",
       "type": "GenericElement",
-      "label": "Choose Demo",
+      "label": "Text 05",
       "frame": [
         28,
         372.66666412353516,
@@ -193,13 +193,13 @@
         46
       ],
       "interactive": false,
-      "text": "Choose Demo",
+      "text": "Text 05",
       "truncated": false
     },
     {
-      "id": "Choose Friends",
+      "id": "Text 06",
       "type": "GenericElement",
-      "label": "Choose Friends",
+      "label": "Text 06",
       "frame": [
         475.6666564941406,
         372.66666412353516,
@@ -207,13 +207,13 @@
         46
       ],
       "interactive": false,
-      "text": "Choose Friends",
+      "text": "Text 06",
       "truncated": false
     },
     {
-      "id": "Start with Demo",
+      "id": "Text 07",
       "type": "Button",
-      "label": "Start with Demo",
+      "label": "Text 07",
       "frame": [
         24,
         436.6666717529297,
@@ -221,13 +221,13 @@
         58
       ],
       "interactive": false,
-      "text": "Start with Demo",
+      "text": "Text 07",
       "truncated": false
     },
     {
-      "id": "TASKS",
+      "id": "Text 08",
       "type": "StaticText",
-      "label": "TASKS",
+      "label": "Text 08",
       "frame": [
         24,
         538.6666717529297,
@@ -235,13 +235,13 @@
         13.6666259765625
       ],
       "interactive": false,
-      "text": "TASKS",
+      "text": "Text 08",
       "truncated": false
     },
     {
-      "id": "TASKS",
+      "id": "Text 08",
       "type": "StaticText",
-      "label": "TASKS",
+      "label": "Text 08",
       "frame": [
         24,
         538.6666717529297,
@@ -249,13 +249,13 @@
         13.6666259765625
       ],
       "interactive": false,
-      "text": "TASKS",
+      "text": "Text 08",
       "truncated": false
     },
     {
-      "id": "A clear list",
+      "id": "Text 09",
       "type": "StaticText",
-      "label": "A clear list",
+      "label": "Text 09",
       "frame": [
         24,
         554.3333387374878,
@@ -263,13 +263,13 @@
         26
       ],
       "interactive": false,
-      "text": "A clear list",
+      "text": "Text 09",
       "truncated": false
     },
     {
-      "id": "A clear list",
+      "id": "Text 09",
       "type": "StaticText",
-      "label": "A clear list",
+      "label": "Text 09",
       "frame": [
         24,
         554.3333387374878,
@@ -277,13 +277,13 @@
         26
       ],
       "interactive": false,
-      "text": "A clear list",
+      "text": "Text 09",
       "truncated": false
     },
     {
-      "id": "Nothing waiting",
+      "id": "Text 10",
       "type": "StaticText",
-      "label": "Nothing waiting",
+      "label": "Text 10",
       "frame": [
         38,
         608.3333358764648,
@@ -291,13 +291,13 @@
         22
       ],
       "interactive": false,
-      "text": "Nothing waiting",
+      "text": "Text 10",
       "truncated": false
     },
     {
-      "id": "Nothing waiting",
+      "id": "Text 10",
       "type": "StaticText",
-      "label": "Nothing waiting",
+      "label": "Text 10",
       "frame": [
         38,
         608.3333358764648,
@@ -305,13 +305,13 @@
         22
       ],
       "interactive": false,
-      "text": "Nothing waiting",
+      "text": "Text 10",
       "truncated": false
     },
     {
-      "id": "Add one item below.",
+      "id": "Text 11",
       "type": "StaticText",
-      "label": "Add one item below.",
+      "label": "Text 11",
       "frame": [
         38,
         633.3333358764648,
@@ -319,13 +319,13 @@
         18
       ],
       "interactive": false,
-      "text": "Add one item below.",
+      "text": "Text 11",
       "truncated": false
     },
     {
-      "id": "Add one item below.",
+      "id": "Text 11",
       "type": "StaticText",
-      "label": "Add one item below.",
+      "label": "Text 11",
       "frame": [
         38,
         633.3333358764648,
@@ -333,13 +333,13 @@
         18
       ],
       "interactive": false,
-      "text": "Add one item below.",
+      "text": "Text 11",
       "truncated": false
     },
     {
-      "id": "Add a task",
+      "id": "Text 12",
       "type": "TextField",
-      "label": "Add a task",
+      "label": "Text 12",
       "frame": [
         32,
         687.3333435058594,
@@ -347,13 +347,13 @@
         44
       ],
       "interactive": false,
-      "text": "Add a task",
+      "text": "Text 12",
       "truncated": false
     },
     {
-      "id": "Dictate a task",
+      "id": "Text 13",
       "type": "Button",
-      "label": "Dictate a task",
+      "label": "Text 13",
       "frame": [
         827,
         688.3333435058594,
@@ -361,13 +361,13 @@
         42
       ],
       "interactive": false,
-      "text": "Dictate a task",
+      "text": "Text 13",
       "truncated": false
     },
     {
-      "id": "Add task",
+      "id": "Text 14",
       "type": "Button",
-      "label": "Add task",
+      "label": "Text 14",
       "frame": [
         877,
         688.3333435058594,
@@ -375,13 +375,13 @@
         42
       ],
       "interactive": false,
-      "text": "Add task",
+      "text": "Text 14",
       "truncated": false
     },
     {
       "id": "home-rhythm-card",
       "type": "Button",
-      "label": "Your progress, 0 of 2 sessions this week. View details.",
+      "label": "Text 15",
       "frame": [
         4,
         763.3333435058594,
@@ -389,13 +389,13 @@
         189.66668701171875
       ],
       "interactive": false,
-      "text": "Your progress, 0 of 2 sessions this week. View details.",
+      "text": "Text 15",
       "truncated": false
     },
     {
-      "id": "Горизонтальная полоса прокрутки, 1 страница",
+      "id": "Text 16",
       "type": "Slider",
-      "label": "Горизонтальная полоса прокрутки, 1 страница",
+      "label": "Text 16",
       "frame": [
         55,
         636,
@@ -403,13 +403,13 @@
         30
       ],
       "interactive": false,
-      "text": "Горизонтальная полоса прокрутки, 1 страница",
+      "text": "Text 16",
       "truncated": false
     },
     {
-      "id": "Горизонтальная полоса прокрутки, 1 страница",
+      "id": "Text 16",
       "type": "Slider",
-      "label": "Горизонтальная полоса прокрутки, 1 страница",
+      "label": "Text 16",
       "frame": [
         55,
         636,
@@ -417,7 +417,7 @@
         30
       ],
       "interactive": false,
-      "text": "Горизонтальная полоса прокрутки, 1 страница",
+      "text": "Text 16",
       "truncated": false
     },
     {

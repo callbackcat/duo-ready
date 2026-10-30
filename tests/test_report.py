@@ -230,7 +230,7 @@ def test_report_names_captures_without_assertions(tmp_path, capsys):
 
 
 def test_loop_counter_is_per_rerun_chain_and_next_free_run(tmp_path, capsys):
-    """Field test 3, note 14: the counter was project state ("3/3" inherited
+    """Field test 3: the counter was project state ("3/3" inherited
     from the previous day) and the suggested run number already existed."""
     root = str(tmp_path)
     seed(root, run=11)
@@ -252,7 +252,7 @@ def test_loop_counter_is_per_rerun_chain_and_next_free_run(tmp_path, capsys):
 
 
 def test_report_lists_ungated_perf_and_skip_rows(tmp_path):
-    """Field test 3, notes 10 and 13: perf "passed" with nothing compared and
+    """Field test 3: perf "passed" with nothing compared and
     the report did not say so."""
     root = str(tmp_path)
     rdir = seed(root, ui_fail=False)
@@ -269,7 +269,7 @@ def test_report_lists_ungated_perf_and_skip_rows(tmp_path):
 
 
 def test_loop_state_from_0_3_0_does_not_inherit_its_counter(tmp_path, capsys):
-    """Field test 4, note 11: a loop.json written by 0.3.0 has no last_run; on a
+    """Field test 4: a loop.json written by 0.3.0 has no last_run; on a
     fresh run loop.py printed "iteration cap 3 reached" and never a payload."""
     root = str(tmp_path)
     seed(root, run=15)
@@ -282,7 +282,7 @@ def test_loop_state_from_0_3_0_does_not_inherit_its_counter(tmp_path, capsys):
 
 
 def test_todo_names_a_rule_level_lead_without_a_file(tmp_path):
-    """Field test 4, note 11: DUO-TODO.md read "(scan rule rn-fixed-height at None)"."""
+    """Field test 4: DUO-TODO.md read "(scan rule rn-fixed-height at None)"."""
     root = str(tmp_path)
     failures = [{"flow": "feed", "cell": "closed-portrait", "assertion": "tap_target_min", "status": "fail",
                  "elements": [{"id": "mic", "frame": [342, 692, 42, 42]}], "matched_rule": "rn-fixed-height",
@@ -308,3 +308,17 @@ def test_report_baseline_wording_depends_on_the_baseline_file(tmp_path):
     _, summary = report.build_report(root, 1)
     line = [s for s in summary["skipped"] if "nothing was gated" in s][0]
     assert "no baseline in" not in line and "written before .duo/baselines/perf.json existed" in line and "perf.sh --run 1" in line
+
+
+def test_rerun_command_repeats_udid_driver_and_skip_transitions(tmp_path, capsys):
+    """Field test 7: the printed --only-failed command lost --udid and --driver;
+    run as printed it would have rerun a signed-in run on the clean simulator."""
+    root = str(tmp_path)
+    seed(root, run=19)
+    duolib.write_json(os.path.join(root, ".duo", "runs", "19", "matrix-args.json"),
+                      {"udid": "B8F0656B-0000-0000-0000-000000000000", "driver": "duoctl", "skip_transitions": False})
+    assert loop.main(["--run", "19", "--root", root, "--json"]) == 1
+    cmd = json.loads(capsys.readouterr().out)["rerun_command"]
+    assert cmd.endswith("--only-failed .duo/runs/19/failures.json --udid B8F0656B-0000-0000-0000-000000000000 --driver duoctl")
+    duolib.write_json(os.path.join(root, ".duo", "runs", "19", "matrix-args.json"), {"udid": None, "driver": None, "skip_transitions": True})
+    assert loop.rerun_command(19, root).endswith("--only-failed .duo/runs/19/failures.json --skip-transitions")

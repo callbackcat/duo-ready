@@ -62,14 +62,14 @@ For every failure, look up `.duo/scan.json`, restricted to the rules that can ca
 |---|---|
 | offscreen_elements | screen-main-bounds, hardcoded-size, layout-once, rn-dimensions-module-scope, rn-stylesheet-fixed-width, rn-fixed-height, rn-window-height-fraction, window-frame-init, stored-uiscreen |
 | clipped_text | hardcoded-size, rn-stylesheet-fixed-width, rn-adjusts-font-fixed-lineheight, rn-hardcoded-breakpoint, layout-once |
-| tap_target_min | hardcoded-size, rn-fixed-height |
+| tap_target_min | hardcoded-size (a fixed-height rule starts at 300 pt and cannot explain a small button; dropped after field test 7) |
 | bars_vertical_expected | custom-bar-class, rn-js-tab-bar, toolbar-item-no-symbol, custom-overflow-menu |
 | content_under_outer_camera | symmetric-safe-area, rn-safe-area-missing, fill-media, rn-symmetric-insets, rn-image-cover |
 | interactive_in_fold | centered-grid-odd-columns, cached-reserved-regions, rn-expo-hinge-for-layout |
 | transition_stable | layout-once, orientation-layout, rn-orientation-lock, rn-dimensions-no-listener, fixed-orientation-plist |
 | visual_diff, flow | none |
 
-Among those, a finding whose file stem (`PlayerView` from `Sources/PlayerView.swift`) is a case-insensitive substring of the failing element's `id` or `label` wins with `source_confidence: file`; otherwise `matched_rule` names the most severe considered rule with `source_confidence: rule` and `source_hint` stays null (a rule-level match is a lead, not a file to open; the third field test saw an onboarding video blamed for den buttons, and the fourth saw that rule's fix text offered for 42 pt buttons, so a rule-level lead keeps the assertion's own `fix_hint`). With no considered rule at all both fields are null; the payload still carries the assertion's generic `fix_hint`. The second field test showed why the restriction matters: the root element's id was the app name, which is a substring of every file named after the app, so one unrelated provider file was blamed for all 19 failures.
+Among those, a finding whose file stem (`PlayerView` from `Sources/PlayerView.swift`) is a case-insensitive substring of the failing element's `id` or `label` wins with `source_confidence: file`; otherwise `matched_rule` names the most severe considered rule with `source_confidence: rule` and `source_hint` stays null (a rule-level match is a lead, not a file to open; the third field test saw an onboarding video blamed for home buttons, and the fourth saw that rule's fix text offered for 42 pt buttons, so a rule-level lead keeps the assertion's own `fix_hint`). With no considered rule at all both fields are null; the payload still carries the assertion's generic `fix_hint`. The second field test showed why the restriction matters: the root element's id was the app name, which is a substring of every file named after the app, so one unrelated provider file was blamed for all 19 failures.
 
 ## Known gaps
 

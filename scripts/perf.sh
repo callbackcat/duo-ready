@@ -165,7 +165,7 @@ fi
 [ "$JSON" -eq 1 ] && cat "$RUN_DIR/perf.json"
 case "$STATUS" in
   0)
-    # "pass" with nothing compared is not a pass (field test 3, note 10): the
+    # "pass" with nothing compared is not a pass (field test 3): the
     # first run of a project has no baseline, and perf.json says so.
     if "$DUO_PY" -c 'import json, sys; sys.exit(0 if json.load(open(sys.argv[1])).get("status") == "baseline" else 1)' "$RUN_DIR/perf.json" 2>/dev/null; then
       if [ "$WRITE_BASELINE" -eq 1 ]; then

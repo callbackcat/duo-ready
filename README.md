@@ -21,6 +21,8 @@ duo-ready is a Claude Code skill (plus plain scripts you can run by hand) that t
 
 Runs on a Mac with Xcode 27.1. No iPhone Duo hardware needed.
 
+Status: the whole pipeline has run end to end on a production Expo SDK 54 app on a Mac with Xcode 27.1 (seven runs in October 2026), including the fix-and-rerun loop taking a real finding to green. Native UIKit and SwiftUI projects go through the same stages but have had less field time; the rule engine, assertions and parsers are covered by the pytest suite on any OS.
+
 ## Pipeline
 
 ```
@@ -108,7 +110,7 @@ Homebrew 7 refuses formulae from third-party taps until `brew trust` has been ru
 
 `duoctl` and `hinge` are MIT tools that send the same private HID event Xcode's Device Hub sends to fold the simulator. Apple has no public API for this. `scripts/preflight.sh` proves the angle reads back before any pose stage runs and exits with code 5 when an Xcode update breaks the protocol; nothing is ever faked.
 
-AXe is not optional in practice: without it every element tree is empty, and the report marks the run `unverified` (exit 1) instead of passing it. Preflight runs one real `duoctl elements` call and reports `"elements": "ok"` only when a list came back. Keep the project outside iCloud Drive, or set `DUO_DERIVED_DATA`; DerivedData under a synced folder breaks codesign and multiplied the first build time by ten on the field test.
+AXe is not optional in practice: without it every element tree is empty, and the report marks the run `unverified` (exit 1) instead of passing it. Preflight runs one real `duoctl elements` call and reports `"elements": "ok"` only when a list came back. Keep the project outside iCloud Drive, or set `DUO_DERIVED_DATA`; DerivedData under a synced folder breaks codesign and can multiply the first build time by ten.
 
 The two UI test targets (`DuoUITests` for native element trees, `DuoPerfTests` for metrics) are added without opening Xcode: `ruby "$DUO/templates/add-duo-test-targets.rb" ios/App.xcodeproj App "$DUO/templates"` (xcodeproj gem, shipped with CocoaPods). It also switches the scheme's Test action to Release, which a React Native or Expo app needs because nothing in the pipeline starts Metro.
 
@@ -124,7 +126,7 @@ python3 "$DUO/scripts/scan.py"                   # findings grouped by rule
 
 Then open Claude Code in the app folder and say: "get my app ready for iPhone Duo". The skill runs the remaining stages and reports what it could and could not verify. To run them by hand, follow the commands under Use.
 
-First time on a Mac? Please also run the checklist in `CONTRIBUTING.md` and send back `preflight.json` and `.duo/runs/1/duo-report.html`; that is the verification this project still lacks.
+Something off on your Mac? Open an issue with `preflight.json` and `.duo/runs/<n>/duo-report.html` (strip anything private first; `CONTRIBUTING.md` says what to redact).
 
 ## Use
 
@@ -149,7 +151,7 @@ With Claude Code, say "get my app ready for iPhone Duo" and the skill runs these
 
 ## What it checks
 
-Static rules (`references/rules-native.md`, `references/rules-react-native.md`): Apple's published breakage list (`UIScreen.main`, orientation-driven layout, idiom checks, hardcoded device sizes, fill media, layout computed once) plus what the iOS 27.1 SDK added: custom `UIToolbar`/`UINavigationBar`/`UITabBar` that never get vertical bars, title-only toolbar items, custom overflow menus, missing scene lifecycle, symmetric safe-area math, odd-column grids across the fold. React Native and Expo: module-scope `Dimensions.get`, orientation locks (ignored on the inner display), symmetric insets, JS-drawn tab bars, `AppState` pausing in Split View, `useHinge` driving layout, SDK floors, and since the first field test the height rules for the 678 pt outer display (fixed heights, window-height fractions, `adjustsFontSizeToFit` with a fixed `lineHeight`) plus the Expo scene life cycle launch blocker.
+Static rules (`references/rules-native.md`, `references/rules-react-native.md`): Apple's published breakage list (`UIScreen.main`, orientation-driven layout, idiom checks, hardcoded device sizes, fill media, layout computed once) plus what the iOS 27.1 SDK added: custom `UIToolbar`/`UINavigationBar`/`UITabBar` that never get vertical bars, title-only toolbar items, custom overflow menus, missing scene lifecycle, symmetric safe-area math, odd-column grids across the fold. React Native and Expo: module-scope `Dimensions.get`, orientation locks (ignored on the inner display), symmetric insets, JS-drawn tab bars, `AppState` pausing in Split View, `useHinge` driving layout, SDK floors, and the height rules for the 678 pt outer display (fixed heights, window-height fractions, `adjustsFontSizeToFit` with a fixed `lineHeight`) plus the Expo scene life cycle launch blocker.
 
 Runtime assertions per cell (`references/assertions.md`): offscreen elements, clipped text, 44 pt tap targets, vertical bars where the pose expects them, content under the outer camera, interactive elements in the fold region, visual diff against baselines, stability across mid-flow fold transitions.
 

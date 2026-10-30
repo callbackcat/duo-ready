@@ -87,7 +87,7 @@ def test_cli(tmp_path):
 
 
 def test_cells_without_measurements_are_skip_rows_and_launch_memory_delta_is_info(tmp_path):
-    """Field test 3, note 10: the three transition cells ran, measured nothing
+    """Field test 3: the three transition cells ran, measured nothing
     (no hinge bridge) and vanished from perf.json; memory_delta_mb from
     testLaunch is a launch-to-terminate delta and looked like a gate."""
     perf_dir = _seed(tmp_path, "closed-portrait.metrics.json")
@@ -111,7 +111,7 @@ def test_cells_without_measurements_are_skip_rows_and_launch_memory_delta_is_inf
 
 
 def test_refused_cell_is_a_skip_row_with_its_reason(tmp_path):
-    """Field test 4, note 9: the refused closed-landscape cell was a stderr
+    """Field test 4: the refused closed-landscape cell was a stderr
     warning only; perf.json and the report never listed it."""
     perf_dir = _seed(tmp_path, "closed-portrait.metrics.json")
     (tmp_path / "perf" / "closed-landscape.refused.txt").write_text(

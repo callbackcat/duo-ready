@@ -286,3 +286,10 @@ def test_field_test_6_contracts():
     assert "featuring.py" in assets and "interactive controls stay clear of the fold" not in assets, "no fixed nomination claims"
     assert "perf.sh --promote --run <n>" not in report, "the report prints the run number, not <n>"
     assert "was written before" in report and "to compare against it" in report
+
+
+def test_field_test_7_contracts():
+    rm = open(os.path.join(SCRIPTS, "run-matrix.sh"), encoding="utf-8").read()
+    lp = open(os.path.join(SCRIPTS, "loop.py"), encoding="utf-8").read()
+    assert "matrix-args.json" in rm and '"udid"' in rm and '"driver"' in rm, "a rerun must repeat --udid and --driver"
+    assert "matrix-args.json" in lp and "--udid" in lp and "--driver" in lp

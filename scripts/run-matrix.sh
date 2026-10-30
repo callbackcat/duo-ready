@@ -87,7 +87,7 @@ CAPTURES="$RUN_DIR/captures"
 mkdir -p "$CAPTURES"
 
 # A rerun records where it came from, so loop.py counts iterations per rerun
-# chain rather than per project (field test 3, note 14).
+# chain rather than per project (field test 3).
 if [ -n "$ONLY_FAILED" ]; then
   "$DUO_PY" - "$RUN_DIR/rerun-of.json" "$ONLY_FAILED" <<'PY'
 import json, re, sys
@@ -152,6 +152,14 @@ UDID="$(duo_select_sim "$UDID_OPT")"
 export DUOCTL_UDID="$UDID" HINGE_DEVICE="$UDID"
 "$DUO_SCRIPTS/sim.sh" install "$APP_PATH" >/dev/null
 duo_log "run $RUN: app $BUNDLE_ID (sdk $SDK_STAMP) installed on $UDID$([ -n "$UDID_OPT${DUOCTL_UDID_GIVEN:-}" ] && echo ' (chosen with --udid)')"
+# The options a rerun must repeat: loop.py's --only-failed command lost --udid
+# and --driver on field test 7 and would have rerun a signed-in run on the
+# clean simulator.
+"$DUO_PY" - "$RUN_DIR/matrix-args.json" "$UDID" "${UDID_OPT:+1}${DUOCTL_UDID_GIVEN:-}" "$DRIVER" "$SKIP_TRANSITIONS" <<'PY'
+import json, sys
+out, udid, chosen, driver, skip = sys.argv[1:]
+json.dump({"udid": udid if chosen else None, "driver": driver or None, "skip_transitions": skip == "1"}, open(out, "w"), indent=2)
+PY
 DERIVED="$(duo_derived_data)"
 XB_ARGS=()
 while IFS= read -r xb_arg; do [ -n "$xb_arg" ] && XB_ARGS+=("$xb_arg"); done <<EOF
@@ -195,7 +203,7 @@ guarded() {
   # Not `( ... ) || st=$?`: a command on the left of `||` runs with errexit
   # off, subshell included, so a step that failed inside a pipeline (duo_die in
   # run_steps_duoctl's while-read loop) was ignored and the cell was captured
-  # and passed (field test 3, note 9). Errexit is switched back on inside the
+  # and passed (field test 3). Errexit is switched back on inside the
   # subshell and the status read afterwards.
   set +e
   ( set -e; "$fn" "$@" ) 2>"$errf"
@@ -464,7 +472,7 @@ run_transition() {  # run_transition <flow> <steps> <from>to<to>
 
 # Said once, here: a flag set inside guarded's subshell does not survive it,
 # so 0.3.0 repeated the warning for every closed cell and called a chosen
-# `--driver duoctl` "maestro not installed" (field test 3, note 11).
+# `--driver duoctl` "maestro not installed" (field test 3).
 if [ "$DRIVER" = "duoctl" ]; then
   duo_log "driver duoctl: closed cells use the duoctl interpreter (launch, deeplink, wait, sleep, pose, rotate; no taps on the outer display)"
 elif ! command -v maestro >/dev/null 2>&1; then

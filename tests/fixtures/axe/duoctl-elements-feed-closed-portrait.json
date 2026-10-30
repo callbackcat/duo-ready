@@ -34,7 +34,7 @@
   },
   {
     "type": "Button",
-    "label": "Open Demo’s shop",
+    "label": "Text 01",
     "identifier": "home-shop",
     "frame": {
       "width": 40,
@@ -45,7 +45,7 @@
   },
   {
     "type": "Button",
-    "label": "Open profile",
+    "label": "Text 02",
     "identifier": "home-profile",
     "frame": {
       "width": 40,
@@ -100,7 +100,7 @@
   },
   {
     "type": "StaticText",
-    "label": "START A SESSION",
+    "label": "Text 03",
     "identifier": null,
     "frame": {
       "width": 418,
@@ -111,7 +111,7 @@
   },
   {
     "type": "StaticText",
-    "label": "START A SESSION",
+    "label": "Text 03",
     "identifier": null,
     "frame": {
       "width": 418,
@@ -122,7 +122,7 @@
   },
   {
     "type": "StaticText",
-    "label": "Who is joining?",
+    "label": "Text 04",
     "identifier": null,
     "frame": {
       "width": 418,
@@ -133,7 +133,7 @@
   },
   {
     "type": "StaticText",
-    "label": "Who is joining?",
+    "label": "Text 04",
     "identifier": null,
     "frame": {
       "width": 418,
@@ -144,7 +144,7 @@
   },
   {
     "type": "GenericElement",
-    "label": "Choose Demo",
+    "label": "Text 05",
     "identifier": null,
     "frame": {
       "width": 205,
@@ -155,7 +155,7 @@
   },
   {
     "type": "GenericElement",
-    "label": "Choose Friends",
+    "label": "Text 06",
     "identifier": null,
     "frame": {
       "width": 205,
@@ -166,7 +166,7 @@
   },
   {
     "type": "Button",
-    "label": "Start with Demo",
+    "label": "Text 07",
     "identifier": null,
     "frame": {
       "width": 418,
@@ -177,7 +177,7 @@
   },
   {
     "type": "StaticText",
-    "label": "TASKS",
+    "label": "Text 08",
     "identifier": null,
     "frame": {
       "width": 123.33332824707031,
@@ -188,7 +188,7 @@
   },
   {
     "type": "StaticText",
-    "label": "TASKS",
+    "label": "Text 08",
     "identifier": null,
     "frame": {
       "width": 123.33332824707031,
@@ -199,7 +199,7 @@
   },
   {
     "type": "StaticText",
-    "label": "A clear list",
+    "label": "Text 09",
     "identifier": null,
     "frame": {
       "width": 123.33332824707031,
@@ -210,7 +210,7 @@
   },
   {
     "type": "StaticText",
-    "label": "A clear list",
+    "label": "Text 09",
     "identifier": null,
     "frame": {
       "width": 123.33332824707031,
@@ -221,7 +221,7 @@
   },
   {
     "type": "StaticText",
-    "label": "Nothing waiting",
+    "label": "Text 10",
     "identifier": null,
     "frame": {
       "width": 390,
@@ -232,7 +232,7 @@
   },
   {
     "type": "StaticText",
-    "label": "Nothing waiting",
+    "label": "Text 10",
     "identifier": null,
     "frame": {
       "width": 390,
@@ -243,7 +243,7 @@
   },
   {
     "type": "StaticText",
-    "label": "Add one item below.",
+    "label": "Text 11",
     "identifier": null,
     "frame": {
       "width": 390,
@@ -254,7 +254,7 @@
   },
   {
     "type": "StaticText",
-    "label": "Add one item below.",
+    "label": "Text 11",
     "identifier": null,
     "frame": {
       "width": 390,
@@ -265,7 +265,7 @@
   },
   {
     "type": "TextField",
-    "label": "Add a task",
+    "label": "Text 12",
     "identifier": null,
     "frame": {
       "width": 302,
@@ -276,7 +276,7 @@
   },
   {
     "type": "Button",
-    "label": "Dictate a task",
+    "label": "Text 13",
     "identifier": null,
     "frame": {
       "width": 42,
@@ -287,7 +287,7 @@
   },
   {
     "type": "Button",
-    "label": "Add task",
+    "label": "Text 14",
     "identifier": null,
     "frame": {
       "width": 42,
@@ -298,7 +298,7 @@
   },
   {
     "type": "Button",
-    "label": "Your progress, 0 of 2 sessions this week. View details.",
+    "label": "Text 15",
     "identifier": "home-rhythm-card",
     "frame": {
       "width": 458,
@@ -309,7 +309,7 @@
   },
   {
     "type": "Slider",
-    "label": "Горизонтальная полоса прокрутки, 1 страница",
+    "label": "Text 16",
     "identifier": null,
     "frame": {
       "width": 399,
@@ -320,7 +320,7 @@
   },
   {
     "type": "Slider",
-    "label": "Горизонтальная полоса прокрутки, 1 страница",
+    "label": "Text 16",
     "identifier": null,
     "frame": {
       "width": 399,

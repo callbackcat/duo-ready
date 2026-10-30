@@ -159,7 +159,7 @@ case "$cmd" in
     # The current orientation is the window's (`sim.sh orientation`), not the
     # hinge's label: on the inner display that label is the device's and reads
     # "portrait" for a 951 x 669 landscape window, so 0.3.0 returned early here
-    # and never rotated an inner cell (field test 3, note 8).
+    # and never rotated an inner cell (field test 3).
     cur="$("$0" orientation 2>/dev/null || true)"
     if [ "$cur" = "$1" ]; then exit 0; fi
     err=""; ok=0; i=0
@@ -194,7 +194,7 @@ case "$cmd" in
     # orientation comes from the size `duoctl state` reports for it. The hinge's
     # own `orientation` is the device's: on the inner display it reads
     # "portrait" for the 951 x 669 landscape window and lags a rotation by 2 to
-    # 4 s (field test 3, note 8: 0.3.0 believed it, returned early from
+    # 4 s (field test 3: 0.3.0 believed it, returned early from
     # `rotate portrait`, and photographed every inner portrait cell in
     # landscape). `duoctl state` is stale for a few seconds after a fold (field
     # test 2, note 11), so it is believed only once its activeScreen agrees with
@@ -291,7 +291,7 @@ except Exception:
       if ! printf '%s\n' "$jobs" | grep -F "$bundle" >/dev/null; then
         reason="exited within 3 s of launch"
         # Exclude the `log` process itself: it logs its own command line, which
-        # contains the predicate text and matched it (field test 2, note 13).
+        # contains the predicate text and matched it (field test 2).
         killed="$(xcrun simctl spawn "$udid" log show --last 1m --style compact --predicate 'eventMessage CONTAINS "UIScene life cycle is required" AND process != "log"' 2>/dev/null || true)"
         if printf '%s\n' "$killed" | grep -F "UIScene life cycle" >/dev/null; then
           reason="killed by UIKit: 'UIScene life cycle is required for apps built with this SDK'. The build is stamped with the iOS 27 SDK but the app has no UIApplicationSceneManifest / scene delegate (scan rule no-scene-delegate; Expo and React Native templates up to SDK 54 / 0.81 are in this state). Fix the life cycle before measuring anything"

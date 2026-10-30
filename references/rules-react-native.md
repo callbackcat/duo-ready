@@ -81,7 +81,7 @@ Ref: https://developer.apple.com/iphone-duo/prepare/
 ## rn-stylesheet-fixed-width
 **warn · manual**
 
-A fixed `width: 375` overflows the 466 pt outer display once insets are applied and leaves half of the 951 pt inner display empty. Use `flex: 1`, percentages, or the measured window width. `maxWidth` is the recommended cap and is not reported (it was, and both findings on the first field-test app were caps).
+A fixed `width: 375` overflows the 466 pt outer display once insets are applied and leaves half of the 951 pt inner display empty. Use `flex: 1`, percentages, or the measured window width. `maxWidth` is the recommended cap and is not reported (it was, and both findings on a field-test app were caps).
 
 ```tsx
 // before
@@ -96,7 +96,7 @@ Ref: https://developer.apple.com/design/human-interface-guidelines/designing-for
 
 On iPhone Duo the status column (84 pt) and the vertical bar sit on one edge and the outer camera occludes a 37×37 pt corner. A screen that ignores the safe area draws under them. Wrap the screen in `SafeAreaView` from `react-native-safe-area-context` or apply `useSafeAreaInsets()` per edge.
 
-Not reported: files without `style=` or `StyleSheet.create` (they draw nothing of their own), `<Redirect>` and `<Slot>` routes, navigator roots (`<Stack>`, `<Tabs>`, `<Drawer>`), and screens whose root is a `*Scaffold`, `*Layout`, `*Shell`, `*Chrome` or `*Frame` component that applies the insets for them. All seven findings on the first field-test app were one of these.
+Not reported: files without `style=` or `StyleSheet.create` (they draw nothing of their own), `<Redirect>` and `<Slot>` routes, navigator roots (`<Stack>`, `<Tabs>`, `<Drawer>`), and screens whose root is a `*Scaffold`, `*Layout`, `*Shell`, `*Chrome` or `*Frame` component that applies the insets for them. All seven findings on a field-test app were one of these.
 
 ```tsx
 // after
@@ -143,7 +143,7 @@ Ref: https://developer.apple.com/design/human-interface-guidelines/designing-for
 
 In Split View on the inner display your app can be visible and `inactive` at the same time. Pausing playback or network work on anything other than `background` interrupts the user while they look at the other app.
 
-Reported only in files that import or read `AppState`, never on a property such as `action.status !== 'active'`, and not on resume handlers of the form `if (state !== 'active') return;` (four of five findings on the first field-test app were those).
+Reported only in files that import or read `AppState`, never on a property such as `action.status !== 'active'`, and not on resume handlers of the form `if (state !== 'active') return;` (four of five findings on a field-test app were those).
 
 ```tsx
 // before
@@ -182,7 +182,7 @@ Ref: https://docs.expo.dev/versions/v58.0.0/sdk/hinge/
 ## rn-adjusts-font-fixed-lineheight
 **warn · manual** (file-level: a `<Text adjustsFontSizeToFit>` whose style sets a fixed `lineHeight`)
 
-The outer display is 678 pt tall and 466 pt wide, so a title that fits on a 6.1" iPhone can be a few points too wide there. On the new architecture (React Native 0.81) `adjustsFontSizeToFit` ignores `minimumFontScale` and shrinks the font until the text fits its frame; a fixed `lineHeight` stops the line box from shrinking with it, the search never finds a fit, and the text ends at the 4 pt floor and vanishes. Seen on two screens of the first field-test app.
+The outer display is 678 pt tall and 466 pt wide, so a title that fits on a 6.1" iPhone can be a few points too wide there. On the new architecture (React Native 0.81) `adjustsFontSizeToFit` ignores `minimumFontScale` and shrinks the font until the text fits its frame; a fixed `lineHeight` stops the line box from shrinking with it, the search never finds a fit, and the text ends at the 4 pt floor and vanishes. Seen on two screens of a field-test app.
 
 ```tsx
 // before
@@ -197,7 +197,7 @@ Ref: https://developer.apple.com/design/human-interface-guidelines/designing-for
 ## rn-fixed-height
 **warn · manual**
 
-`height: 300` or more in a style, or `height={250}` / `size={250}` on an element, on a screen that does not scroll pushes the footer into the content on the 678 pt outer display (and the 669 pt inner one in landscape). Every real outer-display bug on the first field-test app was a fixed-height hero. Let the art shrink first (`flexShrink: 1`, a `maxHeight` derived from the window) or make the screen scroll.
+`height: 300` or more in a style, or `height={250}` / `size={250}` on an element, on a screen that does not scroll pushes the footer into the content on the 678 pt outer display (and the 669 pt inner one in landscape). Every real outer-display bug on a field-test app was a fixed-height hero. Let the art shrink first (`flexShrink: 1`, a `maxHeight` derived from the window) or make the screen scroll.
 
 ```tsx
 // before

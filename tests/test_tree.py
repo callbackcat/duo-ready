@@ -1,5 +1,5 @@
 """tree.py: the AXe (`duoctl elements`) normaliser, on raw output recorded on the
-second field test (anonymised: app and screen names replaced, geometry kept)."""
+a field test (anonymised: app name, screen names and copy replaced, geometry kept)."""
 import json
 import os
 import subprocess
@@ -23,17 +23,17 @@ def test_from_axe_maps_fields_and_marks_interactive_by_type():
     assert doc["source"] == "duoctl elements" and doc["ancestry"] is False and doc["udid"] == "X"
     by_id = {e["id"]: e for e in doc["elements"]}
     assert by_id["home-profile"]["type"] == "Button" and by_id["home-profile"]["interactive"] is True
-    assert by_id["Add a task"]["type"] == "TextField" and by_id["Add a task"]["interactive"] is True
+    assert by_id["Text 12"]["type"] == "TextField" and by_id["Text 12"]["interactive"] is True
     assert by_id["Demo"]["type"] == "Application" and by_id["Demo"]["interactive"] is False
     assert by_id["home-profile"]["frame"] == [318.0, 6.0, 40.0, 40.0]
 
 
 def test_from_axe_drops_duplicate_static_texts():
     raw = _load("duoctl-elements-feed-closed-portrait.json")
-    dup = sum(1 for e in raw if e["type"] == "StaticText" and e["label"] == "TASKS")
+    dup = sum(1 for e in raw if e["type"] == "StaticText" and e["label"] == "Text 08")
     assert dup == 2  # AXe lists every StaticText twice
     doc = tree.from_axe(raw)
-    assert sum(1 for e in doc["elements"] if e["id"] == "TASKS") == 1
+    assert sum(1 for e in doc["elements"] if e["id"] == "Text 08") == 1
 
 
 def test_from_axe_accepts_list_frames_and_dict_wrapper():

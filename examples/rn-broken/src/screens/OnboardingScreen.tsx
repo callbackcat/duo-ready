@@ -3,7 +3,7 @@ import { AppState, Image, StyleSheet, Text, View, useWindowDimensions } from 're
 import { video } from '../player';
 
 // Intentionally broken for iPhone Duo. Tagged lines are scan fixtures.
-// Every real outer-display bug on the first field-test app was a height bug:
+// Every real outer-display bug on a field-test app was a height bug:
 // the outer display is 678 pt tall, shorter than any current iPhone.
 export function OnboardingScreen() {
   const { height } = useWindowDimensions();

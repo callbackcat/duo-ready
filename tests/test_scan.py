@@ -230,7 +230,7 @@ def test_expo_scene_lifecycle_needs_a_registered_plugin(tmp_path, rules):
 
 def test_expo_scene_plugin_name_is_not_trusted(tmp_path, rules):
     """A registered local plugin named withScene*.js that does not add the scene
-    manifest is still a finding (field test 2, note 32); a package name is all
+    manifest is still a finding (field test 2); a package name is all
     there is to go on for node_modules plugins."""
     root = str(tmp_path)
     _write(root, "app.json", '{"expo": {"name": "x", "orientation": "default", "plugins": ["./plugins/withSceneLifecycle.js"]}}')

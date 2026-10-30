@@ -78,7 +78,7 @@ def test_cli(tmp_path, capsys):
 
 
 def test_flatten_drops_alpha_and_keeps_pixels(tmp_path):
-    """Field test 5, note 10: simctl captures are RGBA (opaque) and the gate
+    """Field test 5: simctl captures are RGBA (opaque) and the gate
     rejected all six exported screenshots; assets.sh now flattens on export."""
     src = str(tmp_path / "cap.png")
     rows = pngio.solid(8, 4, (10, 20, 30, 255), 4)
@@ -166,7 +166,8 @@ def test_featuring_marks_a_run_with_failures_not_ready_and_claims_nothing_unprov
     assert "clear of the fold" not in text  # the failed assertion earns no claim
     assert "vertical placement" not in text  # skip everywhere is not a pass
     assert "beyond the window edges" in text  # pass + warn, no fail
-    assert "outer display when closed" in text and "book) pose" in text and "both orientations" in text
+    assert "outer display when closed" in text and "book) pose" in text
+    assert "both orientations on the inner display" in text  # outer landscape was never captured
     assert "Split View" not in text and "iOS 27.1 SDK" in text
     assert "inner and outer displays" in text
 
@@ -188,3 +189,22 @@ def test_featuring_green_run_lists_the_proven_claims(tmp_path):
     assert "clear of the fold" in open(os.path.join(root, "FEATURING.md"), encoding="utf-8").read()
     # no ui.json at all: unproven, not a claim
     assert "unproven" in featuring.build("DemoApp", 4, None)
+
+
+def test_featuring_orientation_claim_needs_both_orientations_captured():
+    """Field test 7: the draft said "both orientations" for an app whose outer
+    display never rotates (closed-landscape refused and skipped)."""
+    base = [{"assertion": "offscreen_elements", "status": "pass"}]
+    cells = [
+        {"flow": "feed", "cell": "closed-portrait", "results": base},
+        {"flow": "feed", "cell": "closed-landscape", "skipped": True, "results": []},
+        {"flow": "feed", "cell": "open-landscape", "results": base},
+        {"flow": "feed", "cell": "open-portrait", "results": base},
+    ]
+    text = featuring.build("DemoApp", 20, _ui(cells))
+    assert "both orientations on the inner display" in text and "both orientations." not in text
+    cells[1] = {"flow": "feed", "cell": "closed-landscape", "results": base}
+    text = featuring.build("DemoApp", 20, _ui(cells))
+    assert "and both orientations." in text
+    text = featuring.build("DemoApp", 20, _ui(cells[:1] + cells[2:3]))
+    assert "orientations" not in text

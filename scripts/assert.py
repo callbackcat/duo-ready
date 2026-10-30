@@ -65,12 +65,12 @@ GENERIC_ID_WORDS = {"button", "view", "label", "cell", "controller", "screen", "
 BAR_TYPES = {"tabbar", "toolbar", "navigationbar", "tab", "toolbaritem"}
 # Scan rules that explain each assertion (references/assertions.md); source_hint
 # only ever points at one of these, never at an unrelated rule whose file name
-# happens to share a token with the app's own name (field test 2, note 27).
+# happens to share a token with the app's own name (field test 2).
 ASSERTION_RULES = {
     "offscreen_elements": ["screen-main-bounds", "hardcoded-size", "layout-once", "rn-dimensions-module-scope", "rn-stylesheet-fixed-width",
                            "rn-fixed-height", "rn-window-height-fraction", "window-frame-init", "stored-uiscreen"],
     "clipped_text": ["hardcoded-size", "rn-stylesheet-fixed-width", "rn-adjusts-font-fixed-lineheight", "rn-hardcoded-breakpoint", "layout-once"],
-    "tap_target_min": ["hardcoded-size", "rn-fixed-height"],
+    "tap_target_min": ["hardcoded-size"],  # rn-fixed-height (300 pt and up) cannot explain a 42 pt button (field test 7)
     "bars_vertical_expected": ["custom-bar-class", "rn-js-tab-bar", "toolbar-item-no-symbol", "custom-overflow-menu"],
     "content_under_outer_camera": ["symmetric-safe-area", "rn-safe-area-missing", "fill-media", "rn-symmetric-insets", "rn-image-cover"],
     "interactive_in_fold": ["centered-grid-odd-columns", "cached-reserved-regions", "rn-expo-hinge-for-layout"],
@@ -190,7 +190,7 @@ def is_scroll(el) -> bool:
 
 def is_interactive(el) -> bool:
     # AXe reports `Button`, `TextField`...; run-matrix 0.2.0 compared lowercase
-    # names and made every element non-interactive (field test 2, note 10).
+    # names and made every element non-interactive (field test 2).
     return bool(el.get("interactive")) or _tree.is_interactive_type(el.get("type"))
 
 
@@ -198,7 +198,7 @@ def is_scroll_indicator(el, W, H) -> bool:
     """A UIScrollView indicator: AXe reports it as an adjustable `Slider`, thin
     (32 pt or less) and as long as most of the window along its axis. VoiceOver
     can adjust it; nothing taps it, so it is neither a tap target nor a control
-    on the fold (field test 3, note 12: one in every den and wardrobe cell)."""
+    on the fold (field test 3: one in every home and shop cell)."""
     if str(el.get("type", "")).lower() != "slider":
         return False
     _, _, w, h = frame_of(el)
@@ -339,7 +339,7 @@ def a_bars_vertical(elements, cell, W, H, tier):
     bar_typed = any(str(e.get("type", "")).lower() in BAR_TYPES for e in elements)
     # A bar is a row (or column) of items inside the window that spans most of
     # it. Controls that merely sit low on a scrolled screen, below the window
-    # bottom, are content (field test 3, note 12: a task field, two 42 pt
+    # bottom, are content (field test 3: a task field, two 42 pt
     # buttons and a scroll indicator were read as a bottom bar).
     bottom = _bar_row([e for e in interactive_elements(elements, W, H)
                        if frame_of(e)[1] >= H - STATUS_COLUMN_PT and frame_of(e)[1] + frame_of(e)[3] <= H + 1
@@ -641,7 +641,7 @@ def evaluate_run(root: str, run: int, include_warn: bool = False) -> tuple[dict,
                     "screenshot": _rel(root, shot) if os.path.exists(shot) else None,
                     "matched_rule": hit.get("rule") if hit else None,
                     # A rule-level match names a rule, not a file: the first finding
-                    # of that rule blamed an onboarding video for den buttons (field test 3).
+                    # of that rule blamed an onboarding video for home-screen buttons (field test 3).
                     "source_hint": f"{hit['file']}:{hit.get('line')}" if hit and hit.get("confidence") == "file" else None,
                     "source_confidence": hit.get("confidence") if hit else None,
                     # The rule's hint applies only when its file is the screen's;
@@ -665,7 +665,7 @@ def evaluate_run(root: str, run: int, include_warn: bool = False) -> tuple[dict,
             add("offscreen_elements", *checked(lambda: a_offscreen(elements, W, H, ancestry)))
             if cell.split(">")[-1] == "book":
                 # The after-tree is the book pose: a grid on the hinge is caught
-                # here too, not only in the book-landscape cell (field test 3, note 12).
+                # here too, not only in the book-landscape cell (field test 3).
                 after_cell = "book-landscape" if W >= H else "book-portrait"
                 add("interactive_in_fold", *checked(lambda: a_fold(elements, after_cell, W, H)))
         else:

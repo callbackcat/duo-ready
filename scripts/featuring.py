@@ -47,18 +47,26 @@ def summarise(ui: dict | None) -> dict:
         for r in c.get("results", []):
             status.setdefault(r.get("assertion"), set()).add(r.get("status"))
     poses = set()
-    rotated = False
+    seen = {"inner": set(), "outer": set()}
     for c in cells:
         name = c.get("cell") or ""
-        if ">" in name:
-            continue
-        pose = name.split("-")[0]
+        if ">" in name or c.get("skipped") or c.get("errored"):
+            continue  # a refused cell (portrait lock) proves nothing about that orientation
+        pose, _, orient = name.partition("-")
         poses.add(pose)
-        if name.endswith("-portrait") and pose != "closed" or name.endswith("-landscape") and pose == "closed":
-            rotated = True
+        seen["outer" if pose == "closed" else "inner"].add(orient)
+    both = {d for d, o in seen.items() if {"portrait", "landscape"} <= o}
+    # "both orientations" only where both were captured: the outer display of
+    # a portrait-locked app never showed landscape (field test 7).
+    if both == {"inner", "outer"}:
+        orientations = "both orientations"
+    elif both:
+        orientations = f"both orientations on the {next(iter(both))} display"
+    else:
+        orientations = ""
     transitions = any(">" in (c.get("cell") or "") for c in cells)
     proven = [text for a, text in CLAIMS if status.get(a) and "pass" in status[a] and "fail" not in status[a]]
-    return {"cells": len(cells), "failing": failing_cells, "poses": poses, "rotated": rotated,
+    return {"cells": len(cells), "failing": failing_cells, "poses": poses, "orientations": orientations,
             "transitions": transitions, "proven": proven, "verified": (ui or {}).get("verified"),
             "sdk_stamp": (ui or {}).get("sdk_stamp")}
 
@@ -78,8 +86,8 @@ def build(app: str, run: int, ui: dict | None, displays=("inner", "outer")) -> s
     lines.append("Submit in App Store Connect under Featuring Nominations. Suggested \"Helpful details\":")
     lines.append("")
     pose_bits = [w for p, w in POSE_WORDS if p in s["poses"]]
-    if s["rotated"]:
-        pose_bits.append("both orientations")
+    if s["orientations"]:
+        pose_bits.append(s["orientations"])
     adapt = ""
     if pose_bits:
         adapt = " It adapts to " + ", ".join(pose_bits[:-1]) + (" and " if len(pose_bits) > 1 else "") + pose_bits[-1] + "."

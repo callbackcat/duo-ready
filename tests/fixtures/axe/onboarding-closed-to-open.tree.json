@@ -15,9 +15,9 @@
       "truncated": false
     },
     {
-      "id": "Hi, I’m Demo.",
+      "id": "Text 17",
       "type": "StaticText",
-      "label": "Hi, I’m Demo.",
+      "label": "Text 17",
       "frame": [
         223.3333282470703,
         601.6666564941406,
@@ -25,13 +25,13 @@
         58
       ],
       "interactive": false,
-      "text": "Hi, I’m Demo.",
+      "text": "Text 17",
       "truncated": false
     },
     {
-      "id": "Hi, I’m Demo.",
+      "id": "Text 17",
       "type": "StaticText",
-      "label": "Hi, I’m Demo.",
+      "label": "Text 17",
       "frame": [
         223.3333282470703,
         601.6666564941406,
@@ -39,13 +39,13 @@
         58
       ],
       "interactive": false,
-      "text": "Hi, I’m Demo.",
+      "text": "Text 17",
       "truncated": false
     },
     {
-      "id": "I’ll help you get\nstarted.",
+      "id": "Text 18",
       "type": "StaticText",
-      "label": "I’ll help you get\nstarted.",
+      "label": "Text 18",
       "frame": [
         223.3333282470703,
         667.6666564941406,
@@ -53,13 +53,13 @@
         46
       ],
       "interactive": false,
-      "text": "I’ll help you get\nstarted.",
+      "text": "Text 18",
       "truncated": false
     },
     {
-      "id": "I’ll help you get\nstarted.",
+      "id": "Text 18",
       "type": "StaticText",
-      "label": "I’ll help you get\nstarted.",
+      "label": "Text 18",
       "frame": [
         223.3333282470703,
         667.6666564941406,
@@ -67,13 +67,13 @@
         46
       ],
       "interactive": false,
-      "text": "I’ll help you get\nstarted.",
+      "text": "Text 18",
       "truncated": false
     },
     {
       "id": "welcome-begin",
       "type": "Button",
-      "label": "Let’s begin, 󰅂",
+      "label": "Text 19",
       "frame": [
         143.66666412353516,
         811,
@@ -81,13 +81,13 @@
         56
       ],
       "interactive": false,
-      "text": "Let’s begin, 󰅂",
+      "text": "Text 19",
       "truncated": false
     },
     {
       "id": "welcome-sign-in",
       "type": "Button",
-      "label": "I already have an account",
+      "label": "Text 20",
       "frame": [
         143.66666412353516,
         869,
@@ -95,7 +95,7 @@
         44
       ],
       "interactive": false,
-      "text": "I already have an account",
+      "text": "Text 20",
       "truncated": false
     },
     {

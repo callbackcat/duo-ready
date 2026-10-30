@@ -285,7 +285,7 @@ def check_rn_adjusts_font_fixed_lineheight(rule: dict, path: str, raw: str, stri
         if "adjustsFontSizeToFit" not in ln:
             continue
         # Every styles.X referenced in the style={...} expression counts, array
-        # styles included (`style={[styles.a, styles.b]}`; field test 2 note 31:
+        # styles included (`style={[styles.a, styles.b]}`; field test 2:
         # an array style with a fixed lineHeight slipped past the single-name match).
         expr = re.search(r"style=\{(.*)\}", ln)
         names = re.findall(r"\bstyles\.(\w+)", expr.group(1)) if expr else []
@@ -494,7 +494,7 @@ def check_expo_no_scene_lifecycle(rule: dict, root: str, files: list[tuple[str, 
         for name in plugins:
             if name.startswith("."):
                 # A local plugin is opened and must mention the scene manifest; a
-                # "scene" in its file name proves nothing (field test 2, note 32).
+                # "scene" in its file name proves nothing (field test 2).
                 for cand in (name, name + ".js", name + ".ts", name + ".mjs", os.path.join(name, "index.js")):
                     full = os.path.join(root, cand)
                     if os.path.isfile(full) and _EXPO_SCENE_RE.search(_read(full)):

@@ -101,7 +101,7 @@
     {
       "id": "shop-group-home",
       "type": "GenericElement",
-      "label": "The home",
+      "label": "Text 21",
       "frame": [
         475.6666564941406,
         286,
@@ -109,7 +109,7 @@
         40
       ],
       "interactive": false,
-      "text": "The home",
+      "text": "Text 21",
       "truncated": false
     },
     {
@@ -185,7 +185,7 @@
     {
       "id": "shop-tile-fur.plain",
       "type": "Button",
-      "label": "Classic, on now",
+      "label": "Text 22",
       "frame": [
         20,
         391,
@@ -193,7 +193,7 @@
         255
       ],
       "interactive": false,
-      "text": "Classic, on now",
+      "text": "Text 22",
       "truncated": false
     },
     {
@@ -269,7 +269,7 @@
     {
       "id": "shop-tile-fur.midnight",
       "type": "Button",
-      "label": "A small reward for your first week.",
+      "label": "Text 23",
       "frame": [
         478,
         654,
@@ -277,7 +277,7 @@
         255
       ],
       "interactive": false,
-      "text": "A small reward for your first week.",
+      "text": "Text 23",
       "truncated": false
     },
     {
@@ -295,9 +295,9 @@
       "truncated": false
     },
     {
-      "id": "Горизонтальная полоса прокрутки, 1 страница",
+      "id": "Text 16",
       "type": "Slider",
-      "label": "Горизонтальная полоса прокрутки, 1 страница",
+      "label": "Text 16",
       "frame": [
         55,
         636,
@@ -305,13 +305,13 @@
         30
       ],
       "interactive": false,
-      "text": "Горизонтальная полоса прокрутки, 1 страница",
+      "text": "Text 16",
       "truncated": false
     },
     {
-      "id": "Горизонтальная полоса прокрутки, 1 страница",
+      "id": "Text 16",
       "type": "Slider",
-      "label": "Горизонтальная полоса прокрутки, 1 страница",
+      "label": "Text 16",
       "frame": [
         55,
         636,
@@ -319,7 +319,7 @@
         30
       ],
       "interactive": false,
-      "text": "Горизонтальная полоса прокрутки, 1 страница",
+      "text": "Text 16",
       "truncated": false
     },
     {

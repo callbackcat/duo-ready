@@ -92,9 +92,21 @@ def next_run(root, run: int) -> int:
 
 def rerun_command(run: int, root=None) -> str:
     """The exact command for the next iteration: only the failed (flow, cell)
-    pairs, into the next free run number. $DUO is the skill directory
-    (${CLAUDE_SKILL_DIR} inside Claude Code)."""
-    return f'bash "$DUO/scripts/run-matrix.sh" --run {next_run(root, run)} --only-failed .duo/runs/{run}/failures.json'
+    pairs, into the next free run number, on the same simulator and driver as
+    the run being repeated (run-matrix.sh records them in matrix-args.json;
+    field test 7 would otherwise have rerun a signed-in run on the clean
+    simulator). $DUO is the skill directory (${CLAUDE_SKILL_DIR} inside Claude Code)."""
+    cmd = f'bash "$DUO/scripts/run-matrix.sh" --run {next_run(root, run)} --only-failed .duo/runs/{run}/failures.json'
+    args_path = os.path.join(duolib.run_dir(root or ".", run), "matrix-args.json")
+    if os.path.exists(args_path):
+        a = duolib.load_json(args_path) or {}
+        if a.get("udid"):
+            cmd += f" --udid {a['udid']}"
+        if a.get("driver"):
+            cmd += f" --driver {a['driver']}"
+        if a.get("skip_transitions"):
+            cmd += " --skip-transitions"
+    return cmd
 
 
 def write_todo(root: str, run: int, failures, state: dict) -> str:
