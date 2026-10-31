@@ -36,40 +36,6 @@ Status: the whole pipeline has run end to end on a production Expo SDK 54 app on
   <img src="assets/pipeline.gif" width="100%" alt="Animated duo-ready pipeline: preflight, detect, scan, fix and build feed a pose matrix where a halftone iPhone Duo folds through closed, open and book poses; failing cells loop back through report and rerun until all pass, then App Store screenshots are exported.">
 </p>
 
-<sub>Animation made with <a href="https://github.com/kailashsr38/ascii-magic-art">ascii-magic-art</a> (MIT), adapted from its architecture-map piece. Source: <a href="assets/pipeline/duo-pipeline.js">assets/pipeline/duo-pipeline.js</a>.</sub>
-
-<details>
-<summary>Pipeline as text</summary>
-
-```
-          your app repo
-               |
-  0 preflight  |  Xcode 27.1? iOS 27.1 runtime? duoctl + hinge? pose readback works?
-               v
-  1 detect  ---> duo.yaml (stack, scheme, flows)
-               |
-  2 scan    ---> .duo/scan.json  (36 rules, grouped by rule id)
-               |
-  3 fix     ---> one commit per rule on branch duo-ready
-               |
-  4 build   ---> .app + SDK stamp (26 / 27.0 / 27.1 tier)
-               |
-  5 matrix  ---> for each flow x pose:  pose -> launch -> steps -> capture -> element tree
-               |     closed-portrait  closed-landscape  open-landscape  open-portrait
-               |     book-landscape   book-portrait     closed>open     open>book ...
-               v
-  6 assert  ---> ui.json   (offscreen, clipped, tap targets, bars, camera, fold, visual diff)
-  7 perf    ---> perf.json (launch, fold re-layout, memory, CPU; regression vs baseline)
-               |
-  8 report  ---> duo-report.html        exit 0 pass / 1 UI or unverified / 2 perf / 3 build
-               |
-         fail? |  9 loop: failures.json -> agent patches -> rerun failed cells (max 3)
-               v
-  10 assets ---> fastlane/screenshots/<locale>/  1398x2034  2007x2853  (+ FEATURING.md; upload by hand)
-```
-
-</details>
-
 ## The rule, stated exactly
 
 From **April 2027**, every App Store submission of an app **built with the iOS 27.1 SDK or later** must include iPhone Duo screenshots. They are optional today, and submitting them now puts an "optimized for iPhone Duo" badge on the product page. Apple has not said apps will be removed. Sources: [developer news](https://developer.apple.com/news/?id=kkphp5qo), [screenshot specifications](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications).
