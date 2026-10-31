@@ -32,6 +32,15 @@ Status: the whole pipeline has run end to end on a production Expo SDK 54 app on
 
 ## Pipeline
 
+<p align="center">
+  <img src="assets/pipeline.gif" width="100%" alt="Animated duo-ready pipeline: preflight, detect, scan, fix and build feed a pose matrix where a halftone iPhone Duo folds through closed, open and book poses; failing cells loop back through report and rerun until all pass, then App Store screenshots are exported.">
+</p>
+
+<sub>Animation made with <a href="https://github.com/kailashsr38/ascii-magic-art">ascii-magic-art</a> (MIT), adapted from its architecture-map piece. Source: <a href="assets/pipeline/duo-pipeline.js">assets/pipeline/duo-pipeline.js</a>.</sub>
+
+<details>
+<summary>Pipeline as text</summary>
+
 ```
           your app repo
                |
@@ -58,6 +67,8 @@ Status: the whole pipeline has run end to end on a production Expo SDK 54 app on
                v
   10 assets ---> fastlane/screenshots/<locale>/  1398x2034  2007x2853  (+ FEATURING.md; upload by hand)
 ```
+
+</details>
 
 ## The rule, stated exactly
 
