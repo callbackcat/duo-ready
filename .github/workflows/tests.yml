@@ -1,0 +1,29 @@
+name: Tests
+
+# The pytest suite needs only Python and pytest. macOS runs the same tests minus
+# the off-Mac refusal check; tests that need xcodebuild skip themselves.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pytest:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pytest
+        run: python -m pip install pytest
+      - name: Run tests
+        run: python -m pytest -q tests

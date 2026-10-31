@@ -8,6 +8,9 @@
 
 <p align="center">
   <a href="https://www.skillsdirectory.com/skills/callbackcat-duo-ready"><img alt="Security: A — Skills Directory" src="https://www.skillsdirectory.com/api/skills/callbackcat-duo-ready/badge"></a>
+  <a href="https://github.com/callbackcat/duo-ready/actions/workflows/tests.yml"><img alt="Tests" src="https://github.com/callbackcat/duo-ready/actions/workflows/tests.yml/badge.svg"></a>
+  <a href="https://github.com/callbackcat/duo-ready/tags"><img alt="Version" src="https://img.shields.io/github/v/tag/callbackcat/duo-ready?label=version&sort=semver"></a>
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue"></a>
 </p>
 
 ## What this skill is for
