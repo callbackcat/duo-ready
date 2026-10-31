@@ -1,5 +1,7 @@
 import json
 import os
+import shutil
+import subprocess
 import sys
 
 SCRIPTS = os.path.join(os.path.dirname(__file__), "..", "scripts")
@@ -193,8 +195,15 @@ def test_report_embeds_thumbnails_not_full_captures(tmp_path):
     text = open(html_path, encoding="utf-8").read()
     assert 'href="captures/feed-book-landscape.png"' in text
     thumbs = sorted(os.listdir(os.path.join(rdir, "thumbs")))
-    assert thumbs == ["feed-book-landscape.240.png", "feed-book-landscape.720.png"]
-    assert pngio.info(os.path.join(rdir, "thumbs", "feed-book-landscape.720.png"))["width"] == 720
+    # sips (macOS) writes JPEG thumbnails; the pure-python fallback writes PNG
+    ext = "jpg" if shutil.which("sips") else "png"
+    assert thumbs == [f"feed-book-landscape.240.{ext}", f"feed-book-landscape.720.{ext}"]
+    big_thumb = os.path.join(rdir, "thumbs", f"feed-book-landscape.720.{ext}")
+    if ext == "png":
+        assert pngio.info(big_thumb)["width"] == 720
+    else:
+        out = subprocess.run(["sips", "-g", "pixelWidth", big_thumb], capture_output=True, text=True).stdout
+        assert out.split()[-1] == "720", out
     # the overlay keeps full-capture coordinates so frames line up on the thumbnail
     assert f'viewBox="0 0 {w} {h}"' in text
 
