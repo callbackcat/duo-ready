@@ -6,6 +6,10 @@
 
 <p align="center">Get an existing iOS app ready for iPhone Duo, and prove it works in every pose.</p>
 
+<p align="center">
+  <a href="https://www.skillsdirectory.com/skills/callbackcat-duo-ready"><img alt="Security: A — Skills Directory" src="https://www.skillsdirectory.com/api/skills/callbackcat-duo-ready/badge"></a>
+</p>
+
 ## What this skill is for
 
 iPhone Duo is Apple's foldable iPhone: a 5.4" outer display when closed and a 7.6" inner display when open. Apps that assume one screen size, lock orientation, or read `UIScreen.main` look wrong on it, and from April 2027 every App Store submission built with the iOS 27.1 SDK must include Duo screenshots.
