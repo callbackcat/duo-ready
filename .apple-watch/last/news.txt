@@ -1,0 +1,1308 @@
+
+	
+ <div
+ class="account-menu-user-header"
+ role="banner"
+ aria-label="User information"
+ data-aria-label="userInformation"
+ >
+ <div
+ class="account-menu-avatar"
+ data-slot="initial"
+ aria-hidden="true"
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ <span data-slot="certificatesIDsProfiles"
+ ></span
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ // Synchronously disables the account link before first paint so the user
+ // cannot navigate away before session.js registers its click listener.
+ (function () {
+ var accountLink = document.querySelector(".globalnav-link-account");
+ if (accountLink) {
+ var href = accountLink.getAttribute("href");
+ if (href) {
+ accountLink.dataset.pendingHref = href;
+ accountLink.removeAttribute("href");
+ accountLink.style.cursor = "default";
+ }
+ }
+ })();
+	
+	Prepare and submit your apps for iPhone Duo - Latest News - Apple Developer
+	
+		
+				<meta name="Description" content="iPhone Duo will be available to customers starting October 23, 2026. To get your apps and games ready today, you can:Build or recompile with XcodeRecompile existing apps with Xcode 27.1, which adds development support for iPhone Duo. Use Device Hub to visualize how your apps behave on iPhone Duo across all poses and orientations.
+Get the latest version of Xcode
+Three steps to make your app shine on iPhone Duo
+Learn more about iPhone Duo
+Prepare your App Store product page assetsUpdated screenshot and app preview specifications are now available for the latest Apple devices, including iPhone Duo, so you can showcase your app at its best across orientations. Explore design guidance and get downloadable templates to help you build your App Store assets, including new product page headers and search result assets, as well as your app previews, screenshots, and In-App Events. Visualize how your screenshots, product page headers, and other metadata look on your product page on iPhone Duo with the new preview tool in App Store Connect.
+Get design guidance and templates
+Manage your App Store assets
+View app preview specifications
+View screenshot specifications
+Submit your appYou can submit your iPhone Duo optimized apps and games in App Store Connect today. When you submit iPhone Duo screenshots in App Store Connect, your App Store product page will display a badge to let people know your app is optimized for iPhone Duo. Starting April 2027, any apps or games submitted will need to include screenshots for iPhone Duo.Learn about submitting " />
+				
+	
+	
+		
+	
+					
+		
+		
+		<meta property="og:description" content="iPhone Duo will be available to customers starting October 23, 2026. To get your apps and games ready today, you can:Build or recompile with XcodeRecompile existing apps with Xcode 27.1, which adds development support for iPhone Duo. Use Device Hub to visualize how your apps behave on iPhone Duo across all poses and orientations.
+Get the latest version of Xcode
+Three steps to make your app shine on iPhone Duo
+Learn more about iPhone Duo
+Prepare your App Store product page assetsUpdated screenshot and app preview specifications are now available for the latest Apple devices, including iPhone Duo, so you can showcase your app at its best across orientations. Explore design guidance and get downloadable templates to help you build your App Store assets, including new product page headers and search result assets, as well as your app previews, screenshots, and In-App Events. Visualize how your screenshots, product page headers, and other metadata look on your product page on iPhone Duo with the new preview tool in App Store Connect.
+Get design guidance and templates
+Manage your App Store assets
+View app preview specifications
+View screenshot specifications
+Submit your appYou can submit your iPhone Duo optimized apps and games in App Store Connect today. When you submit iPhone Duo screenshots in App Store Connect, your App Store product page will display a badge to let people know your app is optimized for iPhone Duo. Starting April 2027, any apps or games submitted will need to include screenshots for iPhone Duo.Learn about submitting "/>
+		
+	
+	
+			
+					
+			
+				<meta name="twitter:description" content="iPhone Duo will be available to customers starting October 23, 2026. To get your apps and games ready today, you can:Build or recompile with XcodeRecompile existing apps with Xcode 27.1, which adds development support for iPhone Duo. Use Device Hub to visualize how your apps behave on iPhone Duo across all poses and orientations.
+Get the latest version of Xcode
+Three steps to make your app shine on iPhone Duo
+Learn more about iPhone Duo
+Prepare your App Store product page assetsUpdated screenshot and app preview specifications are now available for the latest Apple devices, including iPhone Duo, so you can showcase your app at its best across orientations. Explore design guidance and get downloadable templates to help you build your App Store assets, including new product page headers and search result assets, as well as your app previews, screenshots, and In-App Events. Visualize how your screenshots, product page headers, and other metadata look on your product page on iPhone Duo with the new preview tool in App Store Connect.
+Get design guidance and templates
+Manage your App Store assets
+View app preview specifications
+View screenshot specifications
+Submit your appYou can submit your iPhone Duo optimized apps and games in App Store Connect today. When you submit iPhone Duo screenshots in App Store Connect, your App Store product page will display a badge to let people know your app is optimized for iPhone Duo. Starting April 2027, any apps or games submitted will need to include screenshots for iPhone Duo.Learn about submitting "/>
+		
+		
+	
+		
+			
+			
+			
+			
+		
+	
+	
+	
+	
+	
+	// Execute immediately to avoid UI flash
+	(function () {
+		// Prevent React dev mode from running this multiple times
+		if (window.__didRunColorThemeScript) {
+			return;
+		}
+		if (window.angular) {
+			return;
+		}
+		window.__didRunColorThemeScript = true;
+		const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+		const body = document.body;
+		// If theme-dark or theme-light is already applied, do nothing and lock it
+		if (body.classList.contains("theme-dark") || body.classList.contains("theme-light")) {
+			// Set the data-color-scheme attribute based on the existing theme
+			body.setAttribute('data-color-scheme', body.classList.contains("theme-dark") ? "dark" : "light");
+			// Prevent future modifications
+			window.__disableColorScheme = true;
+			// Hide the color picker immediately
+			const style = document.createElement('style');
+			style.textContent = '.color-scheme-toggle { display: none !important; }';
+			document.head.appendChild(style);
+			return;
+		}
+		// Otherwise, set theme normally based on user settings or system preference
+		if (window.Settings && window.Settings.preferredColorScheme) {
+			const colorTheme = (window.Settings.preferredColorScheme === 'auto') && !prefersDark ? 'light'
+				: (window.Settings.preferredColorScheme === 'light') ? 'light' : 'dark';
+			body.setAttribute('data-color-scheme', colorTheme);
+			colorTheme === "dark" ? body.classList.add("theme-dark") : body.classList.add("theme-light");
+		} else {
+			const colorTheme = prefersDark ? 'dark' : 'light';
+			body.setAttribute('data-color-scheme', colorTheme);
+			prefersDark ? body.classList.add("theme-dark") : body.classList.add("theme-light");
+		}
+	})();
+	
+		
+			
+				View in English
+				
+			
+		
+	
+	
+		
+						
+					
+		
+			<li class="
+	globalnav-item
+	globalnav-item-apple
+	ac-gn-item
+	ac-gn-apple
+">
+				
+					Apple Developer
+				
+			
+			
+				
+					
+						<div class="
+ globalnav-item
+ globalnav-item-getting-started
+ globalnav-item-menu
+ globalnav-item-submenu
+" style="--r-globalnav-flyout-item-number: 0;">
+							
+								
+									
+										
+											Get Started
+										
+										
+											
+												
+											
+										
+									
+								
+								
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+								
+							
+							
+								
+									
+										
+											Explore Get Started
+											
+												Overview
+												Learn
+												Apple Developer Program
+											
+										
+										
+											Stay Updated
+											
+												Latest News
+												Hello Developer
+											
+										
+									
+								
+							
+						
+						<div class="
+ globalnav-item
+ globalnav-item-platforms
+ globalnav-item-menu
+ globalnav-item-submenu
+" style="--r-globalnav-flyout-item-number: 1;">
+							
+								
+									
+										
+											Platforms
+										
+										
+											
+												
+											
+										
+									
+								
+								
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+								
+							
+							
+								
+									
+										
+										
+											Explore Platforms
+											
+												Apple Platforms
+												iOS
+												iPadOS
+												macOS
+												tvOS
+												visionOS
+												watchOS
+												App Store
+											
+										
+										
+										
+											Featured
+											
+												Design
+												Distribution
+												Games
+												Accessories
+												Web
+												Home
+												CarPlay
+											
+										
+									
+								
+							
+						
+						<div class="
+ globalnav-item
+ globalnav-item-technologies
+ globalnav-item-menu
+ globalnav-item-submenu
+" style="--r-globalnav-flyout-item-number: 2;">
+							
+								
+									
+										
+											Technologies
+										
+										
+											
+												
+											
+										
+									
+								
+								
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+								
+							
+							
+								
+									
+										
+										
+											Explore Technologies
+											
+												Overview
+												Xcode
+												Swift
+												SwiftUI
+											
+										
+										
+										
+											Featured
+											
+												Accessibility
+												AI &amp; Machine Learning
+												App Intents
+												Apple Intelligence
+												Games
+												Security
+												Xcode Cloud
+											
+										
+									
+								
+							
+						
+						<div class="
+ globalnav-item
+ globalnav-item-community
+ globalnav-item-menu
+ globalnav-item-submenu
+" style="--r-globalnav-flyout-item-number: 3;">
+							
+								
+									
+										
+											Community
+										
+										
+											
+												
+											
+										
+									
+								
+								
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+								
+							
+							
+								
+									
+										
+										
+											Explore Community
+											
+												Overview
+												Meet with Apple events
+												Community events
+												Developer Forums
+												Open Source
+											
+										
+										
+										
+											Featured
+											
+												WWDC
+												Swift Student Challenge
+												Developer Stories
+												App Store Awards
+												Apple Design Awards
+												Apple Developer Centers
+											
+										
+									
+								
+							
+						
+						<div class="
+							 globalnav-item
+							 globalnav-item-documentation
+							 globalnav-item-menu
+							 globalnav-item-submenu
+							" style="--r-globalnav-flyout-item-number: 4;">
+							
+								
+									
+										
+											Documentation
+										
+										
+											
+												
+											
+										
+									
+								
+								
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+								
+							
+							
+								
+									
+										
+										
+											Explore Documentation
+											
+												Documentation Library
+												Technology Overviews
+												Sample Code
+												Human Interface Guidelines
+												Videos
+											
+										
+										
+										
+											Release Notes
+											
+												Featured Updates
+												iOS
+												iPadOS
+												macOS
+												watchOS
+												visionOS
+												tvOS
+												Xcode
+											
+										
+									
+								
+							
+						
+						<div class="
+ globalnav-item
+ globalnav-item-downloads
+ globalnav-item-menu
+ globalnav-item-submenu
+" style="--r-globalnav-flyout-item-number: 5;">
+							
+								
+									
+										
+											Downloads
+										
+										
+											
+												
+											
+										
+									
+								
+								
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+								
+							
+							
+								
+									
+										
+										
+											Explore Downloads
+											
+												All Downloads
+												Operating Systems
+												Applications
+												Design Resources
+											
+										
+										
+										
+											Featured
+											
+												Xcode
+												TestFlight
+												Fonts
+												SF Symbols
+												Icon Composer
+											
+										
+									
+								
+							
+						
+						<div class="
+ globalnav-item
+ globalnav-item-support
+ globalnav-item-menu
+ globalnav-item-submenu
+" style="--r-globalnav-flyout-item-number: 6;">
+							
+								
+									
+										
+											Support
+										
+										
+											
+												
+											
+										
+									
+								
+								
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+								
+							
+							
+								
+									
+										
+										
+											Explore Support
+											
+												Overview
+												Help Guides
+												Developer Forums
+												Feedback Assistant
+												Contact Us
+											
+										
+										
+										
+											Featured
+											
+												Account Help
+												App Review Guidelines
+												App Review Help
+												App Store Connect Help
+												Upcoming Requirements
+												Agreements and Guidelines
+												System Status
+											
+										
+									
+								
+							
+						
+					
+				
+			
+			
+			
+				
+					
+						
+							
+						
+					
+					
+						
+							
+						
+					
+				
+				
+					
+						
+							
+								
+									
+									
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+								
+							
+							
+								
+									
+										Quick Links
+										
+											
+												
+													
+														
+															
+																
+															
+														
+														
+															
+																
+															
+														
+													
+													Events
+												
+											
+											
+												
+													
+														
+															
+																
+															
+														
+														
+															
+																
+															
+														
+													
+													News
+												
+											
+											
+												
+													
+														
+															
+																
+															
+														
+														
+															
+																
+															
+														
+													
+													Forums
+												
+											
+											
+												
+													
+														
+															
+																
+															
+														
+														
+															
+																
+															
+														
+													
+													Sample Code
+												
+											
+											
+												
+													
+														
+															
+																
+															
+														
+														
+															
+																
+															
+														
+													
+													Videos
+												
+											
+										
+									
+								
+							
+						
+					
+				
+			
+			
+			
+				
+					
+						
+							
+								
+							
+						
+						
+							
+								
+							
+						
+					
+				
+			
+		
+		
+			
+					
+						
+						
+					
+					
+						
+						
+					
+				
+			
+		
+	
+	&nbsp;
+ -->
+	
+	/* RSID: */
+	var s_account="awdappledeveloper"
+	
+	s_sections = [
+		{
+			"pattern": "^/documentation",
+			"channel": "www.documentation.developer"
+		},
+		{
+			"pattern": "^/library",
+			"channel": "www.documentation.developer"
+		},
+		{
+			"pattern": "^/tutorials",
+			"channel": "www.documentation.developer"
+		},	
+		{
+			"pattern": "human\\-interface\\-guidelines",
+			"channel": "www.hig.developer"
+		},
+		{
+			"pattern": "/testflight/",
+			"channel": "www.appstoreconnect.developer"
+		},
+		{
+			"pattern": "/app\\-store\\-connect/",
+			"channel": "www.appstoreconnect.developer"
+		},
+		{
+			"pattern": "/support/app\\-store\\-connect/",
+			"channel": "www.appstoreconnect.developer"
+		},
+		{
+			"pattern": "/help/app\\-store\\-connect/",
+			"channel": "www.appstoreconnect.developer"
+		},
+		{
+			"pattern": "/wwdc/",
+			"channel": "www.wwdc.developer"
+		},
+		{
+			"pattern": "/wwdc\\d{2}/",
+			"channel": "www.wwdc.developer"
+		},
+		{
+			"pattern": "/videos/",
+			"channel": "www.videos.developer"
+		},
+		{
+			"pattern": "^/account",
+			"channel": "www.account.developer"
+		},
+		{
+			"pattern": "downloads?",
+			"channel": "www.download.developer"
+		},
+		{
+			"pattern": "/localization/",
+			"channel": "www.appstore.developer"
+		},	
+		{
+			"pattern": "/app\\-store/",
+			"channel": "www.appstore.developer"
+		},
+		{
+			"pattern": "/in\\-app\\-purchase/",
+			"channel": "www.appstore.developer"
+		},
+		{
+			"pattern": "/cn/",
+			"channel": "www.cn.developer"
+		},
+		{
+			"pattern": "/jp/",
+			"channel": "www.jp.developer"
+		},
+		{
+			"pattern": "/kr/",
+			"channel": "www.kr.developer"
+		},
+		{
+			"pattern": "/de/",
+			"channel": "www.de.developer"
+		},
+		{
+			"pattern": "/la/",
+			"channel": "www.la.developer"
+		},
+		{
+			"pattern": "/fr/",
+			"channel": "www.fr.developer"
+		},
+		{
+			"pattern": "/it/",
+			"channel": "www.it.developer"
+		},
+		{
+			"pattern": "/br/",
+			"channel": "www.br.developer"
+		}
+	];
+	
+	s.pageName= AC && AC.Tracking && AC.Tracking.pageName();
+	s.channel="www.en.developer";
+	
+	s_sections.forEach((s_section) => {
+		var regex = new RegExp(s_section.pattern);
+		
+		if(location.pathname.search(regex) !== -1) {
+			s.channel=s_section.channel;
+		}
+	});
+	
+	/************* DO NOT ALTER ANYTHING BELOW THIS LINE ! **************/
+	var s_code=s.t();if(s_code)document.write(s_code)
+						
+	
+		
+		
+			
+				News
+			
+			
+				
+					Open Menu
+				
+				
+					Close Menu
+				
+				
+					
+						
+						
+							Hello Developer
+						
+						
+						
+							Software Releases
+						
+						
+						
+							Site Updates
+						
+						
+						
+						
+						
+							Upcoming Requirements
+						
+						
+					
+				
+				
+					
+						
+							
+						
+					
+				
+			
+			
+		
+	
+			
+	
+		
+			
+			
+				
+					
+					
+										
+					
+						
+														
+								
+																																									
+										
+									
+																								
+																	Prepare and submit your apps for iPhone Duo
+								
+								
+								
+									October 5, 2026
+																			iPhone Duo will be available to customers starting October 23, 2026. To get your apps and games ready today, you can:Build or recompile with XcodeRecompile existing apps with Xcode 27.1, which adds development support for iPhone Duo. Use Device Hub to visualize how your apps behave on iPhone Duo across all poses and orientations.
+Get the latest version of Xcode
+Three steps to make your app shine on iPhone Duo
+Learn more about iPhone Duo
+Prepare your App Store product page assetsUpdated screenshot and app preview specifications are now available for the latest Apple devices, including iPhone Duo, so you can showcase your app at its best across orientations. Explore design guidance and get downloadable templates to help you build your App Store assets, including new product page headers and search result assets, as well as your app previews, screenshots, and In-App Events. Visualize how your screenshots, product page headers, and other metadata look on your product page on iPhone Duo with the new preview tool in App Store Connect.
+Get design guidance and templates
+Manage your App Store assets
+View app preview specifications
+View screenshot specifications
+Submit your appYou can submit your iPhone Duo optimized apps and games in App Store Connect today. When you submit iPhone Duo screenshots in App Store Connect, your App Store product page will display a badge to let people know your app is optimized for iPhone Duo. Starting April 2027, any apps or games submitted will need to include screenshots for iPhone Duo.Learn about submitting 
+																	
+																
+									
+											
+										
+										
+																				
+											 
+										
+										
+										
+																				
+											
+										
+										
+																				
+											<button class="icon icon-mail social-icon" data-href="https://developer.apple.com/news/?id=kkphp5qo" data-share-type="mail" data-title="Prepare and submit your apps for iPhone Duo - Latest News - Apple Developer"
+												data-description="https://developer.apple.com/news/?id=kkphp5qo" aria-label="Share via mail">
+										
+										
+																				
+											
+										
+										
+									
+								
+															
+						
+					
+									
+			
+		
+	
+ 
+ 
+ Developer Footer
+	
+								News
+												Prepare and submit your apps for iPhone Duo
+					
+	 
+	
+	
+		
+		
+			
+				Platforms
+			
+			 Open Menu 
+			 Close Menu 
+			
+				iOS
+				iPadOS
+				macOS
+				tvOS
+				visionOS
+				watchOS
+				App Store
+			
+		
+		
+		
+			
+				Tools
+			
+			 Open Menu 
+			 Close Menu 
+			
+				Swift
+				SwiftUI
+				Swift Playground
+				TestFlight
+				Xcode
+				Xcode Cloud
+				Icon Composer
+				SF Symbols
+			
+		
+	
+	
+		
+		
+			
+				Technologies
+			
+			 Open Menu 
+			 Close Menu 
+			
+				Accessibility
+				Accessories
+				AI & Machine Learning
+				Apple In-App Purchase
+				Apple Intelligence
+				Audio &amp; Video
+				Augmented Reality
+				Business
+				Design
+				Distribution
+				Education
+				Games
+				Health &amp; Fitness
+				Localization
+				Maps &amp; Location
+				Security
+				Safari &amp; Web
+			
+		
+	
+	
+		
+		
+			
+				Resources
+			
+			 Open Menu 
+			 Close Menu 
+			
+				Documentation
+				Downloads
+				Sample Code
+				Videos
+				Documentation Archive
+			
+		
+		
+		
+			
+				Support
+			
+			 Open Menu 
+			 Close Menu 
+			
+				Help Guides & Articles
+				Contact Us
+				Forums
+				Feedback & Bug Reporting
+				System Status
+			
+		
+		
+		
+			
+				Account
+			
+			 Open Menu 
+			 Close Menu 
+			
+				Apple Developer
+				App Store Connect
+				Certificates, IDs, &amp; Profiles
+				Feedback Assistant
+			
+		
+	
+	
+	
+		
+		
+			
+				Programs
+			
+			 Open Menu 
+			 Close Menu 
+			
+				Apple Developer Program
+				Apple Developer Enterprise Program
+				App Store Small Business Program
+				MFi Program
+				Mini Apps Partner Program
+				News Partner Program
+				Video Partner Program
+				Security Bounty Program
+				Security Research Device Program
+			
+		
+		
+		
+			
+				Events
+			
+			 Open Menu 
+			 Close Menu 
+			
+				Meet with Apple
+				Apple Developer Centers
+				App Store Awards
+				Apple Design Awards
+				Apple Developer Academies
+				WWDC
+			
+		
+	
+	
+ 
+	
+		
+			Read the latest news. Get the Apple Developer app. Follow us on bilibili, LinkedIn, WeChat, and YouTube.
+		
+		
+			<div class="color-scheme-toggle"
+				role="radiogroup"
+				tabindex="0"
+				aria-label="Select a color scheme preference">
+				
+					<input type="radio" value="light" autocomplete="off"
+						onchange="window.setPreferredColorScheme(event.target.value)" />
+					Light
+				
+				
+					<input type="radio" value="dark" autocomplete="off"
+						onchange="window.setPreferredColorScheme(event.target.value)" />
+					Dark
+				
+				
+					<input type="radio" value="auto" autocomplete="off"
+						onchange="window.setPreferredColorScheme(event.target.value)" />
+					Auto
+				
+			
+			
+		
+	
+	
+	
+		
+		
+	
+	
+	
+		Copyright © 2026 Apple Inc. All rights reserved.
+		
+			Terms of Use
+			Privacy Policy
+			Agreements and Guidelines
+		
+	
+ 
+			
+				
+		
+	

@@ -1,0 +1,1477 @@
+
+	
+ <div
+ class="account-menu-user-header"
+ role="banner"
+ aria-label="User information"
+ data-aria-label="userInformation"
+ >
+ <div
+ class="account-menu-avatar"
+ data-slot="initial"
+ aria-hidden="true"
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ <span data-slot="certificatesIDsProfiles"
+ ></span
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ // Synchronously disables the account link before first paint so the user
+ // cannot navigate away before session.js registers its click listener.
+ (function () {
+ var accountLink = document.querySelector(".globalnav-link-account");
+ if (accountLink) {
+ var href = accountLink.getAttribute("href");
+ if (href) {
+ accountLink.dataset.pendingHref = href;
+ accountLink.removeAttribute("href");
+ accountLink.style.cursor = "default";
+ }
+ }
+ })();
+	
+	App Store Asset Best Practices and Resources - App Store - Apple Developer
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	// Execute immediately to avoid UI flash
+	(function () {
+		// Prevent React dev mode from running this multiple times
+		if (window.__didRunColorThemeScript) {
+			return;
+		}
+		if (window.angular) {
+			return;
+		}
+		window.__didRunColorThemeScript = true;
+		const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+		const body = document.body;
+		// If theme-dark or theme-light is already applied, do nothing and lock it
+		if (body.classList.contains("theme-dark") || body.classList.contains("theme-light")) {
+			// Set the data-color-scheme attribute based on the existing theme
+			body.setAttribute('data-color-scheme', body.classList.contains("theme-dark") ? "dark" : "light");
+			// Prevent future modifications
+			window.__disableColorScheme = true;
+			// Hide the color picker immediately
+			const style = document.createElement('style');
+			style.textContent = '.color-scheme-toggle { display: none !important; }';
+			document.head.appendChild(style);
+			return;
+		}
+		// Otherwise, set theme normally based on user settings or system preference
+		if (window.Settings && window.Settings.preferredColorScheme) {
+			const colorTheme = (window.Settings.preferredColorScheme === 'auto') && !prefersDark ? 'light'
+				: (window.Settings.preferredColorScheme === 'light') ? 'light' : 'dark';
+			body.setAttribute('data-color-scheme', colorTheme);
+			colorTheme === "dark" ? body.classList.add("theme-dark") : body.classList.add("theme-light");
+		} else {
+			const colorTheme = prefersDark ? 'dark' : 'light';
+			body.setAttribute('data-color-scheme', colorTheme);
+			prefersDark ? body.classList.add("theme-dark") : body.classList.add("theme-light");
+		}
+	})();
+	
+		
+			
+				View in English
+				
+			
+		
+	
+	
+		
+						
+					
+		
+			<li class="
+	globalnav-item
+	globalnav-item-apple
+	ac-gn-item
+	ac-gn-apple
+">
+				
+					Apple Developer
+				
+			
+			
+				
+					
+						<div class="
+ globalnav-item
+ globalnav-item-getting-started
+ globalnav-item-menu
+ globalnav-item-submenu
+" style="--r-globalnav-flyout-item-number: 0;">
+							
+								
+									
+										
+											Get Started
+										
+										
+											
+												
+											
+										
+									
+								
+								
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+								
+							
+							
+								
+									
+										
+											Explore Get Started
+											
+												Overview
+												Learn
+												Apple Developer Program
+											
+										
+										
+											Stay Updated
+											
+												Latest News
+												Hello Developer
+											
+										
+									
+								
+							
+						
+						<div class="
+ globalnav-item
+ globalnav-item-platforms
+ globalnav-item-menu
+ globalnav-item-submenu
+" style="--r-globalnav-flyout-item-number: 1;">
+							
+								
+									
+										
+											Platforms
+										
+										
+											
+												
+											
+										
+									
+								
+								
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+								
+							
+							
+								
+									
+										
+										
+											Explore Platforms
+											
+												Apple Platforms
+												iOS
+												iPadOS
+												macOS
+												tvOS
+												visionOS
+												watchOS
+												App Store
+											
+										
+										
+										
+											Featured
+											
+												Design
+												Distribution
+												Games
+												Accessories
+												Web
+												Home
+												CarPlay
+											
+										
+									
+								
+							
+						
+						<div class="
+ globalnav-item
+ globalnav-item-technologies
+ globalnav-item-menu
+ globalnav-item-submenu
+" style="--r-globalnav-flyout-item-number: 2;">
+							
+								
+									
+										
+											Technologies
+										
+										
+											
+												
+											
+										
+									
+								
+								
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+								
+							
+							
+								
+									
+										
+										
+											Explore Technologies
+											
+												Overview
+												Xcode
+												Swift
+												SwiftUI
+											
+										
+										
+										
+											Featured
+											
+												Accessibility
+												AI &amp; Machine Learning
+												App Intents
+												Apple Intelligence
+												Games
+												Security
+												Xcode Cloud
+											
+										
+									
+								
+							
+						
+						<div class="
+ globalnav-item
+ globalnav-item-community
+ globalnav-item-menu
+ globalnav-item-submenu
+" style="--r-globalnav-flyout-item-number: 3;">
+							
+								
+									
+										
+											Community
+										
+										
+											
+												
+											
+										
+									
+								
+								
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+								
+							
+							
+								
+									
+										
+										
+											Explore Community
+											
+												Overview
+												Meet with Apple events
+												Community events
+												Developer Forums
+												Open Source
+											
+										
+										
+										
+											Featured
+											
+												WWDC
+												Swift Student Challenge
+												Developer Stories
+												App Store Awards
+												Apple Design Awards
+												Apple Developer Centers
+											
+										
+									
+								
+							
+						
+						<div class="
+							 globalnav-item
+							 globalnav-item-documentation
+							 globalnav-item-menu
+							 globalnav-item-submenu
+							" style="--r-globalnav-flyout-item-number: 4;">
+							
+								
+									
+										
+											Documentation
+										
+										
+											
+												
+											
+										
+									
+								
+								
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+								
+							
+							
+								
+									
+										
+										
+											Explore Documentation
+											
+												Documentation Library
+												Technology Overviews
+												Sample Code
+												Human Interface Guidelines
+												Videos
+											
+										
+										
+										
+											Release Notes
+											
+												Featured Updates
+												iOS
+												iPadOS
+												macOS
+												watchOS
+												visionOS
+												tvOS
+												Xcode
+											
+										
+									
+								
+							
+						
+						<div class="
+ globalnav-item
+ globalnav-item-downloads
+ globalnav-item-menu
+ globalnav-item-submenu
+" style="--r-globalnav-flyout-item-number: 5;">
+							
+								
+									
+										
+											Downloads
+										
+										
+											
+												
+											
+										
+									
+								
+								
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+								
+							
+							
+								
+									
+										
+										
+											Explore Downloads
+											
+												All Downloads
+												Operating Systems
+												Applications
+												Design Resources
+											
+										
+										
+										
+											Featured
+											
+												Xcode
+												TestFlight
+												Fonts
+												SF Symbols
+												Icon Composer
+											
+										
+									
+								
+							
+						
+						<div class="
+ globalnav-item
+ globalnav-item-support
+ globalnav-item-menu
+ globalnav-item-submenu
+" style="--r-globalnav-flyout-item-number: 6;">
+							
+								
+									
+										
+											Support
+										
+										
+											
+												
+											
+										
+									
+								
+								
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+								
+							
+							
+								
+									
+										
+										
+											Explore Support
+											
+												Overview
+												Help Guides
+												Developer Forums
+												Feedback Assistant
+												Contact Us
+											
+										
+										
+										
+											Featured
+											
+												Account Help
+												App Review Guidelines
+												App Review Help
+												App Store Connect Help
+												Upcoming Requirements
+												Agreements and Guidelines
+												System Status
+											
+										
+									
+								
+							
+						
+					
+				
+			
+			
+			
+				
+					
+						
+							
+						
+					
+					
+						
+							
+						
+					
+				
+				
+					
+						
+							
+								
+									
+									
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+								
+							
+							
+								
+									
+										Quick Links
+										
+											
+												
+													
+														
+															
+																
+															
+														
+														
+															
+																
+															
+														
+													
+													Events
+												
+											
+											
+												
+													
+														
+															
+																
+															
+														
+														
+															
+																
+															
+														
+													
+													News
+												
+											
+											
+												
+													
+														
+															
+																
+															
+														
+														
+															
+																
+															
+														
+													
+													Forums
+												
+											
+											
+												
+													
+														
+															
+																
+															
+														
+														
+															
+																
+															
+														
+													
+													Sample Code
+												
+											
+											
+												
+													
+														
+															
+																
+															
+														
+														
+															
+																
+															
+														
+													
+													Videos
+												
+											
+										
+									
+								
+							
+						
+					
+				
+			
+			
+			
+				
+					
+						
+							
+								
+							
+						
+						
+							
+								
+							
+						
+					
+				
+			
+		
+		
+			
+					
+						
+						
+					
+					
+						
+						
+					
+				
+			
+		
+	
+	&nbsp;
+ -->
+	
+	/* RSID: */
+	var s_account="awdappledeveloper"
+	
+	s_sections = [
+		{
+			"pattern": "^/documentation",
+			"channel": "www.documentation.developer"
+		},
+		{
+			"pattern": "^/library",
+			"channel": "www.documentation.developer"
+		},
+		{
+			"pattern": "^/tutorials",
+			"channel": "www.documentation.developer"
+		},	
+		{
+			"pattern": "human\\-interface\\-guidelines",
+			"channel": "www.hig.developer"
+		},
+		{
+			"pattern": "/testflight/",
+			"channel": "www.appstoreconnect.developer"
+		},
+		{
+			"pattern": "/app\\-store\\-connect/",
+			"channel": "www.appstoreconnect.developer"
+		},
+		{
+			"pattern": "/support/app\\-store\\-connect/",
+			"channel": "www.appstoreconnect.developer"
+		},
+		{
+			"pattern": "/help/app\\-store\\-connect/",
+			"channel": "www.appstoreconnect.developer"
+		},
+		{
+			"pattern": "/wwdc/",
+			"channel": "www.wwdc.developer"
+		},
+		{
+			"pattern": "/wwdc\\d{2}/",
+			"channel": "www.wwdc.developer"
+		},
+		{
+			"pattern": "/videos/",
+			"channel": "www.videos.developer"
+		},
+		{
+			"pattern": "^/account",
+			"channel": "www.account.developer"
+		},
+		{
+			"pattern": "downloads?",
+			"channel": "www.download.developer"
+		},
+		{
+			"pattern": "/localization/",
+			"channel": "www.appstore.developer"
+		},	
+		{
+			"pattern": "/app\\-store/",
+			"channel": "www.appstore.developer"
+		},
+		{
+			"pattern": "/in\\-app\\-purchase/",
+			"channel": "www.appstore.developer"
+		},
+		{
+			"pattern": "/cn/",
+			"channel": "www.cn.developer"
+		},
+		{
+			"pattern": "/jp/",
+			"channel": "www.jp.developer"
+		},
+		{
+			"pattern": "/kr/",
+			"channel": "www.kr.developer"
+		},
+		{
+			"pattern": "/de/",
+			"channel": "www.de.developer"
+		},
+		{
+			"pattern": "/la/",
+			"channel": "www.la.developer"
+		},
+		{
+			"pattern": "/fr/",
+			"channel": "www.fr.developer"
+		},
+		{
+			"pattern": "/it/",
+			"channel": "www.it.developer"
+		},
+		{
+			"pattern": "/br/",
+			"channel": "www.br.developer"
+		}
+	];
+	
+	s.pageName= AC && AC.Tracking && AC.Tracking.pageName();
+	s.channel="www.en.developer";
+	
+	s_sections.forEach((s_section) => {
+		var regex = new RegExp(s_section.pattern);
+		
+		if(location.pathname.search(regex) !== -1) {
+			s.channel=s_section.channel;
+		}
+	});
+	
+	/************* DO NOT ALTER ANYTHING BELOW THIS LINE ! **************/
+	var s_code=s.t();if(s_code)document.write(s_code)
+	
+	
+		
+		
+			
+				App Store
+			
+			
+				
+					Open Menu
+				
+				
+					Close Menu
+				
+				
+					
+						
+							Overview
+						
+						
+							What’s New
+						
+						
+							Get Started
+						
+						
+							Resources
+						
+					
+				
+				
+					
+						
+							
+						
+					
+				
+			
+		
+	
+	
+		
+			
+				
+					
+						
+							 Make your apps shine with assets optimized for iPhone&nbsp;Duo. View the specifications for app previews and screenshots. 
+						
+					
+				
+			
+		
+		
+			
+				
+					
+						
+							App Store asset best practices and&nbsp;resources
+							Compelling assets help you make a strong impression on the App&nbsp;Store and drive people to download your app or game. Use this guidance and ready-made templates to create captivating assets that people will&nbsp;love.
+						
+						
+							
+						
+					
+				
+			
+			
+				
+					
+						
+							
+						
+						
+							Before you beginOverview
+							Your App&nbsp;Store assets are a great opportunity to draw people in to discover what your app or game offers and why they’ll love it. These images and videos help set expectations for people before they download and reflect the quality of the experience they can expect.
+							To communicate your app or game’s value and tell its story, you can use several types of assets on the App&nbsp;Store, including app previews, screenshots, and creative assets. App previews and screenshots showcase your app in-use or gameplay, while creative assets can be used to highlight your brand, promote seasonal offerings, showcase new content, and more. Creative assets appear across the App&nbsp;Store in iOS&nbsp;27 and iPadOS&nbsp;27 and later including your product page, in search results, and when your app is featured.
+							
+								Explore the App Review Guidelines
+							
+							Millions of people around the world visit the App&nbsp;Store, and your assets are often the first thing they see when deciding whether to download your app or game. To make sure your assets meet our policies, get familiar with the App Review Guidelines (particularly section 2.3 about Accurate Metadata) and the Apple Advertising Policies before you start creating.
+							
+							Get startedAsset best practices
+							To help you create effective assets, consider these best practices, which reflect our overarching policies as well as how we evaluate artwork for featuring, so you can put your best work forward.
+							Focus on your core experience
+							While you may depict content outside of your app or game in use, it must still relate to its general functionality. Keep your assets focused on things directly related to your app or game, to ensure people know what to expect before they download. This includes:
+							
+								Don’t include specific pricing, discounts, website URLs, copyright symbols. This ensures your content remains relevant to a global audience and more evergreen.
+								Avoid claims that can’t be verified, such as awards or recognition that your app or game hasn’t actually received.
+								Don’t include logos or references to other platforms or marketplaces.
+								Please don’t include any Apple-designated recognitions — such as Editor’s Choice, App of the Day, Game of the Day, or Apple Design Award winner, as many of these already appear alongside your app or game in search results, as well as on your product page.
+							
+							Design with all customers in mind
+							The App&nbsp;Store is designed to be a safe and trusted place for everyone to discover and download apps and games. To help support this, keep the following in mind:
+							Build for a global audience. Aim to create assets that appeal to people around the world and of all backgrounds. Choose imagery that’s inclusive to people of all backgrounds. You can localize your metadata, including images and videos, to tailor your content to each region or country in which you offer your app or game.
+							
+								Learn about localization
+							
+							Create for all ages. Choose imagery that’s appropriate and inclusive for people of all ages. Assets displayed on the App Store must meet a 4+ age rating, even if your app’s rating is higher and it’s intended for an older audience. Refrain from showing objectionable content, including explicit or harmful imagery, profanity, illegal drugs, self-harm, hate speech, stereotypes, sexually suggestive content, inflammatory religious commentary, or inaccurate and misleading quotations of religious texts.
+							Keep violent content in check. Games that include violence may use action imagery, but must avoid depictions of gore, graphic imagery, or weapons that are pointed directly at a person or the audience.
+							
+							Format best practicesImages and videos
+							Some considerations depend on the format of your asset. Keep these principles in mind when choosing whether to use a static image or video.
+							Image
+							Choose compelling visuals. Your photography, illustration, and graphic design should feel current. Consider using the latest UI and reflecting your app or game’s aesthetic. Aim for strong composition and a clear focal point for each asset.
+							Be intentional with your text. Text can help people understand what they’re looking at, and you can use image overlays to demonstrate input mechanisms or highlight specific functionality. If using text, use a short phrase that enhances your visual rather than describes it. Be sure to localize for all languages your app supports.
+							Keep it legible. Ensure all key elements are readable — especially any text — as assets can appear differently across the App&nbsp;Store. Design key elements with a safe area in mind to accommodate different devices and orientations. Be sure your focal point artwork is within the center of your composition to prevent any unwanted clipping. You can use the Preview tool in App&nbsp;Store&nbsp;Connect to visualize how your assets appear before they’re live on the App&nbsp;Store.
+							Videos
+							Select an impactful poster frame. The poster frame is the first image someone sees before your video plays. Choose a frame that clearly represents your app and is visually compelling on its own.
+							Start strong. Lead with your value proposition or most compelling feature. Be mindful with pacing your cuts to give people enough time to grasp what’s being shared. Avoid quick cuts and fast-moving visuals, as these can be difficult for people to follow and may not be accessible for everyone.
+							Loop seamlessly. Videos autoplay and repeat, so people may see the loop multiple times. Ensure your video is polished and loops smoothly without visible jumps or breaks.
+							Use audio mindfully. In most cases, audio is muted by default, so your creative must work silently first. When you do add sound, treat it as brand texture rather than information delivery. Favor a short music loop over heavy sound effects, avoid sudden loud moments, and ensure the audio loops cleanly if your video repeats.
+							
+							Asset-specific guidelinesDesign for every element
+							Every asset presents you with a unique way to showcase your app or game. Collectively, you want them to tell a cohesive story and look good together. To do so, consider using similar visual style, such as color palette, iconography, fonts, message, and tone.
+							App icon
+							Your app icon is one of the most critical ways to showcase your app or game on the App&nbsp;Store, and even across Apple devices once someone downloads, since your app icon can appear on their Home Screen. Make it unique and expressive of your app or game’s purpose and personality. A great icon is memorable and one that people can instantly recognize at a glance.
+							
+								Use Icon Composer to create layered icons out of Liquid Glass from a single design for iPhone, iPad, Mac, and Apple&nbsp;Watch.
+								Ensure your icon is legible at every size across Apple devices — from App&nbsp;Store, to Spotlight search, to someone’s Home&nbsp;Screen.
+							
+							
+								Learn about designing a great app icon
+							
+							
+								
+									
+										
+										
+										
+										
+											
+												
+											
+										
+									
+									Icon Composer for Beginners Group Lab
+								
+								
+									
+										
+										
+										
+										
+											
+												
+											
+										
+									
+									Say hello to the new look of app icons
+								
+							
+							Product page header
+							When someone lands on your product page, the first thing they’ll notice is your header. Use video or images to express your brand, seasonal offerings, exciting new content, and more to set the tone for the rest of your product page.
+							
+								Focus on a single, clear idea. Visually dense or cluttered assets dilute your impact.
+								Design with a first-time visitor in mind. Consider what’s most compelling to someone who’s completely new to your app or game.
+							
+							To unify your message and further streamline your creative process, you can use a universal creative asset for your header and search results asset to strengthen brand recognition with people across the App&nbsp;Store. To gain additional insight, you can use product page optimization to test alternative header visuals and see which performs best.
+							Get design specifications
+							
+								
+									
+								
+								
+									
+								
+								
+							
+							Product page header templates
+							
+								Figma (Universal)
+								Photoshop (Header, Universal)
+								Pixelmator (Header, Universal)
+								Sketch (Universal)
+							
+							
+								Preview your assets. Ensure your artwork looks great across devices and orientations by keeping key aspects of your art within the safe area defined in each template.
+							
+							Search results
+							Your search result asset is the first thing people experience when they find your app or game through the Search tab, before they ever reach your product page.
+							
+								State the obvious. Since people tend to look for something specific when using search, be sure your app or game’s purpose is obvious at a glance.
+								Showcase the firsthand experience. Consider sharing the interface, content, or gameplay to make it easy for someone to decide whether they want to download.
+							
+							If you choose to not use a search result creative asset, your In-App Events, app previews, and screenshots will appear. 
+							Learn more about App Store search
+							
+								
+									
+								
+								
+									
+								
+								
+							
+							Search results templates
+							
+								Figma (Universal)
+								Photoshop (Search results, Universal)
+								Pixelmator (Search results, Universal)
+								Sketch (Universal)
+							
+							In-App Events
+							In&#8209;App&nbsp;Events are timely, limited-time moments within your app — such as competitions, premieres, live experiences, or seasonal content launches. You can use a creative asset for your In&#8209;App&nbsp;Events.
+							
+								Design for both aspect ratios. You need media for the event card (16:9 landscape) and the event details page (9:16 portrait). Ensure both communicate your event’s essence. Use similar colors or illustration styles for visual continuity.
+								Consider the event badge. Your chosen badge (Challenge, Competition, Live Event, Major Update, New Season, Premiere, Special Event) visually identifies your event type. Design your media to complement the badge rather than duplicate it.
+							
+							Learn more about In-App Events
+							
+								
+									
+								
+								
+									
+								
+								
+							
+							Screenshots
+							Screenshots are one of the most effective ways to communicate your app or game’s value on the App&nbsp;Store and show the user experience. You can have up to 10 screenshots on your product page. Depending on orientation, up to three screenshots can appear in search results.
+							
+								Show what people can expect. Use screenshots to depict your app or game in use and give people a clear, detailed view into the experience. Stay focused on the core user experience — avoid using the entire asset to highlight general accolades or call-to-action statements.
+								Lead with your best features. Showcase your strongest features or benefits and sequence them so they tell a cohesive story that’s reflective of how someone would use your app or game.
+							
+							
+								Creating your product page
+								View screenshot specifications
+							
+							
+							App previews
+							App previews are videos that demonstrate your app’s features, functionality, and user interface. You can have up to three app previews on your product page and up to three may appear in search results.
+							
+								Use real-UI or gameplay. Provide people with an interactive look at your app or game in action, so they can see firsthand what your app or game is all about. Consider compelling visuals in the first few seconds to capture someone’s attention.
+								Tell a complete story. Consider having a beginning, middle, and end in your storytelling so someone has the full context of your experience. For example, you might highlight your most important features in order of popularity, or showcase levels people may encounter when progressing through your game.
+							
+							
+								Create an app preview
+								View app preview specifications
+							
+							
+							
+							Go furtherSubmit your assets
+							When you’re ready, you can submit your assets for approval using App&nbsp;Store&nbsp;Connect, either alongside a new app version, or in your Asset Library. You can also use the App&nbsp;Store&nbsp;Connect&nbsp;API. All of your approved assets — including images, videos, app previews, and screenshots — will appear in your Asset Library. This lets you streamline your creative workflow, as you can see all of your assets in a central place, as well as where each asset can be used across the App&nbsp;Store.
+							You can also use the product page preview tool to visualize your product page before it’s published on the App&nbsp;Store. See how your product page header, app name, description, screenshots, and search results creative assets will appear to people, so you can pick just the right visuals and metadata to share your app or game with the world.
+							
+								Learn about submitting assets
+								Uploading assets using the App&nbsp;Store Connect API
+							
+							Discover more ways to market your apps and games
+							To take your marketing efforts even further, consider using:
+							
+								Custom product pages: Use creative assets on your custom product pages. Learn about custom product pages.
+								Product page optimization: Test your creative using product page optimization. Learn about product page optimization.
+								Additional marketing tools: Understand the additional tools and features you can use to promote your apps and games, even beyond the App&nbsp;Store. Learn about promoting your apps and games.
+							
+							
+								
+									
+										
+										
+										
+										
+											
+												
+											
+										
+									
+									Enhance your presence on the App&nbsp;Store
+								
+							
+						
+					
+				
+			
+		
+	
+		
+	
+		
+			
+				
+					
+						
+						Submit
+						Prepare your apps and metadata for submission to the App Store.
+						
+							Learn more
+						
+					
+				
+				
+					
+						
+						Manage
+						Manage apps, analytics, sales reports, business information, and more.
+						
+							Learn more
+						
+					
+				
+				
+					
+						
+						Promote
+						Get marketing guidance and tools to help you promote your app on the App Store.
+						
+							Learn more
+						
+					
+				
+				
+					
+						
+						Support
+						Have a question or request? Get help with guides, articles, or by contacting us.
+						
+							Learn more
+						
+					
+				
+			
+		
+	
+	
+ 
+ Developer Footer
+	
+		App Store
+		Asset Best Practices and Resources
+	
+	 
+	
+	
+		
+		
+			
+				Platforms
+			
+			 Open Menu 
+			 Close Menu 
+			
+				iOS
+				iPadOS
+				macOS
+				tvOS
+				visionOS
+				watchOS
+				App Store
+			
+		
+		
+		
+			
+				Tools
+			
+			 Open Menu 
+			 Close Menu 
+			
+				Swift
+				SwiftUI
+				Swift Playground
+				TestFlight
+				Xcode
+				Xcode Cloud
+				Icon Composer
+				SF Symbols
+			
+		
+	
+	
+		
+		
+			
+				Technologies
+			
+			 Open Menu 
+			 Close Menu 
+			
+				Accessibility
+				Accessories
+				AI & Machine Learning
+				Apple In-App Purchase
+				Apple Intelligence
+				Audio &amp; Video
+				Augmented Reality
+				Business
+				Design
+				Distribution
+				Education
+				Games
+				Health &amp; Fitness
+				Localization
+				Maps &amp; Location
+				Security
+				Safari &amp; Web
+			
+		
+	
+	
+		
+		
+			
+				Resources
+			
+			 Open Menu 
+			 Close Menu 
+			
+				Documentation
+				Downloads
+				Sample Code
+				Videos
+				Documentation Archive
+			
+		
+		
+		
+			
+				Support
+			
+			 Open Menu 
+			 Close Menu 
+			
+				Help Guides & Articles
+				Contact Us
+				Forums
+				Feedback & Bug Reporting
+				System Status
+			
+		
+		
+		
+			
+				Account
+			
+			 Open Menu 
+			 Close Menu 
+			
+				Apple Developer
+				App Store Connect
+				Certificates, IDs, &amp; Profiles
+				Feedback Assistant
+			
+		
+	
+	
+	
+		
+		
+			
+				Programs
+			
+			 Open Menu 
+			 Close Menu 
+			
+				Apple Developer Program
+				Apple Developer Enterprise Program
+				App Store Small Business Program
+				MFi Program
+				Mini Apps Partner Program
+				News Partner Program
+				Video Partner Program
+				Security Bounty Program
+				Security Research Device Program
+			
+		
+		
+		
+			
+				Events
+			
+			 Open Menu 
+			 Close Menu 
+			
+				Meet with Apple
+				Apple Developer Centers
+				App Store Awards
+				Apple Design Awards
+				Apple Developer Academies
+				WWDC
+			
+		
+	
+	
+ 
+	
+		
+			Read the latest news. Get the Apple Developer app. Follow us on bilibili, LinkedIn, WeChat, and YouTube.
+		
+		
+			<div class="color-scheme-toggle"
+				role="radiogroup"
+				tabindex="0"
+				aria-label="Select a color scheme preference">
+				
+					<input type="radio" value="light" autocomplete="off"
+						onchange="window.setPreferredColorScheme(event.target.value)" />
+					Light
+				
+				
+					<input type="radio" value="dark" autocomplete="off"
+						onchange="window.setPreferredColorScheme(event.target.value)" />
+					Dark
+				
+				
+					<input type="radio" value="auto" autocomplete="off"
+						onchange="window.setPreferredColorScheme(event.target.value)" />
+					Auto
+				
+			
+			
+		
+	
+	
+	
+		
+		
+	
+	
+	
+		Copyright © 2026 Apple Inc. All rights reserved.
+		
+			Terms of Use
+			Privacy Policy
+			Agreements and Guidelines
+		
+	
+ 
+	

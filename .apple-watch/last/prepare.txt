@@ -1,0 +1,1313 @@
+
+		
+ <div
+ class="account-menu-user-header"
+ role="banner"
+ aria-label="User information"
+ data-aria-label="userInformation"
+ >
+ <div
+ class="account-menu-avatar"
+ data-slot="initial"
+ aria-hidden="true"
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ <span data-slot="certificatesIDsProfiles"
+ ></span
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ // Synchronously disables the account link before first paint so the user
+ // cannot navigate away before session.js registers its click listener.
+ (function () {
+ var accountLink = document.querySelector(".globalnav-link-account");
+ if (accountLink) {
+ var href = accountLink.getAttribute("href");
+ if (href) {
+ accountLink.dataset.pendingHref = href;
+ accountLink.removeAttribute("href");
+ accountLink.style.cursor = "default";
+ }
+ }
+ })();
+		
+		Prepare - iPhone Duo - Apple Developer
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+	
+	// Execute immediately to avoid UI flash
+	(function () {
+		// Prevent React dev mode from running this multiple times
+		if (window.__didRunColorThemeScript) {
+			return;
+		}
+		if (window.angular) {
+			return;
+		}
+		window.__didRunColorThemeScript = true;
+		const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+		const body = document.body;
+		// If theme-dark or theme-light is already applied, do nothing and lock it
+		if (body.classList.contains("theme-dark") || body.classList.contains("theme-light")) {
+			// Set the data-color-scheme attribute based on the existing theme
+			body.setAttribute('data-color-scheme', body.classList.contains("theme-dark") ? "dark" : "light");
+			// Prevent future modifications
+			window.__disableColorScheme = true;
+			// Hide the color picker immediately
+			const style = document.createElement('style');
+			style.textContent = '.color-scheme-toggle { display: none !important; }';
+			document.head.appendChild(style);
+			return;
+		}
+		// Otherwise, set theme normally based on user settings or system preference
+		if (window.Settings && window.Settings.preferredColorScheme) {
+			const colorTheme = (window.Settings.preferredColorScheme === 'auto') && !prefersDark ? 'light'
+				: (window.Settings.preferredColorScheme === 'light') ? 'light' : 'dark';
+			body.setAttribute('data-color-scheme', colorTheme);
+			colorTheme === "dark" ? body.classList.add("theme-dark") : body.classList.add("theme-light");
+		} else {
+			const colorTheme = prefersDark ? 'dark' : 'light';
+			body.setAttribute('data-color-scheme', colorTheme);
+			prefersDark ? body.classList.add("theme-dark") : body.classList.add("theme-light");
+		}
+	})();
+	
+		
+			
+				View in English
+				
+			
+		
+	
+	
+		
+						
+					
+		
+			<li class="
+	globalnav-item
+	globalnav-item-apple
+	ac-gn-item
+	ac-gn-apple
+">
+				
+					Apple Developer
+				
+			
+			
+				
+					
+						<div class="
+ globalnav-item
+ globalnav-item-getting-started
+ globalnav-item-menu
+ globalnav-item-submenu
+" style="--r-globalnav-flyout-item-number: 0;">
+							
+								
+									
+										
+											Get Started
+										
+										
+											
+												
+											
+										
+									
+								
+								
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+								
+							
+							
+								
+									
+										
+											Explore Get Started
+											
+												Overview
+												Learn
+												Apple Developer Program
+											
+										
+										
+											Stay Updated
+											
+												Latest News
+												Hello Developer
+											
+										
+									
+								
+							
+						
+						<div class="
+ globalnav-item
+ globalnav-item-platforms
+ globalnav-item-menu
+ globalnav-item-submenu
+" style="--r-globalnav-flyout-item-number: 1;">
+							
+								
+									
+										
+											Platforms
+										
+										
+											
+												
+											
+										
+									
+								
+								
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+								
+							
+							
+								
+									
+										
+										
+											Explore Platforms
+											
+												Apple Platforms
+												iOS
+												iPadOS
+												macOS
+												tvOS
+												visionOS
+												watchOS
+												App Store
+											
+										
+										
+										
+											Featured
+											
+												Design
+												Distribution
+												Games
+												Accessories
+												Web
+												Home
+												CarPlay
+											
+										
+									
+								
+							
+						
+						<div class="
+ globalnav-item
+ globalnav-item-technologies
+ globalnav-item-menu
+ globalnav-item-submenu
+" style="--r-globalnav-flyout-item-number: 2;">
+							
+								
+									
+										
+											Technologies
+										
+										
+											
+												
+											
+										
+									
+								
+								
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+								
+							
+							
+								
+									
+										
+										
+											Explore Technologies
+											
+												Overview
+												Xcode
+												Swift
+												SwiftUI
+											
+										
+										
+										
+											Featured
+											
+												Accessibility
+												AI &amp; Machine Learning
+												App Intents
+												Apple Intelligence
+												Games
+												Security
+												Xcode Cloud
+											
+										
+									
+								
+							
+						
+						<div class="
+ globalnav-item
+ globalnav-item-community
+ globalnav-item-menu
+ globalnav-item-submenu
+" style="--r-globalnav-flyout-item-number: 3;">
+							
+								
+									
+										
+											Community
+										
+										
+											
+												
+											
+										
+									
+								
+								
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+								
+							
+							
+								
+									
+										
+										
+											Explore Community
+											
+												Overview
+												Meet with Apple events
+												Community events
+												Developer Forums
+												Open Source
+											
+										
+										
+										
+											Featured
+											
+												WWDC
+												Swift Student Challenge
+												Developer Stories
+												App Store Awards
+												Apple Design Awards
+												Apple Developer Centers
+											
+										
+									
+								
+							
+						
+						<div class="
+							 globalnav-item
+							 globalnav-item-documentation
+							 globalnav-item-menu
+							 globalnav-item-submenu
+							" style="--r-globalnav-flyout-item-number: 4;">
+							
+								
+									
+										
+											Documentation
+										
+										
+											
+												
+											
+										
+									
+								
+								
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+								
+							
+							
+								
+									
+										
+										
+											Explore Documentation
+											
+												Documentation Library
+												Technology Overviews
+												Sample Code
+												Human Interface Guidelines
+												Videos
+											
+										
+										
+										
+											Release Notes
+											
+												Featured Updates
+												iOS
+												iPadOS
+												macOS
+												watchOS
+												visionOS
+												tvOS
+												Xcode
+											
+										
+									
+								
+							
+						
+						<div class="
+ globalnav-item
+ globalnav-item-downloads
+ globalnav-item-menu
+ globalnav-item-submenu
+" style="--r-globalnav-flyout-item-number: 5;">
+							
+								
+									
+										
+											Downloads
+										
+										
+											
+												
+											
+										
+									
+								
+								
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+								
+							
+							
+								
+									
+										
+										
+											Explore Downloads
+											
+												All Downloads
+												Operating Systems
+												Applications
+												Design Resources
+											
+										
+										
+										
+											Featured
+											
+												Xcode
+												TestFlight
+												Fonts
+												SF Symbols
+												Icon Composer
+											
+										
+									
+								
+							
+						
+						<div class="
+ globalnav-item
+ globalnav-item-support
+ globalnav-item-menu
+ globalnav-item-submenu
+" style="--r-globalnav-flyout-item-number: 6;">
+							
+								
+									
+										
+											Support
+										
+										
+											
+												
+											
+										
+									
+								
+								
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+								
+							
+							
+								
+									
+										
+										
+											Explore Support
+											
+												Overview
+												Help Guides
+												Developer Forums
+												Feedback Assistant
+												Contact Us
+											
+										
+										
+										
+											Featured
+											
+												Account Help
+												App Review Guidelines
+												App Review Help
+												App Store Connect Help
+												Upcoming Requirements
+												Agreements and Guidelines
+												System Status
+											
+										
+									
+								
+							
+						
+					
+				
+			
+			
+			
+				
+					
+						
+							
+						
+					
+					
+						
+							
+						
+					
+				
+				
+					
+						
+							
+								
+									
+									
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+								
+							
+							
+								
+									
+										Quick Links
+										
+											
+												
+													
+														
+															
+																
+															
+														
+														
+															
+																
+															
+														
+													
+													Events
+												
+											
+											
+												
+													
+														
+															
+																
+															
+														
+														
+															
+																
+															
+														
+													
+													News
+												
+											
+											
+												
+													
+														
+															
+																
+															
+														
+														
+															
+																
+															
+														
+													
+													Forums
+												
+											
+											
+												
+													
+														
+															
+																
+															
+														
+														
+															
+																
+															
+														
+													
+													Sample Code
+												
+											
+											
+												
+													
+														
+															
+																
+															
+														
+														
+															
+																
+															
+														
+													
+													Videos
+												
+											
+										
+									
+								
+							
+						
+					
+				
+			
+			
+			
+				
+					
+						
+							
+								
+							
+						
+						
+							
+								
+							
+						
+					
+				
+			
+		
+		
+			
+					
+						
+						
+					
+					
+						
+						
+					
+				
+			
+		
+	
+	&nbsp;
+ -->
+	
+	/* RSID: */
+	var s_account="awdappledeveloper"
+	
+	s_sections = [
+		{
+			"pattern": "^/documentation",
+			"channel": "www.documentation.developer"
+		},
+		{
+			"pattern": "^/library",
+			"channel": "www.documentation.developer"
+		},
+		{
+			"pattern": "^/tutorials",
+			"channel": "www.documentation.developer"
+		},	
+		{
+			"pattern": "human\\-interface\\-guidelines",
+			"channel": "www.hig.developer"
+		},
+		{
+			"pattern": "/testflight/",
+			"channel": "www.appstoreconnect.developer"
+		},
+		{
+			"pattern": "/app\\-store\\-connect/",
+			"channel": "www.appstoreconnect.developer"
+		},
+		{
+			"pattern": "/support/app\\-store\\-connect/",
+			"channel": "www.appstoreconnect.developer"
+		},
+		{
+			"pattern": "/help/app\\-store\\-connect/",
+			"channel": "www.appstoreconnect.developer"
+		},
+		{
+			"pattern": "/wwdc/",
+			"channel": "www.wwdc.developer"
+		},
+		{
+			"pattern": "/wwdc\\d{2}/",
+			"channel": "www.wwdc.developer"
+		},
+		{
+			"pattern": "/videos/",
+			"channel": "www.videos.developer"
+		},
+		{
+			"pattern": "^/account",
+			"channel": "www.account.developer"
+		},
+		{
+			"pattern": "downloads?",
+			"channel": "www.download.developer"
+		},
+		{
+			"pattern": "/localization/",
+			"channel": "www.appstore.developer"
+		},	
+		{
+			"pattern": "/app\\-store/",
+			"channel": "www.appstore.developer"
+		},
+		{
+			"pattern": "/in\\-app\\-purchase/",
+			"channel": "www.appstore.developer"
+		},
+		{
+			"pattern": "/cn/",
+			"channel": "www.cn.developer"
+		},
+		{
+			"pattern": "/jp/",
+			"channel": "www.jp.developer"
+		},
+		{
+			"pattern": "/kr/",
+			"channel": "www.kr.developer"
+		},
+		{
+			"pattern": "/de/",
+			"channel": "www.de.developer"
+		},
+		{
+			"pattern": "/la/",
+			"channel": "www.la.developer"
+		},
+		{
+			"pattern": "/fr/",
+			"channel": "www.fr.developer"
+		},
+		{
+			"pattern": "/it/",
+			"channel": "www.it.developer"
+		},
+		{
+			"pattern": "/br/",
+			"channel": "www.br.developer"
+		}
+	];
+	
+	s.pageName= AC && AC.Tracking && AC.Tracking.pageName();
+	s.channel="www.en.developer";
+	
+	s_sections.forEach((s_section) => {
+		var regex = new RegExp(s_section.pattern);
+		
+		if(location.pathname.search(regex) !== -1) {
+			s.channel=s_section.channel;
+		}
+	});
+	
+	/************* DO NOT ALTER ANYTHING BELOW THIS LINE ! **************/
+	var s_code=s.t();if(s_code)document.write(s_code)
+	
+	
+		
+		
+			
+				iPhone&nbsp;Duo
+			
+			
+				
+					Open Menu
+				
+				
+					Close Menu
+				
+				
+					
+						
+							Overview
+						
+						
+							Prepare
+						
+					
+				
+				
+					
+						
+							
+						
+					
+				
+			
+		
+	
+	
+		
+			
+			
+				
+					
+						
+							Three steps to make your app shine on&nbsp;iPhone&nbsp;Duo
+							Apps built with the iOS&nbsp;27 SDK and later resize dynamically on iPhone&nbsp;Duo. Unfold it and your app expands to fill the inner display; fold it and your app returns to the outer display. Hardcoded screen sizes, fixed orientations, and device assumptions can break layouts, leading to stretched, clipped, or misplaced content. Follow these steps to make sure your app is ready for iPhone&nbsp;Duo.
+						
+					
+					
+					
+						
+					
+					
+						
+							
+							Before you begin
+							While all apps will run on iPhone&nbsp;Duo, building with the latest SDKs let your app use more of the display and adapt gracefully across layouts. The following examples show what your app will look like on iPhone&nbsp;Duo depending on which SDK you build&nbsp;with.
+							
+								
+									
+								
+								
+									iOS&nbsp;26&nbsp;SDK
+									Apps built with the iOS&nbsp;26 SDK or earlier run on iPhone&nbsp;Duo, but won’t adapt to all layouts. When the device is open, your app will appear in the center of the display, with empty space surrounding the window. When the device is closed, the outer display will show your app’s content to the left of the status bar and&nbsp;camera.
+								
+							
+							
+								
+									
+								
+								
+									iOS&nbsp;27&nbsp;SDK
+									Apps built with the iOS&nbsp;27 SDK resize to fill most of the inner display on iPhone&nbsp;Duo, but still avoid the status bar on the right edge. This provides an improved experience, as empty space is&nbsp;minimized.
+								
+							
+							
+								
+									
+								
+								
+									iOS&nbsp;27.1 SDK or&nbsp;later
+									Apps built with the iOS&nbsp;27.1 SDK or later are optimized for iPhone&nbsp;Duo. Apps will extend to use the full display, with toolbars and tab bars appearing vertically below the status bar. This provides people with an optimal and consistent experience as they move across&nbsp;displays.
+									Before shipping an app build with the iOS&nbsp;27.1 SDK, make sure your app’s content adapts to the bars becoming&nbsp;vertical.
+								
+							
+							
+							Step 1: Run the app resizability skill
+							In Xcode, ask the coding assistant to “get my app ready for iPhone&nbsp;Duo.” The skill scans your project for the patterns described in Step&nbsp;2. For each issue it finds, it explains the problem and suggests a&nbsp;fix.
+							If you use a different coding agent, export the skill by running this in&nbsp;Terminal:
+							xcrun agent skills export
+							The skill finds most issues, but not all of them. Use the list below to review what it flags and catch anything it&nbsp;misses.
+							
+							Step 2: Fix patterns
+							Stop sizing from the main screen
+							On iPhone&nbsp;Duo, your app’s size changes whenever the device folds or unfolds, and it doesn’t always match the size of the screen. Search your project for UIScreen.main and replace each&nbsp;use:
+							
+								Size from the view or window. Replace UIScreen.main.bounds with view.bounds or window.bounds. In SwiftUI, use GeometryReader or onGeometryChange.
+								Re-read the size whenever it changes. Reading the size once at launch or in viewIsAppearing isn’t enough, because a fold can resize your app in the middle of a session. Do size-dependent layout in layoutSubviews or viewDidLayoutSubviews, and use viewWillTransition(to:with:) for work that needs to run when the size&nbsp;changes.
+								Get scale from the trait collection. Use traitCollection.displayScale in UIKit or @Environment(\.displayScale) in&nbsp;SwiftUI.
+								Create windows from a scene. Replace UIWindow(frame: UIScreen.main.bounds) with UIWindow(windowScene:).
+								Don’t store a UIScreen. When screen information is needed, access it dynamically with view.window?.windowScene?.screen.
+							
+							Avoid using orientation to make layout decisions
+							On iPhone&nbsp;Duo, the device’s orientation doesn’t tell you what shape your app is. Search for these properties and remove any layout logic that depends on&nbsp;them:
+							
+								UIDevice.current.orientation
+								statusBarOrientation
+								interfaceOrientation, including windowScene.effectiveGeometry.interfaceOrientation.
+							
+							To find out whether your app is wider than it is tall, compare the width and height of the space you have: view.bounds in a view controller, superview.bounds in a view, or the size from GeometryReader in&nbsp;SwiftUI.
+							Stop assuming idiom or size class identifies the device
+							With iPhone&nbsp;Duo and resizable iPhone&nbsp;Mirroring, an iPhone app can have any combination of size classes. On the inner display, your app should look like a natural extension of its iPad layout. For more information, see Prepare your app for iPhone&nbsp;Duo.
+							
+								Don’t choose a layout by idiom. Search for userInterfaceIdiom == .phone and == .pad. Base layout choices on size classes or available space&nbsp;instead.
+								Don’t treat “regular width” as “iPad.” Code that shows an iPad-only layout when horizontalSizeClass == .regular, or that assumes iPhone is always compact, will now run that layout on iPhone&nbsp;too.
+								Remove checks for specific device sizes. Comparisons such as bounds.height == 844 or a list of known iPhone sizes won’t match iPhone&nbsp;Duo.
+								Check full-bleed media. Hero images and video set to .scaleAspectFill or .aspectRatio(contentMode: .fill) can lose important content on wider displays. Use the current size classes or aspect ratio to choose between fill and fit, or set a focal&nbsp;point.
+							
+							
+							Step 3: Test resizing
+							Test resizing using these tools to make sure your app runs as&nbsp;expected.
+							
+								The iOS resizable simulator in Device&nbsp;Hub.
+								iPhone&nbsp;Mirroring on macOS&nbsp;27. Resize the window to extreme sizes in both&nbsp;directions.
+								The iPhone&nbsp;Duo simulator in Xcode&nbsp;27.1.
+									
+										Note: The iPhone&nbsp;Duo simulator is the best way to test the full native&nbsp;experience.
+									
+								
+							
+						
+					
+				
+			
+			
+			
+				
+					
+						
+							Go further: Stand out on the App&nbsp;Store
+							Update your App&nbsp;Store product page to show that your app is ready for iPhone&nbsp;Duo.
+							Showcase iPhone&nbsp;Duo support. Share app previews and screenshots that highlight your app across orientations. When you submit iPhone&nbsp;Duo screenshots in App&nbsp;Store&nbsp;Connect, your App&nbsp;Store product page will display a badge to let people know your app is optimized for iPhone&nbsp;Duo. View screenshot specifications.
+							Preview your assets. Use the new preview tool in App&nbsp;Store&nbsp;Connect to see how your assets — including new creative assets — look on iPhone&nbsp;Duo.
+							Share your app with us. Submit a featuring nomination in App&nbsp;Store&nbsp;Connect to let the App&nbsp;Store editorial team know your app supports iPhone&nbsp;Duo. In the Helpful Details section, you can specify that your app is optimized for iPhone&nbsp;Duo, including support for all device poses. Learn how to create a featuring&nbsp;nomination.
+							
+							Additional resources
+							
+								News: Prepare and submit your apps for iPhone&nbsp;Duo
+								Video: Prepare your app for iPhone&nbsp;Duo
+								Events: Sign up for iPhone&nbsp;Duo workshops
+								Documentation: Browse iPhone&nbsp;Duo resources
+							
+						
+					
+				
+			
+		
+	
+	
+ 
+ Developer Footer
+	
+		iPhone Duo
+		Prepare
+	
+	 
+	
+	
+		
+		
+			
+				Platforms
+			
+			 Open Menu 
+			 Close Menu 
+			
+				iOS
+				iPadOS
+				macOS
+				tvOS
+				visionOS
+				watchOS
+				App Store
+			
+		
+		
+		
+			
+				Tools
+			
+			 Open Menu 
+			 Close Menu 
+			
+				Swift
+				SwiftUI
+				Swift Playground
+				TestFlight
+				Xcode
+				Xcode Cloud
+				Icon Composer
+				SF Symbols
+			
+		
+	
+	
+		
+		
+			
+				Technologies
+			
+			 Open Menu 
+			 Close Menu 
+			
+				Accessibility
+				Accessories
+				AI & Machine Learning
+				Apple In-App Purchase
+				Apple Intelligence
+				Audio &amp; Video
+				Augmented Reality
+				Business
+				Design
+				Distribution
+				Education
+				Games
+				Health &amp; Fitness
+				Localization
+				Maps &amp; Location
+				Security
+				Safari &amp; Web
+			
+		
+	
+	
+		
+		
+			
+				Resources
+			
+			 Open Menu 
+			 Close Menu 
+			
+				Documentation
+				Downloads
+				Sample Code
+				Videos
+				Documentation Archive
+			
+		
+		
+		
+			
+				Support
+			
+			 Open Menu 
+			 Close Menu 
+			
+				Help Guides & Articles
+				Contact Us
+				Forums
+				Feedback & Bug Reporting
+				System Status
+			
+		
+		
+		
+			
+				Account
+			
+			 Open Menu 
+			 Close Menu 
+			
+				Apple Developer
+				App Store Connect
+				Certificates, IDs, &amp; Profiles
+				Feedback Assistant
+			
+		
+	
+	
+	
+		
+		
+			
+				Programs
+			
+			 Open Menu 
+			 Close Menu 
+			
+				Apple Developer Program
+				Apple Developer Enterprise Program
+				App Store Small Business Program
+				MFi Program
+				Mini Apps Partner Program
+				News Partner Program
+				Video Partner Program
+				Security Bounty Program
+				Security Research Device Program
+			
+		
+		
+		
+			
+				Events
+			
+			 Open Menu 
+			 Close Menu 
+			
+				Meet with Apple
+				Apple Developer Centers
+				App Store Awards
+				Apple Design Awards
+				Apple Developer Academies
+				WWDC
+			
+		
+	
+	
+ 
+	
+		
+			Read the latest news. Get the Apple Developer app. Follow us on bilibili, LinkedIn, WeChat, and YouTube.
+		
+		
+			<div class="color-scheme-toggle"
+				role="radiogroup"
+				tabindex="0"
+				aria-label="Select a color scheme preference">
+				
+					<input type="radio" value="light" autocomplete="off"
+						onchange="window.setPreferredColorScheme(event.target.value)" />
+					Light
+				
+				
+					<input type="radio" value="dark" autocomplete="off"
+						onchange="window.setPreferredColorScheme(event.target.value)" />
+					Dark
+				
+				
+					<input type="radio" value="auto" autocomplete="off"
+						onchange="window.setPreferredColorScheme(event.target.value)" />
+					Auto
+				
+			
+			
+		
+	
+	
+	
+		
+		
+	
+	
+	
+		Copyright © 2026 Apple Inc. All rights reserved.
+		
+			Terms of Use
+			Privacy Policy
+			Agreements and Guidelines
+		
+	
+ 

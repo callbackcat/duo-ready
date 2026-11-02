@@ -1,0 +1,5025 @@
+
+	
+ <div
+ class="account-menu-user-header"
+ role="banner"
+ aria-label="User information"
+ data-aria-label="userInformation"
+ >
+ <div
+ class="account-menu-avatar"
+ data-slot="initial"
+ aria-hidden="true"
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ <span data-slot="certificatesIDsProfiles"
+ ></span
+ >
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ // Synchronously disables the account link before first paint so the user
+ // cannot navigate away before session.js registers its click listener.
+ (function () {
+ var accountLink = document.querySelector(".globalnav-link-account");
+ if (accountLink) {
+ var href = accountLink.getAttribute("href");
+ if (href) {
+ accountLink.dataset.pendingHref = href;
+ accountLink.removeAttribute("href");
+ accountLink.style.cursor = "default";
+ }
+ }
+ })();
+	
+	Manage your App Store assets - Manage app information - App Store Connect - Help - Apple Developer
+	
+	
+		
+		
+		
+		
+		
+		
+	
+										'>
+												'>
+												'>
+												'>
+												'>
+												'>
+												'>
+												'>
+																' />
+												' />
+						
+	
+	
+	// Execute immediately to avoid UI flash
+	(function () {
+		// Prevent React dev mode from running this multiple times
+		if (window.__didRunColorThemeScript) {
+			return;
+		}
+		if (window.angular) {
+			return;
+		}
+		window.__didRunColorThemeScript = true;
+		const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+		const body = document.body;
+		// If theme-dark or theme-light is already applied, do nothing and lock it
+		if (body.classList.contains("theme-dark") || body.classList.contains("theme-light")) {
+			// Set the data-color-scheme attribute based on the existing theme
+			body.setAttribute('data-color-scheme', body.classList.contains("theme-dark") ? "dark" : "light");
+			// Prevent future modifications
+			window.__disableColorScheme = true;
+			// Hide the color picker immediately
+			const style = document.createElement('style');
+			style.textContent = '.color-scheme-toggle { display: none !important; }';
+			document.head.appendChild(style);
+			return;
+		}
+		// Otherwise, set theme normally based on user settings or system preference
+		if (window.Settings && window.Settings.preferredColorScheme) {
+			const colorTheme = (window.Settings.preferredColorScheme === 'auto') && !prefersDark ? 'light'
+				: (window.Settings.preferredColorScheme === 'light') ? 'light' : 'dark';
+			body.setAttribute('data-color-scheme', colorTheme);
+			colorTheme === "dark" ? body.classList.add("theme-dark") : body.classList.add("theme-light");
+		} else {
+			const colorTheme = prefersDark ? 'dark' : 'light';
+			body.setAttribute('data-color-scheme', colorTheme);
+			prefersDark ? body.classList.add("theme-dark") : body.classList.add("theme-light");
+		}
+	})();
+	
+		
+			
+				View in English
+				
+			
+		
+	
+	
+		
+						
+					
+		
+			<li class="
+	globalnav-item
+	globalnav-item-apple
+	ac-gn-item
+	ac-gn-apple
+">
+				
+					Apple Developer
+				
+			
+			
+				
+					
+						<div class="
+ globalnav-item
+ globalnav-item-getting-started
+ globalnav-item-menu
+ globalnav-item-submenu
+" style="--r-globalnav-flyout-item-number: 0;">
+							
+								
+									
+										
+											Get Started
+										
+										
+											
+												
+											
+										
+									
+								
+								
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+								
+							
+							
+								
+									
+										
+											Explore Get Started
+											
+												Overview
+												Learn
+												Apple Developer Program
+											
+										
+										
+											Stay Updated
+											
+												Latest News
+												Hello Developer
+											
+										
+									
+								
+							
+						
+						<div class="
+ globalnav-item
+ globalnav-item-platforms
+ globalnav-item-menu
+ globalnav-item-submenu
+" style="--r-globalnav-flyout-item-number: 1;">
+							
+								
+									
+										
+											Platforms
+										
+										
+											
+												
+											
+										
+									
+								
+								
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+								
+							
+							
+								
+									
+										
+										
+											Explore Platforms
+											
+												Apple Platforms
+												iOS
+												iPadOS
+												macOS
+												tvOS
+												visionOS
+												watchOS
+												App Store
+											
+										
+										
+										
+											Featured
+											
+												Design
+												Distribution
+												Games
+												Accessories
+												Web
+												Home
+												CarPlay
+											
+										
+									
+								
+							
+						
+						<div class="
+ globalnav-item
+ globalnav-item-technologies
+ globalnav-item-menu
+ globalnav-item-submenu
+" style="--r-globalnav-flyout-item-number: 2;">
+							
+								
+									
+										
+											Technologies
+										
+										
+											
+												
+											
+										
+									
+								
+								
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+								
+							
+							
+								
+									
+										
+										
+											Explore Technologies
+											
+												Overview
+												Xcode
+												Swift
+												SwiftUI
+											
+										
+										
+										
+											Featured
+											
+												Accessibility
+												AI &amp; Machine Learning
+												App Intents
+												Apple Intelligence
+												Games
+												Security
+												Xcode Cloud
+											
+										
+									
+								
+							
+						
+						<div class="
+ globalnav-item
+ globalnav-item-community
+ globalnav-item-menu
+ globalnav-item-submenu
+" style="--r-globalnav-flyout-item-number: 3;">
+							
+								
+									
+										
+											Community
+										
+										
+											
+												
+											
+										
+									
+								
+								
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+								
+							
+							
+								
+									
+										
+										
+											Explore Community
+											
+												Overview
+												Meet with Apple events
+												Community events
+												Developer Forums
+												Open Source
+											
+										
+										
+										
+											Featured
+											
+												WWDC
+												Swift Student Challenge
+												Developer Stories
+												App Store Awards
+												Apple Design Awards
+												Apple Developer Centers
+											
+										
+									
+								
+							
+						
+						<div class="
+							 globalnav-item
+							 globalnav-item-documentation
+							 globalnav-item-menu
+							 globalnav-item-submenu
+							" style="--r-globalnav-flyout-item-number: 4;">
+							
+								
+									
+										
+											Documentation
+										
+										
+											
+												
+											
+										
+									
+								
+								
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+								
+							
+							
+								
+									
+										
+										
+											Explore Documentation
+											
+												Documentation Library
+												Technology Overviews
+												Sample Code
+												Human Interface Guidelines
+												Videos
+											
+										
+										
+										
+											Release Notes
+											
+												Featured Updates
+												iOS
+												iPadOS
+												macOS
+												watchOS
+												visionOS
+												tvOS
+												Xcode
+											
+										
+									
+								
+							
+						
+						<div class="
+ globalnav-item
+ globalnav-item-downloads
+ globalnav-item-menu
+ globalnav-item-submenu
+" style="--r-globalnav-flyout-item-number: 5;">
+							
+								
+									
+										
+											Downloads
+										
+										
+											
+												
+											
+										
+									
+								
+								
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+								
+							
+							
+								
+									
+										
+										
+											Explore Downloads
+											
+												All Downloads
+												Operating Systems
+												Applications
+												Design Resources
+											
+										
+										
+										
+											Featured
+											
+												Xcode
+												TestFlight
+												Fonts
+												SF Symbols
+												Icon Composer
+											
+										
+									
+								
+							
+						
+						<div class="
+ globalnav-item
+ globalnav-item-support
+ globalnav-item-menu
+ globalnav-item-submenu
+" style="--r-globalnav-flyout-item-number: 6;">
+							
+								
+									
+										
+											Support
+										
+										
+											
+												
+											
+										
+									
+								
+								
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+								
+							
+							
+								
+									
+										
+										
+											Explore Support
+											
+												Overview
+												Help Guides
+												Developer Forums
+												Feedback Assistant
+												Contact Us
+											
+										
+										
+										
+											Featured
+											
+												Account Help
+												App Review Guidelines
+												App Review Help
+												App Store Connect Help
+												Upcoming Requirements
+												Agreements and Guidelines
+												System Status
+											
+										
+									
+								
+							
+						
+					
+				
+			
+			
+			
+				
+					
+						
+							
+						
+					
+					
+						
+							
+						
+					
+				
+				
+					
+						
+							
+								
+									
+									
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+									
+										
+											
+												
+											
+										
+										
+											
+												
+											
+										
+									
+								
+							
+							
+								
+									
+										Quick Links
+										
+											
+												
+													
+														
+															
+																
+															
+														
+														
+															
+																
+															
+														
+													
+													Events
+												
+											
+											
+												
+													
+														
+															
+																
+															
+														
+														
+															
+																
+															
+														
+													
+													News
+												
+											
+											
+												
+													
+														
+															
+																
+															
+														
+														
+															
+																
+															
+														
+													
+													Forums
+												
+											
+											
+												
+													
+														
+															
+																
+															
+														
+														
+															
+																
+															
+														
+													
+													Sample Code
+												
+											
+											
+												
+													
+														
+															
+																
+															
+														
+														
+															
+																
+															
+														
+													
+													Videos
+												
+											
+										
+									
+								
+							
+						
+					
+				
+			
+			
+			
+				
+					
+						
+							
+								
+							
+						
+						
+							
+								
+							
+						
+					
+				
+			
+		
+		
+			
+					
+						
+						
+					
+					
+						
+						
+					
+				
+			
+		
+	
+	&nbsp;
+ -->
+	
+	/* RSID: */
+	var s_account="awdappledeveloper"
+	
+	s_sections = [
+		{
+			"pattern": "^/documentation",
+			"channel": "www.documentation.developer"
+		},
+		{
+			"pattern": "^/library",
+			"channel": "www.documentation.developer"
+		},
+		{
+			"pattern": "^/tutorials",
+			"channel": "www.documentation.developer"
+		},	
+		{
+			"pattern": "human\\-interface\\-guidelines",
+			"channel": "www.hig.developer"
+		},
+		{
+			"pattern": "/testflight/",
+			"channel": "www.appstoreconnect.developer"
+		},
+		{
+			"pattern": "/app\\-store\\-connect/",
+			"channel": "www.appstoreconnect.developer"
+		},
+		{
+			"pattern": "/support/app\\-store\\-connect/",
+			"channel": "www.appstoreconnect.developer"
+		},
+		{
+			"pattern": "/help/app\\-store\\-connect/",
+			"channel": "www.appstoreconnect.developer"
+		},
+		{
+			"pattern": "/wwdc/",
+			"channel": "www.wwdc.developer"
+		},
+		{
+			"pattern": "/wwdc\\d{2}/",
+			"channel": "www.wwdc.developer"
+		},
+		{
+			"pattern": "/videos/",
+			"channel": "www.videos.developer"
+		},
+		{
+			"pattern": "^/account",
+			"channel": "www.account.developer"
+		},
+		{
+			"pattern": "downloads?",
+			"channel": "www.download.developer"
+		},
+		{
+			"pattern": "/localization/",
+			"channel": "www.appstore.developer"
+		},	
+		{
+			"pattern": "/app\\-store/",
+			"channel": "www.appstore.developer"
+		},
+		{
+			"pattern": "/in\\-app\\-purchase/",
+			"channel": "www.appstore.developer"
+		},
+		{
+			"pattern": "/cn/",
+			"channel": "www.cn.developer"
+		},
+		{
+			"pattern": "/jp/",
+			"channel": "www.jp.developer"
+		},
+		{
+			"pattern": "/kr/",
+			"channel": "www.kr.developer"
+		},
+		{
+			"pattern": "/de/",
+			"channel": "www.de.developer"
+		},
+		{
+			"pattern": "/la/",
+			"channel": "www.la.developer"
+		},
+		{
+			"pattern": "/fr/",
+			"channel": "www.fr.developer"
+		},
+		{
+			"pattern": "/it/",
+			"channel": "www.it.developer"
+		},
+		{
+			"pattern": "/br/",
+			"channel": "www.br.developer"
+		}
+	];
+	
+	s.pageName= AC && AC.Tracking && AC.Tracking.pageName();
+	s.channel="www.en.developer";
+	
+	s_sections.forEach((s_section) => {
+		var regex = new RegExp(s_section.pattern);
+		
+		if(location.pathname.search(regex) !== -1) {
+			s.channel=s_section.channel;
+		}
+	});
+	
+	/************* DO NOT ALTER ANYTHING BELOW THIS LINE ! **************/
+	var s_code=s.t();if(s_code)document.write(s_code)
+		
+		
+		
+		
+		
+		
+		
+			
+				
+					
+						
+							
+								
+									
+									Search
+									
+										
+											Search Reset
+										
+									
+								
+								
+																
+								
+								
+																														
+												
+													Release notes
+													Release notes
+												 
+											
+																																																																																										
+														
+															App Store Connect sections
+															Get started
+														 
+													
+																																																																									
+														
+															App Store Connect workflow
+															Get started
+														 
+													
+																																																																									
+														
+															App Store Connect for iPhone and iPad
+															Get started
+														 
+													
+																																																																									
+														
+															App Store Connect API
+															Get started
+														 
+													
+																																																																																																																	
+														
+															Overview of accounts and roles
+															Manage your team
+														 
+													
+																																																																									
+														
+															Add and edit users
+															Manage your team
+														 
+													
+																																																																									
+														
+															Edit access to apps
+															Manage your team
+														 
+													
+																																																																									
+														
+															View and edit your profile
+															Manage your team
+														 
+													
+																																																																									
+														
+															Manage webhooks
+															Manage your team
+														 
+													
+																																																																									
+														
+															Set up OS data transfer
+															Manage your team
+														 
+													
+																																																																																																																	
+														
+															Add a new app
+															Create an app record
+														 
+													
+																																																																									
+														
+															Set your developer name
+															Create an app record
+														 
+													
+																																																																									
+														
+															View and edit app information
+															Create an app record
+														 
+													
+																																																																									
+														
+															Add watchOS app information
+															Create an app record
+														 
+													
+																																																																									
+														
+															Add iMessage app information
+															Create an app record
+														 
+													
+																																																																									
+														
+															Add platforms
+															Create an app record
+														 
+													
+																																																																									
+														
+															Create and submit app bundles
+															Create an app record
+														 
+													
+																																																																									
+														
+															Edit app bundle information
+															Create an app record
+														 
+													
+																																																																									
+														
+															Remove an app
+															Create an app record
+														 
+													
+																																																																									
+														
+															Edit access to an app
+															Create an app record
+														 
+													
+																																																																																																																	
+														
+															Upload builds
+															Manage builds
+														 
+													
+																																																																									
+														
+															View builds and metadata
+															Manage builds
+														 
+													
+																																																																									
+														
+															Choose a build to submit
+															Manage builds
+														 
+													
+																																																																																																																	
+														
+															Overview of Apple-hosted asset packs
+															Manage asset packs
+														 
+													
+																																																																									
+														
+															Upload Apple-hosted asset packs
+															Manage asset packs
+														 
+													
+																																																																																																																	
+														
+															Set an app age rating
+															Manage app information
+														 
+													
+																																																																									
+														
+															Manage app tags
+															Manage app information
+														 
+													
+																																																																									
+														
+															Set the app motion information for Apple Vision Pro
+															Manage app information
+														 
+													
+																																																																									
+														
+															Provide a custom license agreement
+															Manage app information
+														 
+													
+																																																																									
+														
+															Localize app information
+															Manage app information
+														 
+													
+																																																																									
+														
+															Manage app privacy
+															Manage app information
+														 
+													
+																																																																									
+														
+															Set a tax category
+															Manage app information
+														 
+													
+																																																																									
+														
+															Declare Regulated Medical Device Status
+															Manage app information
+														 
+													
+																																																																									
+														
+															Overview of export compliance
+															Manage app information
+														 
+													
+																																																																									
+														
+															Determine and upload app encryption documentation
+															Manage app information
+														 
+													
+																																																																									
+														
+															Add an app icon
+															Manage app information
+														 
+													
+																																																																									
+														
+															Manage your App Store assets
+															Manage app information
+														 
+													
+																																																																									
+														
+															Complete the Digital Goods and Services questionnaire
+															Manage app information
+														 
+													
+																																																																																																																	
+														
+															Overview of Accessibility Nutrition Labels
+															Manage app accessibility
+														 
+													
+																																																																									
+														
+															VoiceOver evaluation criteria
+															Manage app accessibility
+														 
+													
+																																																																									
+														
+															Voice Control evaluation criteria
+															Manage app accessibility
+														 
+													
+																																																																									
+														
+															Larger Text evaluation criteria
+															Manage app accessibility
+														 
+													
+																																																																									
+														
+															Dark Interface evaluation criteria
+															Manage app accessibility
+														 
+													
+																																																																									
+														
+															Differentiate Without Color Alone evaluation criteria
+															Manage app accessibility
+														 
+													
+																																																																									
+														
+															Sufficient Contrast evaluation criteria
+															Manage app accessibility
+														 
+													
+																																																																									
+														
+															Reduced Motion evaluation criteria
+															Manage app accessibility
+														 
+													
+																																																																									
+														
+															Captions evaluation criteria
+															Manage app accessibility
+														 
+													
+																																																																									
+														
+															Audio Descriptions evaluation criteria
+															Manage app accessibility
+														 
+													
+																																																																									
+														
+															Manage Accessibility Nutrition Labels
+															Manage app accessibility
+														 
+													
+																																																																																																																	
+														
+															TestFlight Overview
+															Test a beta version
+														 
+													
+																																																																									
+														
+															Provide test information
+															Test a beta version
+														 
+													
+																																																																									
+														
+															Add internal testers
+															Test a beta version
+														 
+													
+																																																																									
+														
+															Invite external testers
+															Test a beta version
+														 
+													
+																																																																									
+														
+															View and manage tester information
+															Test a beta version
+														 
+													
+																																																																									
+														
+															View tester feedback
+															Test a beta version
+														 
+													
+																																																																									
+														
+															Add testers to builds
+															Test a beta version
+														 
+													
+																																																																									
+														
+															View build status and metrics
+															Test a beta version
+														 
+													
+																																																																									
+														
+															Stop testing a build
+															Test a beta version
+														 
+													
+																																																																									
+														
+															Provide export compliance information for beta builds
+															Test a beta version
+														 
+													
+																																																																									
+														
+															Test Apple-hosted asset packs
+															Test a beta version
+														 
+													
+																																																																									
+														
+															Remove testers from a group
+															Test a beta version
+														 
+													
+																																																																									
+														
+															Delete testers from TestFlight
+															Test a beta version
+														 
+													
+																																																																									
+														
+															Test an App Clip experience
+															Test a beta version
+														 
+													
+																																																																									
+														
+															Test iPhone and iPad apps on Macs with Apple silicon
+															Test a beta version
+														 
+													
+																																																																									
+														
+															Test iPhone and iPad apps on Apple Vision Pro
+															Test a beta version
+														 
+													
+																																																																									
+														
+															Testing subscriptions and In-App Purchases in TestFlight
+															Test a beta version
+														 
+													
+																																																																																																																	
+														
+															Overview of submitting for review
+															Manage submissions to App Review
+														 
+													
+																																																																									
+														
+															Submit an app
+															Manage submissions to App Review
+														 
+													
+																																																																									
+														
+															Submit an In-App Purchase
+															Manage submissions to App Review
+														 
+													
+																																																																									
+														
+															Submit assets from Asset Library
+															Manage submissions to App Review
+														 
+													
+																																																																									
+														
+															Submit Apple-hosted asset packs
+															Manage submissions to App Review
+														 
+													
+																																																																									
+														
+															Submit a custom product page
+															Manage submissions to App Review
+														 
+													
+																																																																									
+														
+															Submit an In-App Event
+															Manage submissions to App Review
+														 
+													
+																																																																									
+														
+															Submit Game Center components
+															Manage submissions to App Review
+														 
+													
+																																																																									
+														
+															Remove a submission from review
+															Manage submissions to App Review
+														 
+													
+																																																																									
+														
+															Reply to App Review messages
+															Manage submissions to App Review
+														 
+													
+																																																																									
+														
+															Manage a submission with unresolved issues
+															Manage submissions to App Review
+														 
+													
+																																																																									
+														
+															Upload a geographic coverage file
+															Manage submissions to App Review
+														 
+													
+																																																																																																																	
+														
+															Overview of publishing your app on the App Store
+															Manage your app's availability
+														 
+													
+																																																																									
+														
+															Manage availability for your app on the App Store
+															Manage your app's availability
+														 
+													
+																																																																									
+														
+															Set distribution methods
+															Manage your app's availability
+														 
+													
+																																																																									
+														
+															Publish for pre-order
+															Manage your app's availability
+														 
+													
+																																																																									
+														
+															Select an App Store version release option
+															Manage your app's availability
+														 
+													
+																																																																									
+														
+															Manage availability of iPhone and iPad apps on Macs with Apple silicon
+															Manage your app's availability
+														 
+													
+																																																																									
+														
+															Manage availability of iPhone and iPad apps on Apple Vision Pro
+															Manage your app's availability
+														 
+													
+																																																																									
+														
+															Make a version unavailable for download
+															Manage your app's availability
+														 
+													
+																																																																									
+														
+															View app status history
+															Manage your app's availability
+														 
+													
+																																																																																																																	
+														
+															Set a price
+															Manage app pricing
+														 
+													
+																																																																									
+														
+															Schedule price changes for apps
+															Manage app pricing
+														 
+													
+																																																																																																																	
+														
+															Overview of maintaining an app
+															Update your app
+														 
+													
+																																																																									
+														
+															Create a new version
+															Update your app
+														 
+													
+																																																																									
+														
+															Release a version update in phases
+															Update your app
+														 
+													
+																																																																																																																	
+														
+															Nominate your app for featuring
+															Manage featuring nominations
+														 
+													
+																																																																																																																	
+														
+															Ratings and reviews overview
+															Monitor ratings and reviews
+														 
+													
+																																																																									
+														
+															View ratings and reviews
+															Monitor ratings and reviews
+														 
+													
+																																																																									
+														
+															Respond to reviews
+															Monitor ratings and reviews
+														 
+													
+																																																																									
+														
+															Reset an app overview rating
+															Monitor ratings and reviews
+														 
+													
+																																																																																																																	
+														
+															Overview of reporting tools
+															Measure app performance
+														 
+													
+																																																																									
+														
+															Differences in reporting tools
+															Measure app performance
+														 
+													
+																																																																									
+														
+															View units, proceeds, sales, and pre-orders
+															Measure app performance
+														 
+													
+																																																																									
+														
+															View subscription data
+															Measure app performance
+														 
+													
+																																																																									
+														
+															Download and view reports
+															Measure app performance
+														 
+													
+																																																																																																																	
+														
+															Overview of app transfer
+															Transfer an app
+														 
+													
+																																																																									
+														
+															App transfer criteria
+															Transfer an app
+														 
+													
+																																																																									
+														
+															Initiate an app transfer
+															Transfer an app
+														 
+													
+																																																																									
+														
+															Accept an app transfer
+															Transfer an app
+														 
+													
+																																																																																																																	
+														
+															Sign and update agreements
+															Manage agreements
+														 
+													
+																																																																									
+														
+															View agreements status
+															Manage agreements
+														 
+													
+																																																																																																																	
+														
+															Enter banking information
+															Manage banking information
+														 
+													
+																																																																																																																	
+														
+															Provide tax information
+															Manage tax information
+														 
+													
+																																																																									
+														
+															Provide tax information for business-to-business status
+															Manage tax information
+														 
+													
+																																																																									
+														
+															Provide tax information for commissions and fees related to external purchases and alternative distribution
+															Manage tax information
+														 
+													
+																																																																									
+														
+															Provide tax information for Core Technology Fee
+															Manage tax information
+														 
+													
+																																																																									
+														
+															Manage invoices and other tax documents
+															Manage tax information
+														 
+													
+																																																																																																																	
+														
+															Manage European Union Digital Services Act trader requirements
+															Manage compliance information
+														 
+													
+																																																																									
+														
+															View China mainland compliance information
+															Manage compliance information
+														 
+													
+																																																																									
+														
+															Manage Korea compliance information
+															Manage compliance information
+														 
+													
+																																																																									
+														
+															Manage information for DAC7
+															Manage compliance information
+														 
+													
+																																																																									
+														
+															Manage information for ITA
+															Manage compliance information
+														 
+													
+																																																																									
+														
+															Manage information for MRDP
+															Manage compliance information
+														 
+													
+																																																																									
+														
+															Manage information for SERR
+															Manage compliance information
+														 
+													
+																																																																									
+														
+															Manage information for State Council Decree No. 810
+															Manage compliance information
+														 
+													
+																																																																																																																	
+														
+															Overview of receiving payments
+															Getting paid
+														 
+													
+																																																																									
+														
+															View payments and proceeds
+															Getting paid
+														 
+													
+																																																																									
+														
+															Download financial reports
+															Getting paid
+														 
+													
+																																																																																																																	
+														
+															Overview of making payments to Apple
+															Making payments to Apple
+														 
+													
+																																																																									
+														
+															Update your account for invoicing requirements
+															Making payments to Apple
+														 
+													
+																																																																									
+														
+															Understanding taxes
+															Making payments to Apple
+														 
+													
+																																																																									
+														
+															Invoice fields
+															Making payments to Apple
+														 
+													
+																																																																									
+														
+															Reporting tokens and transactions to Apple
+															Making payments to Apple
+														 
+													
+																																																																																																																	
+														
+															Core Technology Fee report fields
+															Understanding the Core Technology Fee
+														 
+													
+																																																																																																																	
+														
+															Request and manage promo codes
+															Offer promo codes
+														 
+													
+																																																																																																																	
+														
+															Overview of App Clips
+															Offer App Clip experiences
+														 
+													
+																																																																									
+														
+															Offer a default App Clip experience
+															Offer App Clip experiences
+														 
+													
+																																																																									
+														
+															Offer an advanced App Clip experience
+															Offer App Clip experiences
+														 
+													
+																																																																									
+														
+															Generate App Clip codes
+															Offer App Clip experiences
+														 
+													
+																																																																									
+														
+															Manage an App Clip experience
+															Offer App Clip experiences
+														 
+													
+																																																																									
+														
+															View domain URL status
+															Offer App Clip experiences
+														 
+													
+																																																																																																																	
+														
+															Configure multiple product page versions
+															Create custom product pages
+														 
+													
+																																																																																																																	
+														
+															Overview of product page optimization
+															Create product page optimization tests
+														 
+													
+																																																																									
+														
+															Create a test
+															Create product page optimization tests
+														 
+													
+																																																																									
+														
+															Configure test treatments
+															Create product page optimization tests
+														 
+													
+																																																																									
+														
+															Run a test
+															Create product page optimization tests
+														 
+													
+																																																																									
+														
+															Apply a test treatment to your product page
+															Create product page optimization tests
+														 
+													
+																																																																																																																	
+														
+															Overview of In-App Events
+															Offer In-App Events
+														 
+													
+																																																																									
+														
+															Offer In-App Events
+															Offer In-App Events
+														 
+													
+																																																																									
+														
+															Manage events
+															Offer In-App Events
+														 
+													
+																																																																																																																	
+														
+															Overview for configuring In-App Purchases
+															Configure In-App Purchase settings
+														 
+													
+																																																																									
+														
+															Generate keys for In-App Purchases
+															Configure In-App Purchase settings
+														 
+													
+																																																																									
+														
+															Generate a shared secret to verify receipts
+															Configure In-App Purchase settings
+														 
+													
+																																																																									
+														
+															Enter server URLs for App Store Server Notifications
+															Configure In-App Purchase settings
+														 
+													
+																																																																									
+														
+															Set a tax category for In-App Purchases
+															Configure In-App Purchase settings
+														 
+													
+																																																																									
+														
+															Turn on Family Sharing for In-App Purchases
+															Configure In-App Purchase settings
+														 
+													
+																																																																									
+														
+															Promote In-App Purchases
+															Configure In-App Purchase settings
+														 
+													
+																																																																																																																	
+														
+															Create consumable or non-consumable In-App Purchases
+															Manage In-App Purchases
+														 
+													
+																																																																									
+														
+															View and edit In-App Purchase information
+															Manage In-App Purchases
+														 
+													
+																																																																									
+														
+															Set a price for an In-App Purchase
+															Manage In-App Purchases
+														 
+													
+																																																																									
+														
+															Schedule price changes for In-App Purchases
+															Manage In-App Purchases
+														 
+													
+																																																																									
+														
+															Set availability for In-App Purchases
+															Manage In-App Purchases
+														 
+													
+																																																																									
+														
+															Create offer codes for In-App Purchases
+															Manage In-App Purchases
+														 
+													
+																																																																																																																	
+														
+															Offer auto-renewable subscriptions
+															Manage subscriptions
+														 
+													
+																																																																									
+														
+															Set availability for an auto-renewable subscription
+															Manage subscriptions
+														 
+													
+																																																																									
+														
+															Manage pricing for auto-renewable subscriptions
+															Manage subscriptions
+														 
+													
+																																																																									
+														
+															Manage purchase options for an auto-renewable subscription
+															Manage subscriptions
+														 
+													
+																																																																									
+														
+															Set up introductory offers for auto-renewable subscriptions
+															Manage subscriptions
+														 
+													
+																																																																									
+														
+															Set up promotional offers for auto-renewable subscriptions
+															Manage subscriptions
+														 
+													
+																																																																									
+														
+															Set up subscription offer codes
+															Manage subscriptions
+														 
+													
+																																																																									
+														
+															Set up win-back offers
+															Manage subscriptions
+														 
+													
+																																																																									
+														
+															Manage Streamlined Purchasing
+															Manage subscriptions
+														 
+													
+																																																																									
+														
+															Enable billing grace period for auto-renewable subscriptions
+															Manage subscriptions
+														 
+													
+																																																																									
+														
+															Create non-renewing subscriptions
+															Manage subscriptions
+														 
+													
+																																																																																																																	
+														
+															Overview of testing in sandbox
+															Test In-App Purchases
+														 
+													
+																																																																									
+														
+															Create Sandbox Apple Account
+															Test In-App Purchases
+														 
+													
+																																																																									
+														
+															Manage Sandbox Apple Account settings
+															Test In-App Purchases
+														 
+													
+																																																																																																																	
+														
+															Overview of Game Center
+															Configure Game Center
+														 
+													
+																																																																									
+														
+															Manage leaderboards
+															Configure Game Center
+														 
+													
+																																																																									
+														
+															Manage leaderboard sets
+															Configure Game Center
+														 
+													
+																																																																									
+														
+															Manage achievements
+															Configure Game Center
+														 
+													
+																																																																									
+														
+															Manage challenges
+															Configure Game Center
+														 
+													
+																																																																									
+														
+															Manage activities
+															Configure Game Center
+														 
+													
+																																																																									
+														
+															Overview of Game Center groups
+															Configure Game Center
+														 
+													
+																																																																									
+														
+															Manage groups
+															Configure Game Center
+														 
+													
+																																																																									
+														
+															Overview of testing Game Center
+															Configure Game Center
+														 
+													
+																																																																									
+														
+															Remove leaderboard test data
+															Configure Game Center
+														 
+													
+																																																																									
+														
+															Manage an app version for Game Center
+															Configure Game Center
+														 
+													
+																																																																									
+														
+															Add multiplayer compatibility
+															Configure Game Center
+														 
+													
+																																																																									
+														
+															Manage scores and players
+															Configure Game Center
+														 
+													
+																																																																																																																	
+														
+															Manage distribution on an alternative app marketplace
+															Managing alternative distribution
+														 
+													
+																																																																									
+														
+															Get an alternative distribution package ID
+															Managing alternative distribution
+														 
+													
+																																																																									
+														
+															Submit for Notarization
+															Managing alternative distribution
+														 
+													
+																																																																									
+														
+															Create a marketplace app
+															Managing alternative distribution
+														 
+													
+																																																																																																																	
+														
+															Role permissions
+															Reference > Account management
+														 
+													
+																										
+														
+															User notifications
+															Reference > Account management
+														 
+													
+																										
+														
+															Compliance review
+															Reference > Account management
+														 
+													
+																										
+														
+															Tax ID formats
+															Reference > Account management
+														 
+													
+																																																																																						
+														
+															App and submission statuses
+															Reference > App information
+														 
+													
+																										
+														
+															App information
+															Reference > App information
+														 
+													
+																										
+														
+															Platform version information
+															Reference > App information
+														 
+													
+																										
+														
+															App Store asset statuses
+															Reference > App information
+														 
+													
+																										
+														
+															App preview specifications
+															Reference > App information
+														 
+													
+																										
+														
+															Screenshot specifications
+															Reference > App information
+														 
+													
+																										
+														
+															Creative assets specifications
+															Reference > App information
+														 
+													
+																										
+														
+															Required, localizable, and editable properties
+															Reference > App information
+														 
+													
+																										
+														
+															App Store localizations
+															Reference > App information
+														 
+													
+																										
+														
+															App privacy
+															Reference > App information
+														 
+													
+																										
+														
+															Age ratings values and definitions
+															Reference > App information
+														 
+													
+																										
+														
+															Provide app motion information
+															Reference > App information
+														 
+													
+																										
+														
+															Export compliance documentation for encryption
+															Reference > App information
+														 
+													
+																										
+														
+															App bundle information
+															Reference > App information
+														 
+													
+																																																																																						
+														
+															App pricing and availability
+															Reference > Pricing and availability
+														 
+													
+																										
+														
+															App Store pricing and availability start times by country or region
+															Reference > Pricing and availability
+														 
+													
+																										
+														
+															In-App Purchase and subscriptions pricing and availability
+															Reference > Pricing and availability
+														 
+													
+																																																																																						
+														
+															Build upload statuses
+															Reference > App uploads
+														 
+													
+																										
+														
+															App build statuses 
+															Reference > App uploads
+														 
+													
+																										
+														
+															Maximum build file sizes
+															Reference > App uploads
+														 
+													
+																										
+														
+															On-Demand Resources size limits
+															Reference > App uploads
+														 
+													
+																										
+														
+															App Sandbox information
+															Reference > App uploads
+														 
+													
+																										
+														
+															Apple-hosted asset pack statuses
+															Reference > App uploads
+														 
+													
+																										
+														
+															Apple-hosted asset pack size limits
+															Reference > App uploads
+														 
+													
+																																																																																						
+														
+															TestFlight tester information
+															Reference > TestFlight
+														 
+													
+																										
+														
+															Beta tester feedback
+															Reference > TestFlight
+														 
+													
+																																																																																						
+														
+															In-App Purchase types
+															Reference > In-App Purchases and subscriptions
+														 
+													
+																										
+														
+															In-App Purchase information
+															Reference > In-App Purchases and subscriptions
+														 
+													
+																										
+														
+															In-App Purchase statuses
+															Reference > In-App Purchases and subscriptions
+														 
+													
+																										
+														
+															In-App Purchase localization statuses
+															Reference > In-App Purchases and subscriptions
+														 
+													
+																										
+														
+															Auto-renewable subscription information
+															Reference > In-App Purchases and subscriptions
+														 
+													
+																										
+														
+															Auto-renewable subscription price increase thresholds
+															Reference > In-App Purchases and subscriptions
+														 
+													
+																										
+														
+															Consent for subscription offer conversions
+															Reference > In-App Purchases and subscriptions
+														 
+													
+																																																																																						
+														
+															Leaderboards
+															Reference > Game Center
+														 
+													
+																										
+														
+															Achievements
+															Reference > Game Center
+														 
+													
+																										
+														
+															Challenges
+															Reference > Game Center
+														 
+													
+																										
+														
+															Game activities
+															Reference > Game Center
+														 
+													
+																										
+														
+															Group properties
+															Reference > Game Center
+														 
+													
+																										
+														
+															Game Center properties
+															Reference > Game Center
+														 
+													
+																																																																																						
+														
+															Nominations template
+															Reference > Nominations
+														 
+													
+																																																																																						
+														
+															In-App Event statuses
+															Reference > In-App Events
+														 
+													
+																										
+														
+															In-App Event badges
+															Reference > In-App Events
+														 
+													
+																										
+														
+															In-App Event media specifications
+															Reference > In-App Events
+														 
+													
+																																																																																						
+														
+															Payment information
+															Reference > Reporting
+														 
+													
+																										
+														
+															Financial report fields
+															Reference > Reporting
+														 
+													
+																										
+														
+															Transaction tax report fields
+															Reference > Reporting
+														 
+													
+																										
+														
+															Apple legal entities
+															Reference > Reporting
+														 
+													
+																										
+														
+															Currency codes
+															Reference > Reporting
+														 
+													
+																										
+														
+															Financial report regions and currencies
+															Reference > Reporting
+														 
+													
+																										
+														
+															Minimum payment threshold
+															Reference > Reporting
+														 
+													
+																										
+														
+															Summary Sales Report
+															Reference > Reporting
+														 
+													
+																										
+														
+															Sales Events Report
+															Reference > Reporting
+														 
+													
+																										
+														
+															Pre-Order Report
+															Reference > Reporting
+														 
+													
+																										
+														
+															Subscription Report
+															Reference > Reporting
+														 
+													
+																										
+														
+															Subscription Event Report
+															Reference > Reporting
+														 
+													
+																										
+														
+															Subscriber Report
+															Reference > Reporting
+														 
+													
+																										
+														
+															Subscription Offer Redemption Report
+															Reference > Reporting
+														 
+													
+																										
+														
+															Win-back eligibility report
+															Reference > Reporting
+														 
+													
+																										
+														
+															Report file names
+															Reference > Reporting
+														 
+													
+																										
+														
+															Subscription events
+															Reference > Reporting
+														 
+													
+																										
+														
+															Promotional codes
+															Reference > Reporting
+														 
+													
+																										
+														
+															Product type identifiers
+															Reference > Reporting
+														 
+													
+																										
+														
+															Cancellation reasons
+															Reference > Reporting
+														 
+													
+																										
+														
+															Sales and Trends metrics and dimensions
+															Reference > Reporting
+														 
+													
+																										
+														
+															Sales and Trends reports availability
+															Reference > Reporting
+														 
+													
+																										
+														
+															Banking information
+															Reference > Reporting
+														 
+													
+																																																															
+	
+									
+										
+											No results
+											If you have any questions about membership, your account, or App Store Connect, please review developer support.
+										
+									 
+								
+							
+						
+					
+				
+			
+		
+		
+	
+	
+		
+						
+				
+			
+			App Store Connect Help					
+		
+		
+		
+						
+			 			 			
+			 			 App Store Connect
+			 			 			 			 /
+			 			
+			 			 Manage app information
+			 			 			 			 /
+			 			
+			 			 Manage your App Store assets
+			 			 			
+			Filter ⌘K
+		
+	
+			
+					
+						
+																													
+									
+										
+										Release notes
+									
+								
+																																				
+									Get started
+								
+								
+																																																			
+												
+													
+													App Store Connect sections
+												
+											
+																																																													
+												
+													
+													App Store Connect workflow
+												
+											
+																																																													
+												
+													
+													App Store Connect for iPhone and iPad
+												
+											
+																																																													
+												
+													
+													App Store Connect API
+												
+											
+																											
+																																				
+									Manage your team
+								
+								
+																																																			
+												
+													
+													Overview of accounts and roles
+												
+											
+																																																													
+												
+													
+													Add and edit users
+												
+											
+																																																													
+												
+													
+													Edit access to apps
+												
+											
+																																																													
+												
+													
+													View and edit your profile
+												
+											
+																																																													
+												
+													
+													Manage webhooks
+												
+											
+																																																													
+												
+													
+													Set up OS data transfer
+												
+											
+																											
+																																				
+									Create an app record
+								
+								
+																																																			
+												
+													
+													Add a new app
+												
+											
+																																																													
+												
+													
+													Set your developer name
+												
+											
+																																																													
+												
+													
+													View and edit app information
+												
+											
+																																																													
+												
+													
+													Add watchOS app information
+												
+											
+																																																													
+												
+													
+													Add iMessage app information
+												
+											
+																																																													
+												
+													
+													Add platforms
+												
+											
+																																																													
+												
+													
+													Create and submit app bundles
+												
+											
+																																																													
+												
+													
+													Edit app bundle information
+												
+											
+																																																													
+												
+													
+													Remove an app
+												
+											
+																																																													
+												
+													
+													Edit access to an app
+												
+											
+																											
+																																				
+									Manage builds
+								
+								
+																																																			
+												
+													
+													Upload builds
+												
+											
+																																																													
+												
+													
+													View builds and metadata
+												
+											
+																																																													
+												
+													
+													Choose a build to submit
+												
+											
+																											
+																																				
+									Manage asset packs
+								
+								
+																																																			
+												
+													
+													Overview of Apple-hosted asset packs
+												
+											
+																																																													
+												
+													
+													Upload Apple-hosted asset packs
+												
+											
+																											
+																																				
+									Manage app information
+								
+								
+																																																			
+												
+													
+													Set an app age rating
+												
+											
+																																																													
+												
+													
+													Manage app tags
+												
+											
+																																																													
+												
+													
+													Set the app motion information for Apple Vision Pro
+												
+											
+																																																													
+												
+													
+													Provide a custom license agreement
+												
+											
+																																																													
+												
+													
+													Localize app information
+												
+											
+																																																													
+												
+													
+													Manage app privacy
+												
+											
+																																																													
+												
+													
+													Set a tax category
+												
+											
+																																																													
+												
+													
+													Declare Regulated Medical Device Status
+												
+											
+																																																													
+												
+													
+													Overview of export compliance
+												
+											
+																																																													
+												
+													
+													Determine and upload app encryption documentation
+												
+											
+																																																													
+												
+													
+													Add an app icon
+												
+											
+																																																													
+												
+													
+													Manage your App Store assets
+												
+											
+																																																													
+												
+													
+													Complete the Digital Goods and Services questionnaire
+												
+											
+																											
+																																				
+									Manage app accessibility
+								
+								
+																																																			
+												
+													
+													Overview of Accessibility Nutrition Labels
+												
+											
+																																																													
+												
+													
+													VoiceOver evaluation criteria
+												
+											
+																																																													
+												
+													
+													Voice Control evaluation criteria
+												
+											
+																																																													
+												
+													
+													Larger Text evaluation criteria
+												
+											
+																																																													
+												
+													
+													Dark Interface evaluation criteria
+												
+											
+																																																													
+												
+													
+													Differentiate Without Color Alone evaluation criteria
+												
+											
+																																																													
+												
+													
+													Sufficient Contrast evaluation criteria
+												
+											
+																																																													
+												
+													
+													Reduced Motion evaluation criteria
+												
+											
+																																																													
+												
+													
+													Captions evaluation criteria
+												
+											
+																																																													
+												
+													
+													Audio Descriptions evaluation criteria
+												
+											
+																																																													
+												
+													
+													Manage Accessibility Nutrition Labels
+												
+											
+																											
+																																				
+									Test a beta version
+								
+								
+																																																			
+												
+													
+													TestFlight Overview
+												
+											
+																																																													
+												
+													
+													Provide test information
+												
+											
+																																																													
+												
+													
+													Add internal testers
+												
+											
+																																																													
+												
+													
+													Invite external testers
+												
+											
+																																																													
+												
+													
+													View and manage tester information
+												
+											
+																																																													
+												
+													
+													View tester feedback
+												
+											
+																																																													
+												
+													
+													Add testers to builds
+												
+											
+																																																													
+												
+													
+													View build status and metrics
+												
+											
+																																																													
+												
+													
+													Stop testing a build
+												
+											
+																																																													
+												
+													
+													Provide export compliance information for beta builds
+												
+											
+																																																													
+												
+													
+													Test Apple-hosted asset packs
+												
+											
+																																																													
+												
+													
+													Remove testers from a group
+												
+											
+																																																													
+												
+													
+													Delete testers from TestFlight
+												
+											
+																																																													
+												
+													
+													Test an App Clip experience
+												
+											
+																																																													
+												
+													
+													Test iPhone and iPad apps on Macs with Apple silicon
+												
+											
+																																																													
+												
+													
+													Test iPhone and iPad apps on Apple Vision Pro
+												
+											
+																																																													
+												
+													
+													Testing subscriptions and In-App Purchases in TestFlight
+												
+											
+																											
+																																				
+									Manage submissions to App Review
+								
+								
+																																																			
+												
+													
+													Overview of submitting for review
+												
+											
+																																																													
+												
+													
+													Submit an app
+												
+											
+																																																													
+												
+													
+													Submit an In-App Purchase
+												
+											
+																																																													
+												
+													
+													Submit assets from Asset Library
+												
+											
+																																																													
+												
+													
+													Submit Apple-hosted asset packs
+												
+											
+																																																													
+												
+													
+													Submit a custom product page
+												
+											
+																																																													
+												
+													
+													Submit an In-App Event
+												
+											
+																																																													
+												
+													
+													Submit Game Center components
+												
+											
+																																																													
+												
+													
+													Remove a submission from review
+												
+											
+																																																													
+												
+													
+													Reply to App Review messages
+												
+											
+																																																													
+												
+													
+													Manage a submission with unresolved issues
+												
+											
+																																																													
+												
+													
+													Upload a geographic coverage file
+												
+											
+																											
+																																				
+									Manage your app's availability
+								
+								
+																																																			
+												
+													
+													Overview of publishing your app on the App Store
+												
+											
+																																																													
+												
+													
+													Manage availability for your app on the App Store
+												
+											
+																																																													
+												
+													
+													Set distribution methods
+												
+											
+																																																													
+												
+													
+													Publish for pre-order
+												
+											
+																																																													
+												
+													
+													Select an App Store version release option
+												
+											
+																																																													
+												
+													
+													Manage availability of iPhone and iPad apps on Macs with Apple silicon
+												
+											
+																																																													
+												
+													
+													Manage availability of iPhone and iPad apps on Apple Vision Pro
+												
+											
+																																																													
+												
+													
+													Make a version unavailable for download
+												
+											
+																																																													
+												
+													
+													View app status history
+												
+											
+																											
+																																				
+									Manage app pricing
+								
+								
+																																																			
+												
+													
+													Set a price
+												
+											
+																																																													
+												
+													
+													Schedule price changes for apps
+												
+											
+																											
+																																				
+									Update your app
+								
+								
+																																																			
+												
+													
+													Overview of maintaining an app
+												
+											
+																																																													
+												
+													
+													Create a new version
+												
+											
+																																																													
+												
+													
+													Release a version update in phases
+												
+											
+																											
+																																				
+									Manage featuring nominations
+								
+								
+																																																			
+												
+													
+													Nominate your app for featuring
+												
+											
+																											
+																																				
+									Monitor ratings and reviews
+								
+								
+																																																			
+												
+													
+													Ratings and reviews overview
+												
+											
+																																																													
+												
+													
+													View ratings and reviews
+												
+											
+																																																													
+												
+													
+													Respond to reviews
+												
+											
+																																																													
+												
+													
+													Reset an app overview rating
+												
+											
+																											
+																																				
+									Measure app performance
+								
+								
+																																																			
+												
+													
+													Overview of reporting tools
+												
+											
+																																																													
+												
+													
+													Differences in reporting tools
+												
+											
+																																																													
+												
+													
+													View units, proceeds, sales, and pre-orders
+												
+											
+																																																													
+												
+													
+													View subscription data
+												
+											
+																																																													
+												
+													
+													Download and view reports
+												
+											
+																											
+																																				
+									Transfer an app
+								
+								
+																																																			
+												
+													
+													Overview of app transfer
+												
+											
+																																																													
+												
+													
+													App transfer criteria
+												
+											
+																																																													
+												
+													
+													Initiate an app transfer
+												
+											
+																																																													
+												
+													
+													Accept an app transfer
+												
+											
+																											
+																																				
+									Manage agreements
+								
+								
+																																																			
+												
+													
+													Sign and update agreements
+												
+											
+																																																													
+												
+													
+													View agreements status
+												
+											
+																											
+																																				
+									Manage banking information
+								
+								
+																																																			
+												
+													
+													Enter banking information
+												
+											
+																											
+																																				
+									Manage tax information
+								
+								
+																																																			
+												
+													
+													Provide tax information
+												
+											
+																																																													
+												
+													
+													Provide tax information for business-to-business status
+												
+											
+																																																													
+												
+													
+													Provide tax information for commissions and fees related to external purchases and alternative distribution
+												
+											
+																																																													
+												
+													
+													Provide tax information for Core Technology Fee
+												
+											
+																																																													
+												
+													
+													Manage invoices and other tax documents
+												
+											
+																											
+																																				
+									Manage compliance information
+								
+								
+																																																			
+												
+													
+													Manage European Union Digital Services Act trader requirements
+												
+											
+																																																													
+												
+													
+													View China mainland compliance information
+												
+											
+																																																													
+												
+													
+													Manage Korea compliance information
+												
+											
+																																																													
+												
+													
+													Manage information for DAC7
+												
+											
+																																																													
+												
+													
+													Manage information for ITA
+												
+											
+																																																													
+												
+													
+													Manage information for MRDP
+												
+											
+																																																													
+												
+													
+													Manage information for SERR
+												
+											
+																																																													
+												
+													
+													Manage information for State Council Decree No. 810
+												
+											
+																											
+																																				
+									Getting paid
+								
+								
+																																																			
+												
+													
+													Overview of receiving payments
+												
+											
+																																																													
+												
+													
+													View payments and proceeds
+												
+											
+																																																													
+												
+													
+													Download financial reports
+												
+											
+																											
+																																				
+									Making payments to Apple
+								
+								
+																																																			
+												
+													
+													Overview of making payments to Apple
+												
+											
+																																																													
+												
+													
+													Update your account for invoicing requirements
+												
+											
+																																																													
+												
+													
+													Understanding taxes
+												
+											
+																																																													
+												
+													
+													Invoice fields
+												
+											
+																																																													
+												
+													
+													Reporting tokens and transactions to Apple
+												
+											
+																											
+																																				
+									Understanding the Core Technology Fee
+								
+								
+																																																			
+												
+													
+													Core Technology Fee report fields
+												
+											
+																											
+																																				
+									Offer promo codes
+								
+								
+																																																			
+												
+													
+													Request and manage promo codes
+												
+											
+																											
+																																				
+									Offer App Clip experiences
+								
+								
+																																																			
+												
+													
+													Overview of App Clips
+												
+											
+																																																													
+												
+													
+													Offer a default App Clip experience
+												
+											
+																																																													
+												
+													
+													Offer an advanced App Clip experience
+												
+											
+																																																													
+												
+													
+													Generate App Clip codes
+												
+											
+																																																													
+												
+													
+													Manage an App Clip experience
+												
+											
+																																																													
+												
+													
+													View domain URL status
+												
+											
+																											
+																																				
+									Create custom product pages
+								
+								
+																																																			
+												
+													
+													Configure multiple product page versions
+												
+											
+																											
+																																				
+									Create product page optimization tests
+								
+								
+																																																			
+												
+													
+													Overview of product page optimization
+												
+											
+																																																													
+												
+													
+													Create a test
+												
+											
+																																																													
+												
+													
+													Configure test treatments
+												
+											
+																																																													
+												
+													
+													Run a test
+												
+											
+																																																													
+												
+													
+													Apply a test treatment to your product page
+												
+											
+																											
+																																				
+									Offer In-App Events
+								
+								
+																																																			
+												
+													
+													Overview of In-App Events
+												
+											
+																																																													
+												
+													
+													Offer In-App Events
+												
+											
+																																																													
+												
+													
+													Manage events
+												
+											
+																											
+																																				
+									Configure In-App Purchase settings
+								
+								
+																																																			
+												
+													
+													Overview for configuring In-App Purchases
+												
+											
+																																																													
+												
+													
+													Generate keys for In-App Purchases
+												
+											
+																																																													
+												
+													
+													Generate a shared secret to verify receipts
+												
+											
+																																																													
+												
+													
+													Enter server URLs for App Store Server Notifications
+												
+											
+																																																													
+												
+													
+													Set a tax category for In-App Purchases
+												
+											
+																																																													
+												
+													
+													Turn on Family Sharing for In-App Purchases
+												
+											
+																																																													
+												
+													
+													Promote In-App Purchases
+												
+											
+																											
+																																				
+									Manage In-App Purchases
+								
+								
+																																																			
+												
+													
+													Create consumable or non-consumable In-App Purchases
+												
+											
+																																																													
+												
+													
+													View and edit In-App Purchase information
+												
+											
+																																																													
+												
+													
+													Set a price for an In-App Purchase
+												
+											
+																																																													
+												
+													
+													Schedule price changes for In-App Purchases
+												
+											
+																																																													
+												
+													
+													Set availability for In-App Purchases
+												
+											
+																																																													
+												
+													
+													Create offer codes for In-App Purchases
+												
+											
+																											
+																																				
+									Manage subscriptions
+								
+								
+																																																			
+												
+													
+													Offer auto-renewable subscriptions
+												
+											
+																																																													
+												
+													
+													Set availability for an auto-renewable subscription
+												
+											
+																																																													
+												
+													
+													Manage pricing for auto-renewable subscriptions
+												
+											
+																																																													
+												
+													
+													Manage purchase options for an auto-renewable subscription
+												
+											
+																																																													
+												
+													
+													Set up introductory offers for auto-renewable subscriptions
+												
+											
+																																																													
+												
+													
+													Set up promotional offers for auto-renewable subscriptions
+												
+											
+																																																													
+												
+													
+													Set up subscription offer codes
+												
+											
+																																																													
+												
+													
+													Set up win-back offers
+												
+											
+																																																													
+												
+													
+													Manage Streamlined Purchasing
+												
+											
+																																																													
+												
+													
+													Enable billing grace period for auto-renewable subscriptions
+												
+											
+																																																													
+												
+													
+													Create non-renewing subscriptions
+												
+											
+																											
+																																				
+									Test In-App Purchases
+								
+								
+																																																			
+												
+													
+													Overview of testing in sandbox
+												
+											
+																																																													
+												
+													
+													Create Sandbox Apple Account
+												
+											
+																																																													
+												
+													
+													Manage Sandbox Apple Account settings
+												
+											
+																											
+																																				
+									Configure Game Center
+								
+								
+																																																			
+												
+													
+													Overview of Game Center
+												
+											
+																																																													
+												
+													
+													Manage leaderboards
+												
+											
+																																																													
+												
+													
+													Manage leaderboard sets
+												
+											
+																																																													
+												
+													
+													Manage achievements
+												
+											
+																																																													
+												
+													
+													Manage challenges
+												
+											
+																																																													
+												
+													
+													Manage activities
+												
+											
+																																																													
+												
+													
+													Overview of Game Center groups
+												
+											
+																																																													
+												
+													
+													Manage groups
+												
+											
+																																																													
+												
+													
+													Overview of testing Game Center
+												
+											
+																																																													
+												
+													
+													Remove leaderboard test data
+												
+											
+																																																													
+												
+													
+													Manage an app version for Game Center
+												
+											
+																																																													
+												
+													
+													Add multiplayer compatibility
+												
+											
+																																																													
+												
+													
+													Manage scores and players
+												
+											
+																											
+																																				
+									Managing alternative distribution
+								
+								
+																																																			
+												
+													
+													Manage distribution on an alternative app marketplace
+												
+											
+																																																													
+												
+													
+													Get an alternative distribution package ID
+												
+											
+																																																													
+												
+													
+													Submit for Notarization
+												
+											
+																																																													
+												
+													
+													Create a marketplace app
+												
+											
+																											
+																																				
+									Reference
+								
+								
+																																								
+												Account management
+											
+											
+																																							
+															
+																
+																Role permissions
+															
+														
+																											
+															
+																
+																User notifications
+															
+														
+																											
+															
+																
+																Compliance review
+															
+														
+																											
+															
+																
+																Tax ID formats
+															
+														
+																																				
+																																																		
+												App information
+											
+											
+																																							
+															
+																
+																App and submission statuses
+															
+														
+																											
+															
+																
+																App information
+															
+														
+																											
+															
+																
+																Platform version information
+															
+														
+																											
+															
+																
+																App Store asset statuses
+															
+														
+																											
+															
+																
+																App preview specifications
+															
+														
+																											
+															
+																
+																Screenshot specifications
+															
+														
+																											
+															
+																
+																Creative assets specifications
+															
+														
+																											
+															
+																
+																Required, localizable, and editable properties
+															
+														
+																											
+															
+																
+																App Store localizations
+															
+														
+																											
+															
+																
+																App privacy
+															
+														
+																											
+															
+																
+																Age ratings values and definitions
+															
+														
+																											
+															
+																
+																Provide app motion information
+															
+														
+																											
+															
+																
+																Export compliance documentation for encryption
+															
+														
+																											
+															
+																
+																App bundle information
+															
+														
+																																				
+																																																		
+												Pricing and availability
+											
+											
+																																							
+															
+																
+																App pricing and availability
+															
+														
+																											
+															
+																
+																App Store pricing and availability start times by country or region
+															
+														
+																											
+															
+																
+																In-App Purchase and subscriptions pricing and availability
+															
+														
+																																				
+																																																		
+												App uploads
+											
+											
+																																							
+															
+																
+																Build upload statuses
+															
+														
+																											
+															
+																
+																App build statuses 
+															
+														
+																											
+															
+																
+																Maximum build file sizes
+															
+														
+																											
+															
+																
+																On-Demand Resources size limits
+															
+														
+																											
+															
+																
+																App Sandbox information
+															
+														
+																											
+															
+																
+																Apple-hosted asset pack statuses
+															
+														
+																											
+															
+																
+																Apple-hosted asset pack size limits
+															
+														
+																																				
+																																																		
+												TestFlight
+											
+											
+																																							
+															
+																
+																TestFlight tester information
+															
+														
+																											
+															
+																
+																Beta tester feedback
+															
+														
+																																				
+																																																		
+												In-App Purchases and subscriptions
+											
+											
+																																							
+															
+																
+																In-App Purchase types
+															
+														
+																											
+															
+																
+																In-App Purchase information
+															
+														
+																											
+															
+																
+																In-App Purchase statuses
+															
+														
+																											
+															
+																
+																In-App Purchase localization statuses
+															
+														
+																											
+															
+																
+																Auto-renewable subscription information
+															
+														
+																											
+															
+																
+																Auto-renewable subscription price increase thresholds
+															
+														
+																											
+															
+																
+																Consent for subscription offer conversions
+															
+														
+																																				
+																																																		
+												Game Center
+											
+											
+																																							
+															
+																
+																Leaderboards
+															
+														
+																											
+															
+																
+																Achievements
+															
+														
+																											
+															
+																
+																Challenges
+															
+														
+																											
+															
+																
+																Game activities
+															
+														
+																											
+															
+																
+																Group properties
+															
+														
+																											
+															
+																
+																Game Center properties
+															
+														
+																																				
+																																																		
+												Nominations
+											
+											
+																																							
+															
+																
+																Nominations template
+															
+														
+																																				
+																																																		
+												In-App Events
+											
+											
+																																							
+															
+																
+																In-App Event statuses
+															
+														
+																											
+															
+																
+																In-App Event badges
+															
+														
+																											
+															
+																
+																In-App Event media specifications
+															
+														
+																																				
+																																																		
+												Reporting
+											
+											
+																																							
+															
+																
+																Payment information
+															
+														
+																											
+															
+																
+																Financial report fields
+															
+														
+																											
+															
+																
+																Transaction tax report fields
+															
+														
+																											
+															
+																
+																Apple legal entities
+															
+														
+																											
+															
+																
+																Currency codes
+															
+														
+																											
+															
+																
+																Financial report regions and currencies
+															
+														
+																											
+															
+																
+																Minimum payment threshold
+															
+														
+																											
+															
+																
+																Summary Sales Report
+															
+														
+																											
+															
+																
+																Sales Events Report
+															
+														
+																											
+															
+																
+																Pre-Order Report
+															
+														
+																											
+															
+																
+																Subscription Report
+															
+														
+																											
+															
+																
+																Subscription Event Report
+															
+														
+																											
+															
+																
+																Subscriber Report
+															
+														
+																											
+															
+																
+																Subscription Offer Redemption Report
+															
+														
+																											
+															
+																
+																Win-back eligibility report
+															
+														
+																											
+															
+																
+																Report file names
+															
+														
+																											
+															
+																
+																Subscription events
+															
+														
+																											
+															
+																
+																Promotional codes
+															
+														
+																											
+															
+																
+																Product type identifiers
+															
+														
+																											
+															
+																
+																Cancellation reasons
+															
+														
+																											
+															
+																
+																Sales and Trends metrics and dimensions
+															
+														
+																											
+															
+																
+																Sales and Trends reports availability
+															
+														
+																											
+															
+																
+																Banking information
+															
+														
+																																				
+																											
+																		
+				
+				
+					Filter ⌘K
+				
+				 
+			
+				
+				
+										Manage app information
+										
+	Manage your App Store assets
+	Overview
+	Your App Store images and videos help people quickly understand what your app or game offers, whether they're discovering it for the first time or coming back to see what's new.
+	Use Asset Library to submit and manage your app's images and videos across platforms, sizes, and placements, including app previews, screenshots, and custom creative assets like the product page header and in-app event cards.
+	App previews and screenshots. Upload app previews and screenshots to showcase your app or game in action. Set a visually compelling poster frame from your footage to highlight the moment that best conveys the essence of your app. You can also add app previews and screenshots for other devices and localizations, or archive ones you no longer need.
+	Creative assets. Upload, submit, or re-use creative assets to highlight your overarching brand or value proposition across the App Store, in placements like product page header, search results, and in-app events.
+	Required role: Account Holder, Admin, App Manager, or Marketing. View role permissions.
+	
+	
+		Manage your image and video assets in Asset Library
+		Use Asset Library to manage your app's images and videos, including app previews, screenshots, and creative assets. You can upload and submit creative assets on their own, independent of an app version, without specifying where you plan to use them. This lets you get them approved in advance and ready to use whenever you need them. Use your approved creative assets across eligible touch points on the App Store to drive engagement and discovery.
+		Because your screenshots and app previews also live in Asset Library, you can quickly reuse existing ones, for example when creating a Custom Product Page, without having to track them down again.
+		Learn more about App Store asset best practices and resources.
+		Learn how to upload and submit assets to the Asset Library using the App Store Connect API.
+		
+			Upload assets to Asset Library
+			
+				You can upload and submit images and videos on their own, independent of an app version, without specifying where you plan to use them. This lets you get assets approved in advance and ready to use whenever you need them.
+				Learn about app preview, screenshot, and creative asset specifications.
+				
+					
+						In Apps, select the app you want to upload assets for.
+					
+					
+						In the sidebar, click Asset Library.
+					
+					
+						Click the add button (+).
+					
+					
+						Select the type of asset you’re uploading: Upload Creative Assets or Previews and Screenshots.
+						
+					
+					
+						Choose the assets you want to upload, then click Upload at the bottom right.
+					
+				 
+				When you're ready, submit your assets for review.
+			
+		
+		
+			View your assets in Asset Library
+			
+				
+					
+						In Apps, select the app you want to view assets for.
+					
+					
+						In the sidebar, click Asset Library.
+					
+					
+						Click the asset you want to view or edit. In the detail view, you can:
+						
+							
+								In the Name field, you can enter a name to help you identify this asset. This name is only visible in App Store Connect.
+							
+							
+								In the Works With section, view which App Store features and placements the asset is compatible with, such as In-App Events or Search Results.
+							
+							
+								In the Recent Usage field, view where this asset was most recently used.
+							
+							
+								Set a poster frame for video assets. The poster frame set applies to everywhere the asset is used.
+							
+						
+					
+					
+						Click Save.
+					
+				
+				
+					Tip: When viewing your assets, you can filter by Type, Status, and Format to quickly find the asset you're looking for.
+				
+			
+		
+		
+			Delete assets from Asset Library
+			
+				You can delete an asset only when its status is Prepared for Submission.
+				
+					
+						In Apps, select the app you want to remove assets for.
+					
+					
+						In the sidebar, select Asset Library.
+					
+					
+						Click Edit at the top right.
+					
+					
+						Select the assets you want to remove.
+					
+					
+						Click Delete at the top right.
+					
+					
+						In the confirmation dialog, click Delete.
+					
+				
+				You can also click an asset, then click Delete Asset at the bottom of the detail page.
+				Learn how to remove creative assets from a placement.
+			
+		
+		
+			Archive assets from Asset Library
+			
+				To find archived assets, use the Status filter in the Asset Library.
+				
+					
+						In Apps, select your app.
+					
+					
+						In the sidebar, select Asset Library.
+					
+					
+						Select the asset you want to archive.
+					
+					
+						On the asset detail page, select Archive Asset, then confirm.
+						
+							Note: Archived assets can't be used in new placements. However, if a new version of a placement is created and the archived asset is carried over, the asset may be restored automatically. To manually restore an archived asset, click the asset, click Unarchive Asset, then follow the prompts.
+						
+						
+					
+				
+			
+		
+	
+	
+		Manage your app previews and screenshots
+		You can manage your app previews and screenshots across three places in App Store Connect, each with different capabilities.
+		Product Page Information (on the version page, Custom Product Pages, and Product Page Optimization): Upload assets, sort their order, set or remove their placement, browse existing assets from Asset Library, and set a poster frame, all scoped to the version, Custom Product Page, or Product Page Optimization treatment you're currently editing.
+		Media Manager: Manage app preview and screenshot placements for each supported device size and localization. You can add assets from the Asset Library, reorder their display sequence, remove placements, and choose poster frames.
+		Asset Library: Upload new assets, set a poster frame, and delete unapproved assets, independent of any app version.
+		Your app previews and screenshots must meet Apple's guidelines and the App Review Guidelines(sections 2.3.3 and 2.3.4).
+		For marketing guidelines, visit Creating your product page or Show more with app previews.
+		
+		
+			Upload your previews and screenshots
+			
+				You upload your app previews and screenshots through the Product Page Information section on the version page or directly in Asset Library then submit them for review when your app has one of these statuses:
+				
+					
+						Prepare for Submission
+					
+					
+						Invalid Binary
+					
+					
+						Rejected
+					
+					
+						Metadata Rejected
+					
+					
+						Developer Rejected
+					
+				
+				Follow the steps below to manage your screenshots and app previews. You can also manage them by selecting View All Sizes in Media Manager:
+				
+					
+						In Apps, select the app you want to view.
+					
+					
+						In the sidebar, select the app version under the platform you want to edit.
+						
+							Note: To upload assets for other localizations, choose the language from the pop-up menu on the top right.
+						
+					
+					
+						Under the Product Page Information section, click the App Previews and Screenshots tab.
+					
+					
+						Under Previews and Screenshots, select the device tab for the asset you want to upload.
+						
+							Note: To upload the required screenshots for iMessage and watchOS apps, or to manage scaled app previews and screenshots for other device sizes, select View All Sizes in Media Manager on the right.
+						
+					
+					
+						Click Upload or drag your screenshots and app preview into the appropriate well.
+						
+							Note: You can also click Browse Assets to use approved, compatible images and videos from the Asset Library.
+						
+					
+				
+				When you're ready, submit your assets for review.
+				Learn how to upload app previews and screenshots directly through Asset Library.
+				Learn how to upload assets using the App Store Connect API.
+			
+		
+		
+			Set an app preview poster frame
+			
+				
+					
+						In Apps, select the app you want to view.
+					
+					
+						In the sidebar, select the app version under the platform you want to edit.
+					
+					
+						Under the Product Page Information section, click the App Previews and Screenshots tab.
+					
+					
+						Click View All Sizes in Media Manager on the right.
+					
+					
+						Scroll to the device size where you want to edit the app preview.
+					
+					
+						Hold the pointer over the app preview and click Edit Poster Frame.
+					
+					
+						Select the new poster frame or restore the default frame.
+					
+					
+						Use the playback controls to navigate to the frame of the video you want to use for your poster frame.
+					
+					
+						To select the currently displayed frame of the video as your poster frame, click Set Poster Frame.
+					
+					
+						To save the poster frame, click Done.
+						
+							Note: 
+							
+								
+									Poster frames can't be edited after assets have been approved.
+								
+								
+									You can also set your poster frame directly from the Product Page Information section by holding the pointer over the app preview and clicking Edit Poster Frame. The poster frame set applies to everywhere the asset is used.
+								
+							
+						
+					
+				
+			
+		
+		
+			Remove your previews and screenshots
+			
+				Learn how to delete app previews and screenshots directly through Asset Library.
+				
+					
+						In Apps, select the app you want to view.
+					
+					
+						In the sidebar, select the app version under the platform you want to edit.
+					
+					
+						Under the Product Page Information section, click the App Previews and Screenshots tab.
+					
+					
+						Click View All Sizes in Media Manager on the right.
+					
+					
+						Scroll to the device size where you want to delete the app preview or screenshots.
+						
+							Note: If you want to remove it for a specific localization, on the top right, choose the language from the drop down menu.
+						
+					
+					
+						Hold the pointer over the screenshot or app preview that you want to delete, and then click on the Delete button (–).
+						After you remove a screenshot or app preview, it’s also removed for all other display sizes using scaled versions.
+					
+				
+				
+					Tip: You can also remove app previews and screenshots directly from under the Product Page Information section. Point to the left side of the image or video, then click Delete (–). The asset remains in Asset Library, but is no longer placed on your product page.
+				
+				Learn how to remove screenshots and app previews using the App Store Connect API.
+			
+		
+	
+	
+		Manage creative assets
+		Creative assets are rich images or videos that showcase your app's or game's overarching value, brand, or excitement, distinct from the in-use functionality requirement in app previews and screenshots. You can now go beyond showing your apps and games in use, highlighting things like your brand, seasonal offerings, exciting new content, and more. In addition to standard screenshots and previews, these assets can be used to highlight a brand, promote seasonal offerings, or showcase new content.
+		You can designate a creative asset to appear in organic placements across the App Store, including product page header, search results, and in-app events and more.
+		
+			Note: 
+			
+				
+					Creative assets are optional and separate from your app's screenshots, app previews, In-App Purchase and Subscription images, and any promotional artwork requested by editorial teams.
+				
+				
+					Your app previews, screenshots and creative assets used in product page header, search results and in your in-app events all live in Asset Library, the central place to manage your app's assets across platforms, sizes, and placements.
+				
+			
+		
+		If you upload a universal creative asset, you can use it for both your product page header and search results placement. Otherwise, select dedicated assets for each. Creative assets support both images and videos, and are available for iOS and iPadOS apps and games running iOS 27 or iPadOS 27 or later.
+		Learn more about App Store asset best practices and resources.
+		Learn about creative assets specifications.
+		
+			Upload creative assets
+			
+				You upload your custom creative assets through the Product Page Information section on the version page, directly in Asset Library, or from Custom Product Pages, Product Page Optimization, and In-App Events, then submit them for review.
+				
+					Note: You can submit creative assets as a standalone submission through Asset Library. Because this submission is standalone, you can upload and get creative assets approved without updating your app's version or indicating where you plan to use them. Standalone assets are reviewed against your app's latest version.
+				
+				Learn about creative assets specifications.
+				
+					
+						In Apps, select the app you want to view.
+					
+					
+						In the sidebar, click the app version under the platform you want.
+					
+					
+						Under the Product Page Information, click the Header and Search Results tab, then click Header or Search Results, depending on which asset you want to add.
+					
+					
+						Drag your image or video asset into the well, or, to use an asset already in Asset Library instead, click Browse Assets.
+					
+					
+						In the dialog that appears, select the asset you want to use on the App Store, then click Save.
+						
+						
+						
+							Tip: Select Preview to review how your new assets look on the product page and search results on the App Store. You can view them for both iPhone and iPad, across different orientations and languages.
+						
+						
+					
+					
+						Once everything looks good, submit your version for review as usual. After your version is approved and released, the creative assets on your product page header and in search results also go live on the App Store.
+						
+							Note: To use the same asset for both your product page and search results, select Use header asset in search results. This option is only available for universal creative assets. Otherwise, upload or choose a dedicated asset for search results.
+						
+					
+				
+				Learn how to upload creative assets in Asset Library.
+				Learn how to submit assets from Asset Library.
+			
+		
+		
+			Update creative assets for a version already on the App Store
+			
+				If your app's current version is already live on the App Store, you can update its creative assets with approved assets without submitting a new version.
+				
+					
+						In Apps, select the app you want to view.
+					
+					
+						In the sidebar, click the version that's currently live on the App Store.
+					
+					
+						Under the Product Page Information, click the Header and Search Results tab, then click Header or Search Results, depending on which asset you want to update.
+					
+					
+						Click Browse Assets. In the dialog that appears, choose an approved asset from Asset Library, then click Next.
+					
+					
+						In the dialog that appears, click Publish. Your app's product page updates with the new asset on the App Store.
+						
+					
+				
+			
+		
+		
+			Remove creative assets from a placement
+			
+				
+					
+						In Apps, click the app you want to view.
+					
+					
+						In the sidebar, click the app version under the platform you want.
+					
+					
+						Click the Header and Search Results tab, then click Header or Search Results depending on which asset you want to remove.
+					
+					
+						Click Delete.
+					
+				
+				The asset is removed from its placement on the App Store, but isn't deleted from Asset Library. Learn how to delete or archive creative assets directly through Asset Library.
+			
+		
+	
+	
+	
+	Related
+		App preview specifications
+		Screenshot specifications
+		Get started with app discovery and marketing
+		Submit your apps to the App Store for Apple Vision Pro
+	
+				
+			
+						
+					
+	
+	
+		
+	
+		
+			
+				
+					
+						
+					
+					Submit yourfeedback
+				
+			
+			
+				
+					
+						
+					
+					Ask questions on the&nbsp;forums
+				
+			
+			
+				
+					
+						
+					
+					Contact Apple Developer&nbsp;Support
+				
+			
+		
+	
+		
+	
+ 
+ Developer Footer
+	
+	
+					Help
+					App Store Connect
+					Manage app information
+					Manage your App Store assets
+			
+	 
+	
+	
+		
+		
+			
+				Platforms
+			
+			 Open Menu 
+			 Close Menu 
+			
+				iOS
+				iPadOS
+				macOS
+				tvOS
+				visionOS
+				watchOS
+				App Store
+			
+		
+		
+		
+			
+				Tools
+			
+			 Open Menu 
+			 Close Menu 
+			
+				Swift
+				SwiftUI
+				Swift Playground
+				TestFlight
+				Xcode
+				Xcode Cloud
+				Icon Composer
+				SF Symbols
+			
+		
+	
+	
+		
+		
+			
+				Technologies
+			
+			 Open Menu 
+			 Close Menu 
+			
+				Accessibility
+				Accessories
+				AI & Machine Learning
+				Apple In-App Purchase
+				Apple Intelligence
+				Audio &amp; Video
+				Augmented Reality
+				Business
+				Design
+				Distribution
+				Education
+				Games
+				Health &amp; Fitness
+				Localization
+				Maps &amp; Location
+				Security
+				Safari &amp; Web
+			
+		
+	
+	
+		
+		
+			
+				Resources
+			
+			 Open Menu 
+			 Close Menu 
+			
+				Documentation
+				Downloads
+				Sample Code
+				Videos
+				Documentation Archive
+			
+		
+		
+		
+			
+				Support
+			
+			 Open Menu 
+			 Close Menu 
+			
+				Help Guides & Articles
+				Contact Us
+				Forums
+				Feedback & Bug Reporting
+				System Status
+			
+		
+		
+		
+			
+				Account
+			
+			 Open Menu 
+			 Close Menu 
+			
+				Apple Developer
+				App Store Connect
+				Certificates, IDs, &amp; Profiles
+				Feedback Assistant
+			
+		
+	
+	
+	
+		
+		
+			
+				Programs
+			
+			 Open Menu 
+			 Close Menu 
+			
+				Apple Developer Program
+				Apple Developer Enterprise Program
+				App Store Small Business Program
+				MFi Program
+				Mini Apps Partner Program
+				News Partner Program
+				Video Partner Program
+				Security Bounty Program
+				Security Research Device Program
+			
+		
+		
+		
+			
+				Events
+			
+			 Open Menu 
+			 Close Menu 
+			
+				Meet with Apple
+				Apple Developer Centers
+				App Store Awards
+				Apple Design Awards
+				Apple Developer Academies
+				WWDC
+			
+		
+	
+	
+ 
+	
+		
+			Read the latest news. Get the Apple Developer app. Follow us on bilibili, LinkedIn, WeChat, and YouTube.
+		
+		
+			<div class="color-scheme-toggle"
+				role="radiogroup"
+				tabindex="0"
+				aria-label="Select a color scheme preference">
+				
+					<input type="radio" value="light" autocomplete="off"
+						onchange="window.setPreferredColorScheme(event.target.value)" />
+					Light
+				
+				
+					<input type="radio" value="dark" autocomplete="off"
+						onchange="window.setPreferredColorScheme(event.target.value)" />
+					Dark
+				
+				
+					<input type="radio" value="auto" autocomplete="off"
+						onchange="window.setPreferredColorScheme(event.target.value)" />
+					Auto
+				
+			
+			
+		
+	
+	
+	
+		
+		
+	
+	
+	
+		Copyright © 2026 Apple Inc. All rights reserved.
+		
+			Terms of Use
+			Privacy Policy
+			Agreements and Guidelines
+		
+	
+ 
